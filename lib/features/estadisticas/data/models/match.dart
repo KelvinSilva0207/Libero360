@@ -1,0 +1,124 @@
+/// Enum para el estado del partido
+enum EstadoPartido {
+  noIniciado,
+  enProgreso,
+  pausado,
+  finalizado,
+}
+
+/// Modelo de Partido para estadísticas de voleibol
+class Match {
+  int id = 0;
+  DateTime fecha = DateTime.now();
+  String equipoLocal = '';
+  String equipoVisitante = '';
+  int puntosLocal = 0;
+  int puntosVisitante = 0;
+  int setsLocal = 0;
+  int setsVisitante = 0;
+  int setActual = 1;
+  EstadoPartido estado = EstadoPartido.noIniciado;
+  bool turnoLocal = true;
+  int velocidadAnimacion = 1000;
+  DateTime createdAt = DateTime.now();
+
+  Match();
+
+  factory Match.create({
+    required String equipoLocal,
+    required String equipoVisitante,
+    DateTime? fecha,
+  }) {
+    return Match()
+      ..fecha = fecha ?? DateTime.now()
+      ..equipoLocal = equipoLocal
+      ..equipoVisitante = equipoVisitante
+      ..puntosLocal = 0
+      ..puntosVisitante = 0
+      ..setsLocal = 0
+      ..setsVisitante = 0
+      ..setActual = 1
+      ..estado = EstadoPartido.noIniciado
+      ..turnoLocal = true
+      ..velocidadAnimacion = 1000
+      ..createdAt = DateTime.now();
+  }
+
+  String get marcador => '$puntosLocal - $puntosVisitante';
+  String get resultadoSets => '$setsLocal - $setsVisitante';
+  bool get isFinalizado => estado == EstadoPartido.finalizado;
+  bool get isActivo => estado == EstadoPartido.enProgreso;
+
+  void agregarPuntoLocal() {
+    puntosLocal++;
+    _verificarCambioSet();
+  }
+
+  void agregarPuntoVisitante() {
+    puntosVisitante++;
+    _verificarCambioSet();
+  }
+
+  void _verificarCambioSet() {
+    const puntosParaGanar = 25;
+    const puntosDiferencia = 2;
+    
+    if (puntosLocal >= puntosParaGanar || puntosVisitante >= puntosParaGanar) {
+      if ((puntosLocal - puntosVisitante).abs() >= puntosDiferencia) {
+        if (puntosLocal > puntosVisitante) {
+          setsLocal++;
+        } else {
+          setsVisitante++;
+        }
+        setActual++;
+        puntosLocal = 0;
+        puntosVisitante = 0;
+        
+        if (setsLocal == 3 || setsVisitante == 3) {
+          estado = EstadoPartido.finalizado;
+        }
+      }
+    }
+  }
+
+  void iniciar() {
+    estado = EstadoPartido.enProgreso;
+  }
+
+  void pausar() {
+    estado = EstadoPartido.pausado;
+  }
+
+  void reanudar() {
+    estado = EstadoPartido.enProgreso;
+  }
+
+  void finalizar() {
+    estado = EstadoPartido.finalizado;
+  }
+
+  void cambiarTurno() {
+    turnoLocal = !turnoLocal;
+  }
+
+  void update({
+    int? puntosLocal,
+    int? puntosVisitante,
+    int? setsLocal,
+    int? setsVisitante,
+    int? setActual,
+    EstadoPartido? estado,
+    bool? turnoLocal,
+  }) {
+    if (puntosLocal != null) this.puntosLocal = puntosLocal;
+    if (puntosVisitante != null) this.puntosVisitante = puntosVisitante;
+    if (setsLocal != null) this.setsLocal = setsLocal;
+    if (setsVisitante != null) this.setsVisitante = setsVisitante;
+    if (setActual != null) this.setActual = setActual;
+    if (estado != null) this.estado = estado;
+    if (turnoLocal != null) this.turnoLocal = turnoLocal;
+  }
+
+  @override
+  String toString() => 'Match(id: $id, $equipoLocal vs $equipoVisitante, $marcador)';
+}

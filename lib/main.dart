@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'features/estadisticas/presentation/views/play_by_play_screen.dart';
 
 void main() {
   runApp(const Libero360App());
@@ -60,7 +61,18 @@ class HomeScreen extends StatelessWidget {
               children: [
                 _FeatureButton(icon: Icons.person, label: 'Atletas'),
                 _FeatureButton(icon: Icons.sports_score, label: 'Partidos'),
-                _FeatureButton(icon: Icons.analytics, label: 'Estadísticas'),
+                _FeatureButton(
+                  icon: Icons.analytics, 
+                  label: 'Estadísticas',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const PlayByPlayScreen(),
+                      ),
+                    );
+                  },
+                ),
                 _FeatureButton(icon: Icons.check_circle, label: 'Asistencia'),
               ],
             ),
@@ -74,13 +86,14 @@ class HomeScreen extends StatelessWidget {
 class _FeatureButton extends StatelessWidget {
   final IconData icon;
   final String label;
+  final VoidCallback? onTap;
 
-  const _FeatureButton({required this.icon, required this.label});
+  const _FeatureButton({required this.icon, required this.label, this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return ElevatedButton.icon(
-      onPressed: () {},
+      onPressed: onTap,
       icon: Icon(icon),
       label: Text(label),
       style: ElevatedButton.styleFrom(

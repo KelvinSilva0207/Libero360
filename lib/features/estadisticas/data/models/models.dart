@@ -8,7 +8,7 @@
 /// import 'package:libero360/features/estadisticas/data/models/models.dart';
 /// ```
 
-// Modelos Isar
 export 'player.dart';
 export 'match.dart';
 export 'stat_event.dart';
+export 'attendance_record.dart';

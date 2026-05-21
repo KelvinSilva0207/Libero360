@@ -1,4 +1,3 @@
-/// Enum para el estado del partido
 enum EstadoPartido {
   noIniciado,
   enProgreso,
@@ -6,7 +5,12 @@ enum EstadoPartido {
   finalizado,
 }
 
-/// Modelo de Partido para estadísticas de voleibol
+enum TipoPartido {
+  amistoso,
+  liga,
+  torneo,
+}
+
 class Match {
   int id = 0;
   DateTime fecha = DateTime.now();
@@ -22,17 +26,29 @@ class Match {
   int velocidadAnimacion = 1000;
   DateTime createdAt = DateTime.now();
 
+  // Nuevos campos del schema
+  TipoPartido tipoPartido = TipoPartido.amistoso;
+  int setsTotales = 5;
+  String? resultadoFinal;
+  String? lugar;
+
   Match();
 
   factory Match.create({
     required String equipoLocal,
     required String equipoVisitante,
     DateTime? fecha,
+    TipoPartido tipoPartido = TipoPartido.amistoso,
+    int setsTotales = 5,
+    String? lugar,
   }) {
     return Match()
       ..fecha = fecha ?? DateTime.now()
       ..equipoLocal = equipoLocal
       ..equipoVisitante = equipoVisitante
+      ..tipoPartido = tipoPartido
+      ..setsTotales = setsTotales
+      ..lugar = lugar
       ..puntosLocal = 0
       ..puntosVisitante = 0
       ..setsLocal = 0
@@ -44,10 +60,19 @@ class Match {
       ..createdAt = DateTime.now();
   }
 
+  String get rival => equipoVisitante;
   String get marcador => '$puntosLocal - $puntosVisitante';
   String get resultadoSets => '$setsLocal - $setsVisitante';
   bool get isFinalizado => estado == EstadoPartido.finalizado;
   bool get isActivo => estado == EstadoPartido.enProgreso;
+
+  String get tipoPartidoLabel {
+    switch (tipoPartido) {
+      case TipoPartido.amistoso: return 'Amistoso';
+      case TipoPartido.liga: return 'Liga';
+      case TipoPartido.torneo: return 'Torneo';
+    }
+  }
 
   void agregarPuntoLocal() {
     puntosLocal++;
@@ -62,7 +87,7 @@ class Match {
   void _verificarCambioSet() {
     const puntosParaGanar = 25;
     const puntosDiferencia = 2;
-    
+
     if (puntosLocal >= puntosParaGanar || puntosVisitante >= puntosParaGanar) {
       if ((puntosLocal - puntosVisitante).abs() >= puntosDiferencia) {
         if (puntosLocal > puntosVisitante) {
@@ -73,9 +98,10 @@ class Match {
         setActual++;
         puntosLocal = 0;
         puntosVisitante = 0;
-        
+
         if (setsLocal == 3 || setsVisitante == 3) {
           estado = EstadoPartido.finalizado;
+          resultadoFinal = resultadoSets;
         }
       }
     }
@@ -95,28 +121,11 @@ class Match {
 
   void finalizar() {
     estado = EstadoPartido.finalizado;
+    resultadoFinal = resultadoSets;
   }
 
   void cambiarTurno() {
     turnoLocal = !turnoLocal;
-  }
-
-  void update({
-    int? puntosLocal,
-    int? puntosVisitante,
-    int? setsLocal,
-    int? setsVisitante,
-    int? setActual,
-    EstadoPartido? estado,
-    bool? turnoLocal,
-  }) {
-    if (puntosLocal != null) this.puntosLocal = puntosLocal;
-    if (puntosVisitante != null) this.puntosVisitante = puntosVisitante;
-    if (setsLocal != null) this.setsLocal = setsLocal;
-    if (setsVisitante != null) this.setsVisitante = setsVisitante;
-    if (setActual != null) this.setActual = setActual;
-    if (estado != null) this.estado = estado;
-    if (turnoLocal != null) this.turnoLocal = turnoLocal;
   }
 
   @override

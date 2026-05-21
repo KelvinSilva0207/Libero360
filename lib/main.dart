@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'features/auth/auth.dart';
 import 'features/partido/partido.dart';
+import 'features/asistencia/asistencia.dart';
 import 'features/estadisticas/presentation/views/play_by_play_screen.dart';
 
 void main() {
@@ -148,7 +149,14 @@ class HomeScreen extends StatelessWidget {
                       runSpacing: isWide ? 16 : 10,
                       alignment: WrapAlignment.center,
                       children: [
-                        _FeatureButton(icon: Icons.person, label: 'Atletas', isWide: isWide),
+                        _FeatureButton(
+                          icon: Icons.person,
+                          label: 'Atletas',
+                          isWide: isWide,
+                          onTap: () => Navigator.push(
+                            context, MaterialPageRoute(builder: (_) => const AthleteListScreen()),
+                          ),
+                        ),
                         _FeatureButton(
                           icon: Icons.sports_score,
                           label: 'Partidos',
@@ -165,7 +173,14 @@ class HomeScreen extends StatelessWidget {
                             context, MaterialPageRoute(builder: (_) => const PlayByPlayScreen()),
                           ),
                         ),
-                        _FeatureButton(icon: Icons.check_circle, label: 'Asistencia', isWide: isWide),
+                        _FeatureButton(
+                          icon: Icons.check_circle,
+                          label: 'Asistencia',
+                          isWide: isWide,
+                          onTap: () => Navigator.push(
+                            context, MaterialPageRoute(builder: (_) => const AttendanceScreen()),
+                          ),
+                        ),
                       ],
                     ),
                   ],

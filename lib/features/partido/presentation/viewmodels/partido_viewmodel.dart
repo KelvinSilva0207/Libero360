@@ -50,8 +50,11 @@ class PartidoViewModel extends ChangeNotifier {
       _jugadores = List.generate(6, (i) {
         return Player.create(
           nombre: 'Jug ${i + 1}',
+          cedula: '',
+          fechaNacimiento: DateTime.now().subtract(const Duration(days: 365 * 20)),
           numero: i + 1,
           posicion: _posicionEnCancha(i),
+          condicionFisica: 'Excelente',
         );
       });
       for (var j in _jugadores) {

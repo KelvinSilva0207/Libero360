@@ -1,5 +1,3 @@
-import 'package:isar/isar.dart';
-
 import '../local_db/database_service.dart';
 import '../models/models.dart';
 

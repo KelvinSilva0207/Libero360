@@ -302,15 +302,17 @@ class StatEventRepository {
     
     if (match == null) return [];
 
-    return eventos.map((e) {
-      final player = e.playerId > 0 ? _db.getPlayerById(e.playerId) : null;
-      return {
+    final result = <Map<String, dynamic>>[];
+    for (final e in eventos) {
+      final player = e.playerId > 0 ? await _db.getPlayerById(e.playerId) : null;
+      result.add({
         'evento': e,
         'jugador': player,
         'marcador': e.marcadorEnAccion,
         'set': e.setNumero,
         'descripcion': e.descripcionAccion,
-      };
-    }).toList();
+      });
+    }
+    return result;
   }
 }

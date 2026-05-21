@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import '../../../estadisticas/data/models/models.dart';
 import '../../../estadisticas/data/repositories/repositories.dart';
 import '../../../estadisticas/data/local_db/database_service.dart';
+import '../../data/match_config.dart';
 
 class PartidoViewModel extends ChangeNotifier {
   final MatchRepository _matchRepository = MatchRepository();
@@ -32,7 +33,7 @@ class PartidoViewModel extends ChangeNotifier {
   String get nombreVisitante => _match?.equipoVisitante ?? 'Visitante';
   EstadoPartido get estado => _match?.estado ?? EstadoPartido.noIniciado;
 
-  Future<void> init() async {
+  Future<void> init([MatchConfig? config]) async {
     _setLoading(true);
     _error = null;
     notifyListeners();
@@ -40,27 +41,36 @@ class PartidoViewModel extends ChangeNotifier {
     try {
       await DatabaseService.instance.initialize();
 
+      final configLocalName = config?.localName ?? 'Local';
+      final configVisitorName = config?.visitorName ?? 'Visitante';
+      final configSetsTotales = config?.setsTotales ?? 5;
+      final configTipoPartido = config?.tipoPartido ?? TipoPartido.amistoso;
+
       _match = await _matchRepository.crearNuevoPartido(
-        equipoLocal: 'Local',
-        equipoVisitante: 'Visitante',
+        equipoLocal: configLocalName,
+        equipoVisitante: configVisitorName,
+        setsTotales: configSetsTotales,
+        tipoPartido: configTipoPartido,
       );
+
+      if (config != null && config.selectedPlayers.isNotEmpty) {
+        _jugadores = List.from(config.selectedPlayers);
+      } else {
+        _jugadores = List.generate(6, (i) {
+          return Player.create(
+            nombre: 'Jug ${i + 1}',
+            cedula: '',
+            fechaNacimiento: DateTime.now().subtract(const Duration(days: 365 * 20)),
+            numero: i + 1,
+            posicion: _posicionEnCancha(i),
+            condicionFisica: 'Excelente',
+          );
+        });
+      }
+
       _match!.iniciar();
       await _matchRepository.guardar(_match!);
-
-      _jugadores = List.generate(6, (i) {
-        return Player.create(
-          nombre: 'Jug ${i + 1}',
-          cedula: '',
-          fechaNacimiento: DateTime.now().subtract(const Duration(days: 365 * 20)),
-          numero: i + 1,
-          posicion: _posicionEnCancha(i),
-          condicionFisica: 'Excelente',
-        );
-      });
-      for (var j in _jugadores) {
-        await DatabaseService.instance.savePlayer(j);
-      }
-      _jugadorSeleccionado = _jugadores[0];
+      _jugadorSeleccionado = _jugadores.isNotEmpty ? _jugadores[0] : null;
     } catch (e) {
       _error = 'Error al iniciar partido: $e';
     } finally {
@@ -70,12 +80,12 @@ class PartidoViewModel extends ChangeNotifier {
 
   Posicion _posicionEnCancha(int index) {
     switch (index) {
-      case 0: return Posicion.opuesto;
-      case 1: return Posicion.receptor;
-      case 2: return Posicion.central;
-      case 3: return Posicion.colocador;
+      case 0: return Posicion.receptor;
+      case 1: return Posicion.central;
+      case 2: return Posicion.opuesto;
+      case 3: return Posicion.receptor;
       case 4: return Posicion.central;
-      case 5: return Posicion.receptor;
+      case 5: return Posicion.colocador;
       default: return Posicion.colocador;
     }
   }
@@ -205,7 +215,7 @@ class PartidoViewModel extends ChangeNotifier {
   }
 
   Future<void> restarPuntoLocal() async {
-    if (_match == null || !_match!.isActivo || _match!.puntosLocal <= 0) return;
+    if (_match == null || !_match!.isActivo || (_match!.puntosLocal <= 0)) return;
     try {
       _match!.puntosLocal--;
       await _matchRepository.guardar(_match!);
@@ -217,13 +227,44 @@ class PartidoViewModel extends ChangeNotifier {
   }
 
   Future<void> restarPuntoVisitante() async {
-    if (_match == null || !_match!.isActivo || _match!.puntosVisitante <= 0) return;
+    if (_match == null || !_match!.isActivo || (_match!.puntosVisitante <= 0)) return;
     try {
       _match!.puntosVisitante--;
       await _matchRepository.guardar(_match!);
       notifyListeners();
     } catch (e) {
       _error = 'Error: $e';
+      notifyListeners();
+    }
+  }
+
+  Future<void> undoLastPoint() async {
+    if (_match == null || !_match!.isActivo) return;
+    try {
+      final eventos = await _statEventRepository.obtenerEventosDelPartido(_match!.id);
+      final ultimoEvento = eventos.isNotEmpty ? eventos.last : null;
+
+      if (ultimoEvento != null) {
+        await _statEventRepository.eliminar(ultimoEvento.id);
+        final fueLocal = ultimoEvento.esEquipoLocal;
+        if (ultimoEvento.isPuntoGanado || ultimoEvento.tipoAccion == TipoAccion.errorContrario) {
+          if (fueLocal && _match!.puntosLocal > 0) {
+            _match!.puntosLocal--;
+          } else if (!fueLocal && _match!.puntosVisitante > 0) {
+            _match!.puntosVisitante--;
+          }
+        }
+      } else {
+        if (_match!.puntosLocal > 0) {
+          _match!.puntosLocal--;
+        } else if (_match!.puntosVisitante > 0) {
+          _match!.puntosVisitante--;
+        }
+      }
+      await _matchRepository.guardar(_match!);
+      notifyListeners();
+    } catch (e) {
+      _error = 'Error al deshacer: $e';
       notifyListeners();
     }
   }

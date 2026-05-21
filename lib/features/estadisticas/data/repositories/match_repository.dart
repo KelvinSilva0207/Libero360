@@ -58,11 +58,17 @@ class MatchRepository {
     required String equipoLocal,
     required String equipoVisitante,
     DateTime? fecha,
+    TipoPartido tipoPartido = TipoPartido.amistoso,
+    int setsTotales = 5,
+    String? lugar,
   }) async {
     final match = Match.create(
       equipoLocal: equipoLocal,
       equipoVisitante: equipoVisitante,
       fecha: fecha,
+      tipoPartido: tipoPartido,
+      setsTotales: setsTotales,
+      lugar: lugar,
     );
     
     final id = await _db.saveMatch(match);

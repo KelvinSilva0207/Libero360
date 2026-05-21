@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../estadisticas/data/models/player.dart';
+import '../../data/match_config.dart';
 import '../viewmodels/partido_viewmodel.dart';
 import '../widgets/scoreboard_widget.dart';
 import '../widgets/volleyball_court_widget.dart';
@@ -11,7 +13,8 @@ const _accent = Color(0xFFFF8C00);
 const _primary = Color(0xFF0081CF);
 
 class MatchScreen extends StatefulWidget {
-  const MatchScreen({super.key});
+  final MatchConfig? config;
+  const MatchScreen({super.key, this.config});
 
   @override
   State<MatchScreen> createState() => _MatchScreenState();
@@ -21,7 +24,7 @@ class _MatchScreenState extends State<MatchScreen> {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => PartidoViewModel()..init(),
+      create: (_) => PartidoViewModel()..init(widget.config),
       child: Consumer<PartidoViewModel>(
       builder: (context, vm, _) {
         if (vm.isLoading && vm.match == null) {
@@ -54,7 +57,7 @@ class _MatchScreenState extends State<MatchScreen> {
                   Text(vm.error!, style: const TextStyle(color: Colors.red, fontSize: 14)),
                   const SizedBox(height: 16),
                   FilledButton.icon(
-                    onPressed: () => vm.init(),
+                    onPressed: () => vm.init(widget.config),
                     icon: const Icon(Icons.refresh),
                     label: const Text('Reintentar'),
                     style: FilledButton.styleFrom(backgroundColor: _accent),
@@ -77,10 +80,93 @@ class _MatchScreenState extends State<MatchScreen> {
               bottomNavigationBar: _buildBottomNav(context, vm, isWide),
               floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
               floatingActionButton: _buildFab(vm, isWide),
+              endDrawer: _buildRosterDrawer(vm),
             );
           },
         );
       },
+      ),
+    );
+  }
+
+  Widget _buildRosterDrawer(PartidoViewModel vm) {
+    return Drawer(
+      backgroundColor: _surface,
+      child: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              color: _bg,
+              child: Row(
+                children: [
+                  const Icon(Icons.people, color: _accent, size: 20),
+                  const SizedBox(width: 8),
+                  const Text('Roster del Partido', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white54),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1, color: Colors.white12),
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.all(12),
+                itemCount: vm.jugadores.length,
+                itemBuilder: (context, index) {
+                  final j = vm.jugadores[index];
+                  final isStarter = index < 6;
+                  final zIndex = index < 6 ? _zoneLabel(index) : 'SUP';
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 6),
+                    decoration: BoxDecoration(
+                      color: _bg,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: j.id == vm.jugadorSeleccionado?.id ? _accent.withValues(alpha: 0.4) : Colors.transparent,
+                      ),
+                    ),
+                    child: ListTile(
+                      dense: true,
+                      leading: CircleAvatar(
+                        radius: 16,
+                        backgroundColor: isStarter ? _primary : Colors.grey.shade700,
+                        child: Text('${j.numero}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 12)),
+                      ),
+                      title: Text(j.nombre, style: const TextStyle(color: Colors.white, fontSize: 13)),
+                      subtitle: Row(
+                        children: [
+                          Text(j.posicionLabel, style: const TextStyle(color: Colors.white54, fontSize: 10)),
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                            decoration: BoxDecoration(
+                              color: _accent.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(3),
+                            ),
+                            child: Text(zIndex, style: const TextStyle(color: _accent, fontSize: 9, fontWeight: FontWeight.bold)),
+                          ),
+                          if (!isStarter) ...[
+                            const SizedBox(width: 6),
+                            const Text('Banca', style: TextStyle(color: Colors.white24, fontSize: 9)),
+                          ],
+                        ],
+                      ),
+                      onTap: () {
+                        vm.seleccionarJugador(j);
+                        if (index >= 6) vm.seleccionarTeam(vm.teamSeleccionado);
+                      },
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -101,9 +187,9 @@ class _MatchScreenState extends State<MatchScreen> {
           onLocalNameTap: () => _editarNombre(context, vm, true),
           onVisitorNameTap: () => _editarNombre(context, vm, false),
           onLocalScoreTap: vm.sumarPuntoLocal,
-          onLocalScoreLongPress: vm.restarPuntoLocal,
+          onLocalScoreLongPress: () => vm.restarPuntoLocal(),
           onVisitorScoreTap: vm.sumarPuntoVisitante,
-          onVisitorScoreLongPress: vm.restarPuntoVisitante,
+          onVisitorScoreLongPress: () => vm.restarPuntoVisitante(),
         ),
         _buildTeamSelector(context, vm),
         Expanded(
@@ -157,9 +243,9 @@ class _MatchScreenState extends State<MatchScreen> {
                 onLocalNameTap: () => _editarNombre(context, vm, true),
                 onVisitorNameTap: () => _editarNombre(context, vm, false),
                 onLocalScoreTap: vm.sumarPuntoLocal,
-                onLocalScoreLongPress: vm.restarPuntoLocal,
+                onLocalScoreLongPress: () => vm.restarPuntoLocal(),
                 onVisitorScoreTap: vm.sumarPuntoVisitante,
-                onVisitorScoreLongPress: vm.restarPuntoVisitante,
+                onVisitorScoreLongPress: () => vm.restarPuntoVisitante(),
               ),
               _buildTeamSelector(context, vm),
               Expanded(
@@ -206,7 +292,15 @@ class _MatchScreenState extends State<MatchScreen> {
       ),
       title: const Text('Partido', style: TextStyle(color: Colors.white, fontSize: 15)),
       centerTitle: true,
-      actions: [_pausePlayBtn(vm), _moreBtn(context, vm)],
+      actions: [
+        IconButton(
+          icon: Icon(Icons.people_alt, color: vm.jugadores.length > 6 ? _accent : Colors.white54),
+          onPressed: () => Scaffold.of(context).openEndDrawer(),
+          tooltip: 'Roster',
+        ),
+        _pausePlayBtn(vm),
+        _moreBtn(context, vm),
+      ],
     );
   }
 
@@ -222,6 +316,11 @@ class _MatchScreenState extends State<MatchScreen> {
           ),
           const Expanded(
             child: Text('Partido', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w500)),
+          ),
+          IconButton(
+            icon: Icon(Icons.people_alt, color: vm.jugadores.length > 6 ? _accent : Colors.white54),
+            onPressed: () => Scaffold.of(context).openEndDrawer(),
+            tooltip: 'Roster',
           ),
           _pausePlayBtn(vm),
           _moreBtn(context, vm),
@@ -241,27 +340,49 @@ class _MatchScreenState extends State<MatchScreen> {
     return PopupMenuButton<String>(
       icon: const Icon(Icons.more_vert, color: Colors.white),
       onSelected: (v) {
-        if (v == 'end') {
-          showDialog(
-            context: context,
-            builder: (ctx) => AlertDialog(
-              title: const Text('Finalizar partido'),
-              content: const Text('¿Seguro que quieres finalizar el partido?'),
-              actions: [
-                TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    vm.finalizarPartido();
-                  },
-                  child: const Text('Finalizar', style: TextStyle(color: Colors.red)),
-                ),
-              ],
-            ),
-          );
+        switch (v) {
+          case 'undo':
+            vm.undoLastPoint();
+          case 'end':
+            showDialog(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                backgroundColor: _surface,
+                title: const Text('Finalizar partido', style: TextStyle(color: Colors.white)),
+                content: const Text('¿Seguro que quieres finalizar el partido?', style: TextStyle(color: Colors.white70)),
+                actions: [
+                  TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar', style: TextStyle(color: Colors.white54))),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      vm.finalizarPartido();
+                    },
+                    child: const Text('Finalizar', style: TextStyle(color: Colors.red)),
+                  ),
+                ],
+              ),
+            );
         }
       },
       itemBuilder: (context) => [
+        PopupMenuItem(
+          value: 'undo',
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(2),
+                decoration: BoxDecoration(
+                  color: _accent.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: const Icon(Icons.undo, color: _accent, size: 18),
+              ),
+              const SizedBox(width: 8),
+              const Text('Deshacer último punto'),
+            ],
+          ),
+        ),
+        const PopupMenuDivider(),
         const PopupMenuItem(
           value: 'end',
           child: Row(
@@ -277,14 +398,22 @@ class _MatchScreenState extends State<MatchScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Editar ${isLocal ? 'Local' : 'Visitante'}'),
+        backgroundColor: _surface,
+        title: Text('Editar ${isLocal ? 'Local' : 'Visitante'}', style: const TextStyle(color: Colors.white)),
         content: TextField(
           controller: controller,
           autofocus: true,
-          decoration: const InputDecoration(labelText: 'Nombre del equipo'),
+          style: const TextStyle(color: Colors.white),
+          decoration: InputDecoration(
+            labelText: 'Nombre del equipo',
+            labelStyle: const TextStyle(color: Colors.white54),
+            filled: true,
+            fillColor: _bg,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+          ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar', style: TextStyle(color: Colors.white54))),
           TextButton(
             onPressed: () {
               final name = controller.text.trim();
@@ -297,7 +426,7 @@ class _MatchScreenState extends State<MatchScreen> {
               }
               Navigator.pop(ctx);
             },
-            child: const Text('Guardar'),
+            child: const Text('Guardar', style: TextStyle(color: _accent)),
           ),
         ],
       ),
@@ -336,7 +465,7 @@ class _MatchScreenState extends State<MatchScreen> {
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Text('vs', style: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 11)),
+            child: Text('vs', style: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 11)),
           ),
           Expanded(
             child: GestureDetector(
@@ -369,6 +498,9 @@ class _MatchScreenState extends State<MatchScreen> {
   }
 
   Widget _buildBenchBar(PartidoViewModel vm) {
+    final benchPlayers = vm.jugadores.length > 6 ? vm.jugadores.sublist(6) : <Player>[];
+    if (benchPlayers.isEmpty) return const SizedBox.shrink();
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: const BoxDecoration(
@@ -383,7 +515,9 @@ class _MatchScreenState extends State<MatchScreen> {
             children: [
               const Icon(Icons.check_box_outlined, color: _accent, size: 16),
               const SizedBox(width: 6),
-              const Text('¿CAMBIO?', style: TextStyle(color: _accent, fontWeight: FontWeight.bold, fontSize: 11)),
+              const Text('BANCA', style: TextStyle(color: _accent, fontWeight: FontWeight.bold, fontSize: 11)),
+              const Spacer(),
+              Text('${benchPlayers.length} jugadores', style: const TextStyle(color: Colors.white24, fontSize: 9)),
             ],
           ),
           const SizedBox(height: 4),
@@ -391,9 +525,9 @@ class _MatchScreenState extends State<MatchScreen> {
             height: 44,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
-              itemCount: vm.jugadores.length > 6 ? vm.jugadores.length - 6 : 0,
+              itemCount: benchPlayers.length,
               itemBuilder: (context, index) {
-                final j = vm.jugadores[index + 6];
+                final j = benchPlayers[index];
                 return Padding(
                   padding: const EdgeInsets.only(right: 12),
                   child: GestureDetector(
@@ -402,15 +536,15 @@ class _MatchScreenState extends State<MatchScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         CircleAvatar(
-                          radius: 16,
+                          radius: 14,
                           backgroundColor: j.id == vm.jugadorSeleccionado?.id ? _accent : Colors.grey.shade700,
                           child: Text(
                             '${j.numero}',
-                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white),
+                            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
                           ),
                         ),
                         const SizedBox(height: 2),
-                        const Text('Banca', style: TextStyle(fontSize: 9, color: Colors.grey)),
+                        Text(j.posicionLabel, style: const TextStyle(fontSize: 7, color: Colors.grey)),
                       ],
                     ),
                   ),
@@ -466,5 +600,9 @@ class _MatchScreenState extends State<MatchScreen> {
       child: const Text('ROTAR', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
     );
   }
-}
 
+  String _zoneLabel(int index) {
+    const labels = ['Z4', 'Z3', 'Z2', 'Z5', 'Z6', 'Z1'];
+    return index < labels.length ? labels[index] : 'Z?';
+  }
+}

@@ -53,7 +53,7 @@ class VolleyballCourtWidget extends StatelessWidget {
                               onNumeroEdit: onNumeroEdit,
                             ),
                           ),
-                        _buildPositionLabels(context, constraints),
+                        _buildZoneLabels(constraints),
                       ],
                     );
                   },
@@ -67,48 +67,41 @@ class VolleyballCourtWidget extends StatelessWidget {
     final w = c.maxWidth;
     final h = c.maxHeight;
     switch (index) {
-      case 0: return Offset(w * 0.5 - 22, h * 0.08);
-      case 1: return Offset(w * 0.15 - 22, h * 0.35);
-      case 2: return Offset(w * 0.85 - 22, h * 0.35);
-      case 3: return Offset(w * 0.5 - 22, h * 0.62);
-      case 4: return Offset(w * 0.15 - 22, h * 0.85);
-      case 5: return Offset(w * 0.85 - 22, h * 0.85);
+      case 0: return Offset(w * 0.12, h * 0.07);
+      case 1: return Offset(w * 0.5 - 22, h * 0.07);
+      case 2: return Offset(w * 0.75, h * 0.07);
+      case 3: return Offset(w * 0.12, h * 0.62);
+      case 4: return Offset(w * 0.5 - 22, h * 0.78);
+      case 5: return Offset(w * 0.75, h * 0.62);
       default: return Offset.zero;
     }
   }
 
-  Widget _buildPositionLabels(BuildContext context, BoxConstraints c) {
+  Widget _buildZoneLabels(BoxConstraints c) {
     final w = c.maxWidth;
     final h = c.maxHeight;
     return Stack(
       children: [
-        Positioned(
-          left: w * 0.5 - 16, top: h * 0.5 - 10,
+        Positioned(left: w * 0.5 - 16, top: h * 0.5 - 10,
           child: const Text('RED', style: TextStyle(color: Colors.white24, fontSize: 10, fontWeight: FontWeight.bold)),
         ),
-        Positioned(
-          left: 4, top: h * 0.02,
-          child: const Text('P1', style: TextStyle(color: Colors.white10, fontSize: 9)),
+        Positioned(left: 4, top: h * 0.2,
+          child: const Text('Z4', style: TextStyle(color: Colors.white10, fontSize: 9)),
         ),
-        Positioned(
-          left: 4, top: h * 0.22,
-          child: const Text('P6', style: TextStyle(color: Colors.white10, fontSize: 9)),
+        Positioned(left: w * 0.5 - 8, top: h * 0.2,
+          child: const Text('Z3', style: TextStyle(color: Colors.white10, fontSize: 9)),
         ),
-        Positioned(
-          right: 4, top: h * 0.22,
-          child: const Text('P5', style: TextStyle(color: Colors.white10, fontSize: 9)),
+        Positioned(right: 4, top: h * 0.2,
+          child: const Text('Z2', style: TextStyle(color: Colors.white10, fontSize: 9)),
         ),
-        Positioned(
-          left: 4, top: h * 0.72,
-          child: const Text('P2', style: TextStyle(color: Colors.white10, fontSize: 9)),
+        Positioned(left: 4, bottom: h * 0.2,
+          child: const Text('Z5', style: TextStyle(color: Colors.white10, fontSize: 9)),
         ),
-        Positioned(
-          right: 4, top: h * 0.72,
-          child: const Text('P4', style: TextStyle(color: Colors.white10, fontSize: 9)),
+        Positioned(left: w * 0.5 - 8, bottom: h * 0.2,
+          child: const Text('Z6', style: TextStyle(color: Colors.white10, fontSize: 9)),
         ),
-        Positioned(
-          left: w * 0.5 - 12, top: h * 0.92,
-          child: const Text('P3', style: TextStyle(color: Colors.white10, fontSize: 9)),
+        Positioned(right: 4, bottom: h * 0.2,
+          child: const Text('Z1', style: TextStyle(color: Colors.white10, fontSize: 9)),
         ),
       ],
     );
@@ -163,31 +156,40 @@ class _PlayerAvatarState extends State<_PlayerAvatar> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Jugador #${widget.player.numero}'),
+        backgroundColor: const Color(0xFF1E293B),
+        title: Text('Zona ${_zoneLabel(widget.index)} · #${widget.player.numero}',
+            style: const TextStyle(color: Colors.white)),
         content: TextField(
           controller: _numeroCtrl,
           keyboardType: TextInputType.number,
           autofocus: true,
-          decoration: const InputDecoration(
+          style: const TextStyle(color: Colors.white),
+          decoration: InputDecoration(
             labelText: 'Número de camiseta',
-            border: OutlineInputBorder(),
+            labelStyle: const TextStyle(color: Colors.white54),
+            border: const OutlineInputBorder(),
+            filled: true,
+            fillColor: const Color(0xFF0F172A),
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar', style: TextStyle(color: Colors.white54))),
           TextButton(
             onPressed: () {
               final n = int.tryParse(_numeroCtrl.text.trim());
-              if (n != null) {
-                widget.onNumeroEdit?.call(widget.index, n);
-              }
+              if (n != null) widget.onNumeroEdit?.call(widget.index, n);
               Navigator.pop(ctx);
             },
-            child: const Text('Guardar'),
+            child: const Text('Asignar', style: TextStyle(color: Color(0xFFFF8C00))),
           ),
         ],
       ),
     );
+  }
+
+  String _zoneLabel(int index) {
+    const labels = ['Z4', 'Z3', 'Z2', 'Z5', 'Z6', 'Z1'];
+    return index < labels.length ? labels[index] : 'Z?';
   }
 
   @override
@@ -199,7 +201,7 @@ class _PlayerAvatarState extends State<_PlayerAvatar> {
 
     return GestureDetector(
       onTap: widget.onTap,
-      onLongPress: widget.onNumeroEdit != null ? _showEditDialog : null,
+      onDoubleTap: widget.onNumeroEdit != null ? _showEditDialog : null,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -212,7 +214,7 @@ class _PlayerAvatarState extends State<_PlayerAvatar> {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: glowColor.withOpacity(widget.isSelected ? 0.6 : 0.3),
+                      color: glowColor.withValues(alpha: widget.isSelected ? 0.6 : 0.3),
                       blurRadius: widget.isSelected ? 14 : 8,
                       spreadRadius: widget.isSelected ? 4 : 2,
                     ),
@@ -256,10 +258,10 @@ class _PlayerAvatarState extends State<_PlayerAvatar> {
 
   String _posShort(Posicion p) {
     switch (p) {
-      case Posicion.colocador: return 'COL';
+      case Posicion.colocador: return 'ARM';
       case Posicion.opuesto: return 'OP';
       case Posicion.central: return 'CTR';
-      case Posicion.receptor: return 'REC';
+      case Posicion.receptor: return 'PUN';
       case Posicion.libre: return 'LIB';
     }
   }

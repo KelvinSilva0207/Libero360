@@ -37,7 +37,7 @@ class ScoreboardWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
       decoration: BoxDecoration(
         color: const Color(0xFF1E293B),
         borderRadius: const BorderRadius.only(
@@ -46,30 +46,58 @@ class ScoreboardWidget extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
+            color: Colors.black.withValues(alpha: 0.3),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      child: Column(
         children: [
-          _team(
-            name: localName,
-            points: localPoints,
-            sets: localSets,
-            onNameTap: onLocalNameTap,
-            onScoreTap: onLocalScoreTap,
-            onScoreLongPress: onLocalScoreLongPress,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _team(
+                name: localName,
+                points: localPoints,
+                sets: localSets,
+                onNameTap: onLocalNameTap,
+                onScoreTap: onLocalScoreTap,
+                onScoreLongPress: onLocalScoreLongPress,
+              ),
+              _team(
+                name: visitorName,
+                points: visitorPoints,
+                sets: visitorSets,
+                onNameTap: onVisitorNameTap,
+                onScoreTap: onVisitorScoreTap,
+                onScoreLongPress: onVisitorScoreLongPress,
+              ),
+            ],
           ),
-          _team(
-            name: visitorName,
-            points: visitorPoints,
-            sets: visitorSets,
-            onNameTap: onVisitorNameTap,
-            onScoreTap: onVisitorScoreTap,
-            onScoreLongPress: onVisitorScoreLongPress,
+          const SizedBox(height: 4),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0F172A),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'SET $currentSet',
+                  style: const TextStyle(
+                    color: Color(0xFFFF8C00),
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.5,
+                  ),
+                ),
+                if (!isActive)
+                  const Text(' · PAUSADO', style: TextStyle(color: Colors.red, fontSize: 10, fontWeight: FontWeight.bold)),
+              ],
+            ),
           ),
         ],
       ),
@@ -100,46 +128,45 @@ class ScoreboardWidget extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                       letterSpacing: 1.2,
                       color: Colors.white70,
-                      fontSize: 12,
+                      fontSize: 11,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                const SizedBox(width: 4),
-                const Icon(Icons.edit, color: Colors.white24, size: 12),
+                const SizedBox(width: 3),
+                const Icon(Icons.edit, color: Colors.white24, size: 10),
               ],
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 2),
           GestureDetector(
             onTap: onScoreTap,
             onLongPress: onScoreLongPress,
             child: Text(
               '$points',
               style: const TextStyle(
-                fontSize: 56,
+                fontSize: 48,
                 fontWeight: FontWeight.w900,
                 color: Color(0xFFFF8C00),
                 height: 1.0,
               ),
             ),
           ),
-          const SizedBox(height: 4),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: List.generate(3, (index) {
               final filled = index < sets;
               return Container(
                 margin: const EdgeInsets.symmetric(horizontal: 3),
-                width: 12,
-                height: 12,
+                width: 10,
+                height: 10,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
                     color: filled ? const Color(0xFF0081CF) : Colors.white38,
                     width: 2,
                   ),
-                  color: filled ? const Color(0xFF0081CF).withOpacity(0.5) : Colors.transparent,
+                  color: filled ? const Color(0xFF0081CF).withValues(alpha: 0.5) : Colors.transparent,
                 ),
               );
             }),

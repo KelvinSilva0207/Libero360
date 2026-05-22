@@ -12,3 +12,4 @@ export 'player.dart';
 export 'match.dart';
 export 'stat_event.dart';
 export 'attendance_record.dart';
+export 'season.dart';

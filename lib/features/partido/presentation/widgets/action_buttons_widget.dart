@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/themes/app_colors.dart';
 import '../../../estadisticas/data/models/models.dart';
 
 class ActionButtonConfig {
@@ -28,21 +29,21 @@ class ActionButtonsWidget extends StatelessWidget {
     ActionButtonConfig(
       label: 'ATAQUE',
       icon: Icons.sports_volleyball,
-      color: Color(0xFFFF8C00),
+      color: AppColors.accent,
       tipo: TipoAccion.ataque,
       positivo: true,
     ),
     ActionButtonConfig(
       label: 'SAQUE',
       icon: Icons.dry_cleaning,
-      color: Color(0xFF0081CF),
+      color: AppColors.primary,
       tipo: TipoAccion.saque,
       positivo: true,
     ),
     ActionButtonConfig(
       label: 'BLOQUEO',
       icon: Icons.pan_tool,
-      color: Color(0xFF00C853),
+      color: AppColors.success,
       tipo: TipoAccion.bloqueo,
       positivo: true,
     ),
@@ -52,21 +53,21 @@ class ActionButtonsWidget extends StatelessWidget {
     ActionButtonConfig(
       label: 'ATAQUE -',
       icon: Icons.sports_volleyball,
-      color: Color(0xFFD32F2F),
+      color: AppColors.error,
       tipo: TipoAccion.ataque,
       positivo: false,
     ),
     ActionButtonConfig(
       label: 'SAQUE -',
       icon: Icons.dry_cleaning,
-      color: Color(0xFFD32F2F),
+      color: AppColors.error,
       tipo: TipoAccion.saque,
       positivo: false,
     ),
     ActionButtonConfig(
       label: 'BLOQUEO -',
       icon: Icons.pan_tool,
-      color: Color(0xFFD32F2F),
+      color: AppColors.error,
       tipo: TipoAccion.bloqueo,
       positivo: false,
     ),

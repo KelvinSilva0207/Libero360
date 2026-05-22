@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../../core/themes/app_colors.dart';
 import '../../../estadisticas/data/models/player.dart';
+import '../../../estadisticas/data/local_db/database_service.dart';
 import '../../data/match_config.dart';
 import '../viewmodels/partido_viewmodel.dart';
 import '../widgets/scoreboard_widget.dart';
 import '../widgets/volleyball_court_widget.dart';
 import '../widgets/action_buttons_widget.dart';
-
-const _bg = Color(0xFF0F172A);
-const _surface = Color(0xFF1E293B);
-const _accent = Color(0xFFFF8C00);
-const _primary = Color(0xFF0081CF);
+import '../widgets/roster_management_sheet.dart';
 
 class MatchScreen extends StatefulWidget {
   final MatchConfig? config;
@@ -29,14 +27,14 @@ class _MatchScreenState extends State<MatchScreen> {
       builder: (context, vm, _) {
         if (vm.isLoading && vm.match == null) {
           return Scaffold(
-            backgroundColor: _bg,
+            backgroundColor: AppColors.background,
             body: Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Image.asset('assets/images/logo_libero.png', width: 80, height: 80),
                   const SizedBox(height: 16),
-                  const CircularProgressIndicator(color: _accent),
+                  const CircularProgressIndicator(color: AppColors.accent),
                   const SizedBox(height: 12),
                   const Text('Iniciando partido...', style: TextStyle(color: Colors.white54, fontSize: 14)),
                 ],
@@ -47,7 +45,7 @@ class _MatchScreenState extends State<MatchScreen> {
 
         if (vm.error != null && vm.match == null) {
           return Scaffold(
-            backgroundColor: _bg,
+            backgroundColor: AppColors.background,
             body: Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -60,7 +58,7 @@ class _MatchScreenState extends State<MatchScreen> {
                     onPressed: () => vm.init(widget.config),
                     icon: const Icon(Icons.refresh),
                     label: const Text('Reintentar'),
-                    style: FilledButton.styleFrom(backgroundColor: _accent),
+                    style: FilledButton.styleFrom(backgroundColor: AppColors.accent),
                   ),
                 ],
               ),
@@ -73,7 +71,7 @@ class _MatchScreenState extends State<MatchScreen> {
             final isWide = constraints.maxWidth >= 768;
 
             return Scaffold(
-              backgroundColor: _bg,
+              backgroundColor: AppColors.background,
               body: SafeArea(
                 child: isWide ? _buildDesktopLayout(context, vm) : _buildMobileLayout(context, vm),
               ),
@@ -91,17 +89,17 @@ class _MatchScreenState extends State<MatchScreen> {
 
   Widget _buildRosterDrawer(PartidoViewModel vm) {
     return Drawer(
-      backgroundColor: _surface,
+      backgroundColor: AppColors.surface,
       child: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
               padding: const EdgeInsets.all(16),
-              color: _bg,
+              color: AppColors.background,
               child: Row(
                 children: [
-                  const Icon(Icons.people, color: _accent, size: 20),
+                  const Icon(Icons.people, color: AppColors.accent, size: 20),
                   const SizedBox(width: 8),
                   const Text('Roster del Partido', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
                   const Spacer(),
@@ -124,17 +122,17 @@ class _MatchScreenState extends State<MatchScreen> {
                   return Container(
                     margin: const EdgeInsets.only(bottom: 6),
                     decoration: BoxDecoration(
-                      color: _bg,
+                      color: AppColors.background,
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
-                        color: j.id == vm.jugadorSeleccionado?.id ? _accent.withValues(alpha: 0.4) : Colors.transparent,
+                        color: j.id == vm.jugadorSeleccionado?.id ? AppColors.accent.withValues(alpha: 0.4) : Colors.transparent,
                       ),
                     ),
                     child: ListTile(
                       dense: true,
                       leading: CircleAvatar(
                         radius: 16,
-                        backgroundColor: isStarter ? _primary : Colors.grey.shade700,
+                        backgroundColor: isStarter ? AppColors.primary : Colors.grey.shade700,
                         child: Text('${j.numero}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 12)),
                       ),
                       title: Text(j.nombre, style: const TextStyle(color: Colors.white, fontSize: 13)),
@@ -145,10 +143,10 @@ class _MatchScreenState extends State<MatchScreen> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                             decoration: BoxDecoration(
-                              color: _accent.withValues(alpha: 0.2),
+                              color: AppColors.accent.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(3),
                             ),
-                            child: Text(zIndex, style: const TextStyle(color: _accent, fontSize: 9, fontWeight: FontWeight.bold)),
+                            child: Text(zIndex, style: const TextStyle(color: AppColors.accent, fontSize: 9, fontWeight: FontWeight.bold)),
                           ),
                           if (!isStarter) ...[
                             const SizedBox(width: 6),
@@ -283,7 +281,7 @@ class _MatchScreenState extends State<MatchScreen> {
 
   Widget _buildAppBar(BuildContext context, PartidoViewModel vm) {
     return AppBar(
-      backgroundColor: _surface,
+      backgroundColor: AppColors.surface,
       elevation: 0,
       toolbarHeight: 44,
       leading: IconButton(
@@ -294,9 +292,9 @@ class _MatchScreenState extends State<MatchScreen> {
       centerTitle: true,
       actions: [
         IconButton(
-          icon: Icon(Icons.people_alt, color: vm.jugadores.length > 6 ? _accent : Colors.white54),
+          icon: Icon(Icons.people_alt, color: vm.jugadores.length > 6 ? AppColors.accent : Colors.white54),
           onPressed: () => Scaffold.of(context).openEndDrawer(),
-          tooltip: 'Roster',
+          tooltip: 'Plantilla',
         ),
         _pausePlayBtn(vm),
         _moreBtn(context, vm),
@@ -307,7 +305,7 @@ class _MatchScreenState extends State<MatchScreen> {
   Widget _buildDesktopAppBar(BuildContext context, PartidoViewModel vm) {
     return Container(
       height: 48,
-      color: _surface,
+      color: AppColors.surface,
       child: Row(
         children: [
           IconButton(
@@ -318,9 +316,9 @@ class _MatchScreenState extends State<MatchScreen> {
             child: Text('Partido', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w500)),
           ),
           IconButton(
-            icon: Icon(Icons.people_alt, color: vm.jugadores.length > 6 ? _accent : Colors.white54),
+            icon: Icon(Icons.people_alt, color: vm.jugadores.length > 6 ? AppColors.accent : Colors.white54),
             onPressed: () => Scaffold.of(context).openEndDrawer(),
-            tooltip: 'Roster',
+            tooltip: 'Plantilla',
           ),
           _pausePlayBtn(vm),
           _moreBtn(context, vm),
@@ -347,7 +345,7 @@ class _MatchScreenState extends State<MatchScreen> {
             showDialog(
               context: context,
               builder: (ctx) => AlertDialog(
-                backgroundColor: _surface,
+                backgroundColor: AppColors.surface,
                 title: const Text('Finalizar partido', style: TextStyle(color: Colors.white)),
                 content: const Text('¿Seguro que quieres finalizar el partido?', style: TextStyle(color: Colors.white70)),
                 actions: [
@@ -372,10 +370,10 @@ class _MatchScreenState extends State<MatchScreen> {
               Container(
                 padding: const EdgeInsets.all(2),
                 decoration: BoxDecoration(
-                  color: _accent.withValues(alpha: 0.2),
+                  color: AppColors.accent.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(4),
                 ),
-                child: const Icon(Icons.undo, color: _accent, size: 18),
+                child: const Icon(Icons.undo, color: AppColors.accent, size: 18),
               ),
               const SizedBox(width: 8),
               const Text('Deshacer último punto'),
@@ -398,7 +396,7 @@ class _MatchScreenState extends State<MatchScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: _surface,
+        backgroundColor: AppColors.surface,
         title: Text('Editar ${isLocal ? 'Local' : 'Visitante'}', style: const TextStyle(color: Colors.white)),
         content: TextField(
           controller: controller,
@@ -408,7 +406,7 @@ class _MatchScreenState extends State<MatchScreen> {
             labelText: 'Nombre del equipo',
             labelStyle: const TextStyle(color: Colors.white54),
             filled: true,
-            fillColor: _bg,
+            fillColor: AppColors.background,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
           ),
         ),
@@ -426,7 +424,7 @@ class _MatchScreenState extends State<MatchScreen> {
               }
               Navigator.pop(ctx);
             },
-            child: const Text('Guardar', style: TextStyle(color: _accent)),
+            child: const Text('Guardar', style: TextStyle(color: AppColors.accent)),
           ),
         ],
       ),
@@ -446,7 +444,7 @@ class _MatchScreenState extends State<MatchScreen> {
                 decoration: BoxDecoration(
                   border: Border(
                     bottom: BorderSide(
-                      color: vm.teamSeleccionado == 0 ? _accent : Colors.transparent,
+                      color: vm.teamSeleccionado == 0 ? AppColors.accent : Colors.transparent,
                       width: 2,
                     ),
                   ),
@@ -455,7 +453,7 @@ class _MatchScreenState extends State<MatchScreen> {
                   vm.nombreLocal,
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: vm.teamSeleccionado == 0 ? _accent : Colors.white54,
+                    color: vm.teamSeleccionado == 0 ? AppColors.accent : Colors.white54,
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
                   ),
@@ -475,7 +473,7 @@ class _MatchScreenState extends State<MatchScreen> {
                 decoration: BoxDecoration(
                   border: Border(
                     bottom: BorderSide(
-                      color: vm.teamSeleccionado == 1 ? _accent : Colors.transparent,
+                      color: vm.teamSeleccionado == 1 ? AppColors.accent : Colors.transparent,
                       width: 2,
                     ),
                   ),
@@ -484,7 +482,7 @@ class _MatchScreenState extends State<MatchScreen> {
                   vm.nombreVisitante,
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: vm.teamSeleccionado == 1 ? _accent : Colors.white54,
+                    color: vm.teamSeleccionado == 1 ? AppColors.accent : Colors.white54,
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
                   ),
@@ -504,7 +502,7 @@ class _MatchScreenState extends State<MatchScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: const BoxDecoration(
-        color: _surface,
+        color: AppColors.surface,
         border: Border(top: BorderSide(color: Colors.white12)),
       ),
       child: Column(
@@ -513,9 +511,9 @@ class _MatchScreenState extends State<MatchScreen> {
         children: [
           Row(
             children: [
-              const Icon(Icons.check_box_outlined, color: _accent, size: 16),
+              const Icon(Icons.check_box_outlined, color: AppColors.accent, size: 16),
               const SizedBox(width: 6),
-              const Text('BANCA', style: TextStyle(color: _accent, fontWeight: FontWeight.bold, fontSize: 11)),
+              const Text('BANCA', style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.bold, fontSize: 11)),
               const Spacer(),
               Text('${benchPlayers.length} jugadores', style: const TextStyle(color: Colors.white24, fontSize: 9)),
             ],
@@ -537,7 +535,7 @@ class _MatchScreenState extends State<MatchScreen> {
                       children: [
                         CircleAvatar(
                           radius: 14,
-                          backgroundColor: j.id == vm.jugadorSeleccionado?.id ? _accent : Colors.grey.shade700,
+                          backgroundColor: j.id == vm.jugadorSeleccionado?.id ? AppColors.accent : Colors.grey.shade700,
                           child: Text(
                             '${j.numero}',
                             style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
@@ -561,14 +559,14 @@ class _MatchScreenState extends State<MatchScreen> {
     return BottomAppBar(
       shape: isWide ? null : const CircularNotchedRectangle(),
       notchMargin: 8,
-      color: _surface,
+      color: AppColors.surface,
       elevation: 12,
       child: SizedBox(
         height: 56,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _navItem(Icons.people_outline, 'ROSTER', false),
+            _navItem(Icons.people_outline, 'PLANTILLA', false, onTap: () => _abrirPlantilla(context, vm)),
             _navItem(Icons.analytics_outlined, 'ANALYTICS', false),
             if (!isWide) const SizedBox(width: 48),
             _navItem(Icons.grid_view_outlined, 'TACTICS', false),
@@ -579,23 +577,49 @@ class _MatchScreenState extends State<MatchScreen> {
     );
   }
 
-  Widget _navItem(IconData icon, String label, bool active) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, color: active ? _primary : Colors.grey, size: 22),
-        Text(
-          label,
-          style: TextStyle(fontSize: 9, color: active ? _primary : Colors.grey, fontWeight: FontWeight.w600),
-        ),
-      ],
+  Widget _navItem(IconData icon, String label, bool active, {VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: active ? AppColors.primary : Colors.grey, size: 22),
+          Text(
+            label,
+            style: TextStyle(fontSize: 9, color: active ? AppColors.primary : Colors.grey, fontWeight: FontWeight.w600),
+          ),
+        ],
+      ),
     );
+  }
+
+  Future<void> _abrirPlantilla(BuildContext context, PartidoViewModel vm) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await DatabaseService.instance.initialize();
+      if (!mounted) return;
+      final result = await showModalBottomSheet<List<Player>>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (_) => RosterManagementSheet(currentRoster: vm.jugadores),
+      );
+      if (result != null && mounted) {
+        vm.setJugadores(result);
+      }
+    } catch (e) {
+      if (mounted) {
+        messenger.showSnackBar(
+          SnackBar(content: Text('Error al abrir plantilla: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
   }
 
   Widget _buildFab(PartidoViewModel vm, bool isWide) {
     return FloatingActionButton(
       onPressed: vm.isPartidoActivo ? () => vm.rotarJugadores() : null,
-      backgroundColor: _primary,
+      backgroundColor: AppColors.primary,
       elevation: 8,
       child: const Text('ROTAR', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
     );

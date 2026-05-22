@@ -62,7 +62,8 @@ class AuthViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  void checkAuth() {
+  Future<void> checkAuth() async {
+    await _repository.loadSession();
     if (_repository.isLoggedIn) {
       _user = _repository.currentUser;
       _status = AuthStatus.authenticated;

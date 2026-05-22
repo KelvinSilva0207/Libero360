@@ -1,37 +1,47 @@
-import 'package:uuid/uuid.dart';
+import '../../../estadisticas/data/local_db/database_service.dart';
 import '../models/user_model.dart';
 
 class AuthRepository {
-  final List<AppUser> _users = [];
   AppUser? _currentUser;
-  final _uuid = const Uuid();
 
   Future<AppUser?> login(String email, String password) async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    final user = _users.where((u) => u.email == email && u.password == password);
-    if (user.isEmpty) return null;
-    _currentUser = user.first;
+    await DatabaseService.instance.initialize();
+    final user = await DatabaseService.instance.getUserByEmail(email);
+    if (user == null || user.password != password) return null;
+    _currentUser = user;
+    await DatabaseService.instance.saveSessionUserId(user.id);
     return _currentUser;
   }
 
   Future<String?> register(String nombre, String email, String password) async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    if (_users.any((u) => u.email == email)) {
+    await DatabaseService.instance.initialize();
+    final existing = await DatabaseService.instance.getUserByEmail(email);
+    if (existing != null) {
       return 'El correo ya está registrado';
     }
     final user = AppUser(
-      id: _uuid.v4(),
       nombre: nombre,
       email: email,
       password: password,
     );
-    _users.add(user);
+    final id = await DatabaseService.instance.saveUser(user);
+    user.id = id;
     _currentUser = user;
+    await DatabaseService.instance.saveSessionUserId(user.id);
     return null;
   }
 
-  void logout() {
+  Future<void> logout() async {
     _currentUser = null;
+    await DatabaseService.instance.clearSession();
+  }
+
+  Future<void> loadSession() async {
+    await DatabaseService.instance.initialize();
+    final userId = await DatabaseService.instance.getSessionUserId();
+    if (userId != null) {
+      _currentUser = await DatabaseService.instance.getUserById(userId);
+    }
   }
 
   AppUser? get currentUser => _currentUser;

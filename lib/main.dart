@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'core/themes/app_theme.dart';
 import 'features/auth/auth.dart';
 import 'features/partido/partido.dart';
 import 'features/asistencia/asistencia.dart';
 import 'features/estadisticas/presentation/views/play_by_play_screen.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(
     ChangeNotifierProvider(
       create: (_) => AuthViewModel(),
@@ -21,12 +23,25 @@ class Libero360App extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Libero360',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepOrange),
-        useMaterial3: true,
-      ),
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.dark,
+      initialRoute: '/',
+      onGenerateRoute: _onGenerateRoute,
       home: const AuthGate(),
     );
+  }
+
+  Route<dynamic>? _onGenerateRoute(RouteSettings settings) {
+    switch (settings.name) {
+      case '/welcome':
+        return MaterialPageRoute(builder: (_) => const WelcomeScreen());
+      case '/login':
+        return MaterialPageRoute(builder: (_) => const LoginScreen());
+      case '/register':
+        return MaterialPageRoute(builder: (_) => const RegisterScreen());
+      default:
+        return null;
+    }
   }
 }
 
@@ -56,7 +71,7 @@ class _AuthGateState extends State<AuthGate> {
           case AuthStatus.uninitialized:
             return const _SplashScreen();
           case AuthStatus.unauthenticated:
-            return const AuthScreen();
+            return const WelcomeScreen();
         }
       },
     );
@@ -68,8 +83,24 @@ class _SplashScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(child: CircularProgressIndicator()),
+    return Scaffold(
+      backgroundColor: const Color(0xFF0A0E21),
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset('assets/images/logo_libero.png', width: 80, height: 80),
+            const SizedBox(height: 20),
+            const SizedBox(
+              width: 28, height: 28,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.5,
+                color: Color(0xFFFF8C00),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -82,17 +113,18 @@ class HomeScreen extends StatelessWidget {
     final user = context.watch<AuthViewModel>().user;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: const Color(0xFF0A0E21),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1E293B),
-        title: const Text('Libero360 - Gestión de Voleibol', style: TextStyle(color: Colors.white)),
+        backgroundColor: const Color(0xFF1A1F3D),
+        title: const Text('Libero360'),
         actions: [
           PopupMenuButton<String>(
             icon: CircleAvatar(
               backgroundColor: const Color(0xFFFF8C00),
+              radius: 18,
               child: Text(
                 user?.nombre.isNotEmpty == true ? user!.nombre[0].toUpperCase() : '?',
-                style: const TextStyle(color: Colors.white),
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
               ),
             ),
             onSelected: (value) {
@@ -103,16 +135,21 @@ class HomeScreen extends StatelessWidget {
             itemBuilder: (context) => [
               PopupMenuItem(
                 enabled: false,
-                child: Text(user?.nombre ?? 'Usuario',
-                    style: const TextStyle(fontWeight: FontWeight.bold)),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(user?.nombre ?? 'Usuario', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                    if (user?.email != null) Text(user!.email, style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                  ],
+                ),
               ),
               const PopupMenuDivider(),
               const PopupMenuItem(
                 value: 'logout',
                 child: Row(
                   children: [
-                    Icon(Icons.logout, color: Colors.red),
-                    SizedBox(width: 8),
+                    Icon(Icons.logout_rounded, color: Color(0xFFEF4444), size: 20),
+                    SizedBox(width: 10),
                     Text('Cerrar sesión'),
                   ],
                 ),
@@ -132,25 +169,39 @@ class HomeScreen extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Image.asset('assets/images/logo_libero.png', width: 100, height: 100),
+                    Container(
+                      width: 90, height: 90,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF0081CF), Color(0xFFFF8C00)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(45),
+                        child: Image.asset('assets/images/logo_libero.png', fit: BoxFit.cover),
+                      ),
+                    ),
                     const SizedBox(height: 20),
                     Text(
                       'Bienvenido, ${user?.nombre ?? "Usuario"}',
                       style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 6),
                     const Text(
-                      'App de Gestión de Voleibol',
-                      style: TextStyle(fontSize: 16, color: Colors.white54),
+                      '¿Qué deseas hacer hoy?',
+                      style: TextStyle(fontSize: 15, color: Colors.white54),
                     ),
                     const SizedBox(height: 40),
                     Wrap(
-                      spacing: isWide ? 24 : 10,
-                      runSpacing: isWide ? 16 : 10,
+                      spacing: isWide ? 20 : 12,
+                      runSpacing: isWide ? 16 : 12,
                       alignment: WrapAlignment.center,
                       children: [
                         _FeatureButton(
-                          icon: Icons.person,
+                          icon: Icons.people_rounded,
                           label: 'Atletas',
                           isWide: isWide,
                           onTap: () => Navigator.push(
@@ -158,7 +209,7 @@ class HomeScreen extends StatelessWidget {
                           ),
                         ),
                         _FeatureButton(
-                          icon: Icons.sports_score,
+                          icon: Icons.sports_volleyball_rounded,
                           label: 'Partidos',
                           isWide: isWide,
                           onTap: () => Navigator.push(
@@ -166,7 +217,7 @@ class HomeScreen extends StatelessWidget {
                           ),
                         ),
                         _FeatureButton(
-                          icon: Icons.analytics,
+                          icon: Icons.analytics_rounded,
                           label: 'Estadísticas',
                           isWide: isWide,
                           onTap: () => Navigator.push(
@@ -174,7 +225,7 @@ class HomeScreen extends StatelessWidget {
                           ),
                         ),
                         _FeatureButton(
-                          icon: Icons.check_circle,
+                          icon: Icons.checklist_rounded,
                           label: 'Asistencia',
                           isWide: isWide,
                           onTap: () => Navigator.push(
@@ -211,13 +262,17 @@ class _FeatureButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return ElevatedButton.icon(
       onPressed: onTap,
-      icon: Icon(icon, size: isWide ? 28 : 20),
-      label: Text(label, style: TextStyle(fontSize: isWide ? 16 : 13)),
+      icon: Icon(icon, size: isWide ? 26 : 20),
+      label: Text(label, style: TextStyle(fontSize: isWide ? 15 : 13, fontWeight: FontWeight.w600)),
       style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF1E293B),
+        backgroundColor: const Color(0xFF1A1F3D),
         foregroundColor: Colors.white,
-        padding: EdgeInsets.symmetric(horizontal: isWide ? 36 : 20, vertical: isWide ? 24 : 15),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        elevation: 0,
+        padding: EdgeInsets.symmetric(horizontal: isWide ? 32 : 20, vertical: isWide ? 22 : 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: const BorderSide(color: Color(0xFF2D3361), width: 0.5),
+        ),
       ),
     );
   }

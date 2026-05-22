@@ -26,11 +26,11 @@ class Match {
   int velocidadAnimacion = 1000;
   DateTime createdAt = DateTime.now();
 
-  // Nuevos campos del schema
   TipoPartido tipoPartido = TipoPartido.amistoso;
   int setsTotales = 5;
   String? resultadoFinal;
   String? lugar;
+  int? seasonId;
 
   Match();
 
@@ -57,7 +57,8 @@ class Match {
       ..estado = EstadoPartido.noIniciado
       ..turnoLocal = true
       ..velocidadAnimacion = 1000
-      ..createdAt = DateTime.now();
+      ..createdAt = DateTime.now()
+      ..seasonId = null;
   }
 
   String get rival => equipoVisitante;

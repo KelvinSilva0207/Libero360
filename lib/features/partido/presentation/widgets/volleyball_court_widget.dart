@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/themes/app_colors.dart';
 import '../../../estadisticas/data/models/models.dart';
 
 class VolleyballCourtWidget extends StatelessWidget {
@@ -24,7 +25,7 @@ class VolleyballCourtWidget extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
+        color: AppColors.surface,
         border: Border.all(color: Colors.white24, width: 2),
         borderRadius: BorderRadius.circular(12),
       ),
@@ -156,7 +157,7 @@ class _PlayerAvatarState extends State<_PlayerAvatar> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1E293B),
+        backgroundColor: AppColors.surface,
         title: Text('Zona ${_zoneLabel(widget.index)} · #${widget.player.numero}',
             style: const TextStyle(color: Colors.white)),
         content: TextField(
@@ -169,7 +170,7 @@ class _PlayerAvatarState extends State<_PlayerAvatar> {
             labelStyle: const TextStyle(color: Colors.white54),
             border: const OutlineInputBorder(),
             filled: true,
-            fillColor: const Color(0xFF0F172A),
+            fillColor: AppColors.background,
           ),
         ),
         actions: [
@@ -180,7 +181,7 @@ class _PlayerAvatarState extends State<_PlayerAvatar> {
               if (n != null) widget.onNumeroEdit?.call(widget.index, n);
               Navigator.pop(ctx);
             },
-            child: const Text('Asignar', style: TextStyle(color: Color(0xFFFF8C00))),
+            child: const Text('Asignar', style: TextStyle(color: AppColors.accent)),
           ),
         ],
       ),
@@ -194,10 +195,10 @@ class _PlayerAvatarState extends State<_PlayerAvatar> {
 
   @override
   Widget build(BuildContext context) {
-    final avatarColor = widget.isLibero ? const Color(0xFFFF8C00) : const Color(0xFF0081CF);
+    final avatarColor = widget.isLibero ? AppColors.accent : AppColors.primary;
     final glowColor = widget.isSelected
-        ? const Color(0xFFFF8C00)
-        : (widget.isLibero ? const Color(0xFFFF8C00) : const Color(0xFF0081CF));
+        ? AppColors.accent
+        : (widget.isLibero ? AppColors.accent : AppColors.primary);
 
     return GestureDetector(
       onTap: widget.onTap,
@@ -236,7 +237,7 @@ class _PlayerAvatarState extends State<_PlayerAvatar> {
                   child: Container(
                     width: 14,
                     height: 14,
-                    decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFFFF8C00)),
+                    decoration: const BoxDecoration(shape: BoxShape.circle, color: AppColors.accent),
                     child: const Icon(Icons.add, size: 10, color: Colors.white),
                   ),
                 ),
@@ -275,7 +276,7 @@ class _CourtPainter extends CustomPainter {
     final w = size.width;
     final h = size.height;
 
-    canvas.drawRect(Rect.fromLTWH(0, 0, w, h), Paint()..color = const Color(0xFF0F172A));
+    canvas.drawRect(Rect.fromLTWH(0, 0, w, h), Paint()..color = AppColors.background);
 
     final linePaint = Paint()
       ..color = Colors.white24

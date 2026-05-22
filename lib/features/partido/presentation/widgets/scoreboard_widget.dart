@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/themes/app_colors.dart';
 
 class ScoreboardWidget extends StatelessWidget {
   final String localName;
@@ -39,7 +40,7 @@ class ScoreboardWidget extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
+        color: AppColors.surface,
         borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(24),
           bottomRight: Radius.circular(24),
@@ -79,7 +80,7 @@ class ScoreboardWidget extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
             decoration: BoxDecoration(
-              color: const Color(0xFF0F172A),
+              color: AppColors.background,
               borderRadius: BorderRadius.circular(6),
             ),
             child: Row(
@@ -88,7 +89,7 @@ class ScoreboardWidget extends StatelessWidget {
                 Text(
                   'SET $currentSet',
                   style: const TextStyle(
-                    color: Color(0xFFFF8C00),
+                    color: AppColors.accent,
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 1.5,
@@ -147,7 +148,7 @@ class ScoreboardWidget extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 48,
                 fontWeight: FontWeight.w900,
-                color: Color(0xFFFF8C00),
+                color: AppColors.accent,
                 height: 1.0,
               ),
             ),
@@ -163,10 +164,10 @@ class ScoreboardWidget extends StatelessWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: filled ? const Color(0xFF0081CF) : Colors.white38,
+                    color: filled ? AppColors.primary : Colors.white38,
                     width: 2,
                   ),
-                  color: filled ? const Color(0xFF0081CF).withValues(alpha: 0.5) : Colors.transparent,
+                  color: filled ? AppColors.primary.withValues(alpha: 0.5) : Colors.transparent,
                 ),
               );
             }),

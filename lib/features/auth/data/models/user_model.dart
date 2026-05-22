@@ -1,12 +1,12 @@
 class AppUser {
-  final String id;
-  final String nombre;
-  final String email;
-  final String password;
-  final DateTime fechaRegistro;
+  int id = 0;
+  String nombre = '';
+  String email = '';
+  String password = '';
+  DateTime fechaRegistro = DateTime.now();
 
   AppUser({
-    required this.id,
+    this.id = 0,
     required this.nombre,
     required this.email,
     required this.password,

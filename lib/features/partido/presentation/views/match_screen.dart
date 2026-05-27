@@ -1,14 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/themes/app_colors.dart';
-import '../../../estadisticas/data/models/player.dart';
-import '../../../estadisticas/data/local_db/database_service.dart';
 import '../../data/match_config.dart';
 import '../viewmodels/partido_viewmodel.dart';
 import '../widgets/scoreboard_widget.dart';
-import '../widgets/volleyball_court_widget.dart';
-import '../widgets/action_buttons_widget.dart';
-import '../widgets/roster_management_sheet.dart';
 
 class MatchScreen extends StatefulWidget {
   final MatchConfig? config;
@@ -24,147 +19,62 @@ class _MatchScreenState extends State<MatchScreen> {
     return ChangeNotifierProvider(
       create: (_) => PartidoViewModel()..init(widget.config),
       child: Consumer<PartidoViewModel>(
-      builder: (context, vm, _) {
-        if (vm.isLoading && vm.match == null) {
-          return Scaffold(
-            backgroundColor: AppColors.background,
-            body: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Image.asset('assets/images/logo_libero.png', width: 80, height: 80),
-                  const SizedBox(height: 16),
-                  const CircularProgressIndicator(color: AppColors.accent),
-                  const SizedBox(height: 12),
-                  const Text('Iniciando partido...', style: TextStyle(color: Colors.white54, fontSize: 14)),
-                ],
-              ),
-            ),
-          );
-        }
-
-        if (vm.error != null && vm.match == null) {
-          return Scaffold(
-            backgroundColor: AppColors.background,
-            body: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.error_outline, color: Colors.red, size: 48),
-                  const SizedBox(height: 16),
-                  Text(vm.error!, style: const TextStyle(color: Colors.red, fontSize: 14)),
-                  const SizedBox(height: 16),
-                  FilledButton.icon(
-                    onPressed: () => vm.init(widget.config),
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('Reintentar'),
-                    style: FilledButton.styleFrom(backgroundColor: AppColors.accent),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }
-
-        return LayoutBuilder(
-          builder: (context, constraints) {
-            final isWide = constraints.maxWidth >= 768;
-
+        builder: (context, vm, _) {
+          if (vm.isLoading && vm.match == null) {
             return Scaffold(
               backgroundColor: AppColors.background,
-              body: SafeArea(
-                child: isWide ? _buildDesktopLayout(context, vm) : _buildMobileLayout(context, vm),
+              body: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Image.asset('assets/images/logo_libero.png', width: 80, height: 80),
+                    const SizedBox(height: 16),
+                    const CircularProgressIndicator(color: AppColors.accent),
+                    const SizedBox(height: 12),
+                    const Text('Iniciando partido...', style: TextStyle(color: Colors.white54, fontSize: 14)),
+                  ],
+                ),
               ),
-              bottomNavigationBar: _buildBottomNav(context, vm, isWide),
-              floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-              floatingActionButton: _buildFab(vm, isWide),
-              endDrawer: _buildRosterDrawer(vm),
             );
-          },
-        );
-      },
-      ),
-    );
-  }
+          }
 
-  Widget _buildRosterDrawer(PartidoViewModel vm) {
-    return Drawer(
-      backgroundColor: AppColors.surface,
-      child: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              color: AppColors.background,
-              child: Row(
-                children: [
-                  const Icon(Icons.people, color: AppColors.accent, size: 20),
-                  const SizedBox(width: 8),
-                  const Text('Roster del Partido', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
-                  const Spacer(),
-                  IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white54),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-            ),
-            const Divider(height: 1, color: Colors.white12),
-            Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.all(12),
-                itemCount: vm.jugadores.length,
-                itemBuilder: (context, index) {
-                  final j = vm.jugadores[index];
-                  final isStarter = index < 6;
-                  final zIndex = index < 6 ? _zoneLabel(index) : 'SUP';
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 6),
-                    decoration: BoxDecoration(
-                      color: AppColors.background,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: j.id == vm.jugadorSeleccionado?.id ? AppColors.accent.withValues(alpha: 0.4) : Colors.transparent,
-                      ),
+          if (vm.error != null && vm.match == null) {
+            return Scaffold(
+              backgroundColor: AppColors.background,
+              body: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                    const SizedBox(height: 16),
+                    Text(vm.error!, style: const TextStyle(color: Colors.red, fontSize: 14)),
+                    const SizedBox(height: 16),
+                    FilledButton.icon(
+                      onPressed: () => vm.init(widget.config),
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Reintentar'),
+                      style: FilledButton.styleFrom(backgroundColor: AppColors.accent),
                     ),
-                    child: ListTile(
-                      dense: true,
-                      leading: CircleAvatar(
-                        radius: 16,
-                        backgroundColor: isStarter ? AppColors.primary : Colors.grey.shade700,
-                        child: Text('${j.numero}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 12)),
-                      ),
-                      title: Text(j.nombre, style: const TextStyle(color: Colors.white, fontSize: 13)),
-                      subtitle: Row(
-                        children: [
-                          Text(j.posicionLabel, style: const TextStyle(color: Colors.white54, fontSize: 10)),
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                            decoration: BoxDecoration(
-                              color: AppColors.accent.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(3),
-                            ),
-                            child: Text(zIndex, style: const TextStyle(color: AppColors.accent, fontSize: 9, fontWeight: FontWeight.bold)),
-                          ),
-                          if (!isStarter) ...[
-                            const SizedBox(width: 6),
-                            const Text('Banca', style: TextStyle(color: Colors.white24, fontSize: 9)),
-                          ],
-                        ],
-                      ),
-                      onTap: () {
-                        vm.seleccionarJugador(j);
-                        if (index >= 6) vm.seleccionarTeam(vm.teamSeleccionado);
-                      },
-                    ),
-                  );
-                },
+                  ],
+                ),
               ),
-            ),
-          ],
-        ),
+            );
+          }
+
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              final isWide = constraints.maxWidth >= 768;
+              return Scaffold(
+                backgroundColor: AppColors.background,
+                body: SafeArea(
+                  child: isWide
+                      ? _buildDesktopLayout(context, vm)
+                      : _buildMobileLayout(context, vm),
+                ),
+              );
+            },
+          );
+        },
       ),
     );
   }
@@ -181,7 +91,10 @@ class _MatchScreenState extends State<MatchScreen> {
           localSets: vm.setsLocal,
           visitorSets: vm.setsVisitante,
           currentSet: vm.setActual,
+          totalSets: vm.setsPorPartido,
           isActive: vm.isPartidoActivo,
+          isFinalized: vm.isFinalizado,
+          setScores: vm.setScores,
           onLocalNameTap: () => _editarNombre(context, vm, true),
           onVisitorNameTap: () => _editarNombre(context, vm, false),
           onLocalScoreTap: vm.sumarPuntoLocal,
@@ -189,93 +102,47 @@ class _MatchScreenState extends State<MatchScreen> {
           onVisitorScoreTap: vm.sumarPuntoVisitante,
           onVisitorScoreLongPress: () => vm.restarPuntoVisitante(),
         ),
-        _buildTeamSelector(context, vm),
-        Expanded(
-          child: Stack(
-            children: [
-              VolleyballCourtWidget(
-                jugadores: vm.jugadores,
-                seleccionado: vm.jugadorSeleccionado,
-                onSeleccionar: vm.seleccionarJugador,
-                esLocal: vm.teamSeleccionado == 0,
-                onNumeroEdit: (i, n) => vm.actualizarNumeroJugador(i, n),
-              ),
-              Positioned(
-                right: 6,
-                top: 6,
-                bottom: 6,
-                width: 90,
-                child: ActionButtonsWidget(
-                  canAct: vm.isPartidoActivo,
-                  hasSelection: vm.jugadorSeleccionado != null,
-                  onPositiva: (tipo) => vm.registrarAccion(tipo, positivo: true),
-                  onNegativa: (tipo) => vm.registrarAccion(tipo, positivo: false),
-                  onErrorContrario: vm.registrarErrorContrario,
-                ),
-              ),
-            ],
-          ),
-        ),
-        _buildBenchBar(vm),
+        if (!vm.isFinalizado) _buildScoreButtons(vm),
+        if (!vm.isFinalizado) _buildInfoPanel(vm),
+        const Expanded(child: SizedBox()),
+        if (vm.isFinalizado) _buildFinalResult(vm) else _buildBottomBar(vm),
       ],
     );
   }
 
   Widget _buildDesktopLayout(BuildContext context, PartidoViewModel vm) {
-    return Row(
-      children: [
-        SizedBox(
-          width: 340,
-          child: Column(
-            children: [
-              _buildDesktopAppBar(context, vm),
-              ScoreboardWidget(
-                localName: vm.nombreLocal,
-                visitorName: vm.nombreVisitante,
-                localPoints: vm.puntosLocal,
-                visitorPoints: vm.puntosVisitante,
-                localSets: vm.setsLocal,
-                visitorSets: vm.setsVisitante,
-                currentSet: vm.setActual,
-                isActive: vm.isPartidoActivo,
-                onLocalNameTap: () => _editarNombre(context, vm, true),
-                onVisitorNameTap: () => _editarNombre(context, vm, false),
-                onLocalScoreTap: vm.sumarPuntoLocal,
-                onLocalScoreLongPress: () => vm.restarPuntoLocal(),
-                onVisitorScoreTap: vm.sumarPuntoVisitante,
-                onVisitorScoreLongPress: () => vm.restarPuntoVisitante(),
-              ),
-              _buildTeamSelector(context, vm),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
-                  child: ActionButtonsWidget(
-                    canAct: vm.isPartidoActivo,
-                    hasSelection: vm.jugadorSeleccionado != null,
-                    onPositiva: (tipo) => vm.registrarAccion(tipo, positivo: true),
-                    onNegativa: (tipo) => vm.registrarAccion(tipo, positivo: false),
-                    onErrorContrario: vm.registrarErrorContrario,
-                  ),
-                ),
-              ),
-              _buildBenchBar(vm),
-            ],
-          ),
-        ),
-        const VerticalDivider(width: 1, color: Colors.white12),
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: VolleyballCourtWidget(
-              jugadores: vm.jugadores,
-              seleccionado: vm.jugadorSeleccionado,
-              onSeleccionar: vm.seleccionarJugador,
-              esLocal: vm.teamSeleccionado == 0,
-              onNumeroEdit: (i, n) => vm.actualizarNumeroJugador(i, n),
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 600),
+        child: Column(
+          children: [
+            _buildAppBar(context, vm),
+            ScoreboardWidget(
+              localName: vm.nombreLocal,
+              visitorName: vm.nombreVisitante,
+              localPoints: vm.puntosLocal,
+              visitorPoints: vm.puntosVisitante,
+              localSets: vm.setsLocal,
+              visitorSets: vm.setsVisitante,
+              currentSet: vm.setActual,
+              totalSets: vm.setsPorPartido,
+              isActive: vm.isPartidoActivo,
+              isFinalized: vm.isFinalizado,
+              setScores: vm.setScores,
+              onLocalNameTap: () => _editarNombre(context, vm, true),
+              onVisitorNameTap: () => _editarNombre(context, vm, false),
+              onLocalScoreTap: vm.sumarPuntoLocal,
+              onLocalScoreLongPress: () => vm.restarPuntoLocal(),
+              onVisitorScoreTap: vm.sumarPuntoVisitante,
+              onVisitorScoreLongPress: () => vm.restarPuntoVisitante(),
             ),
-          ),
+            if (!vm.isFinalizado) _buildScoreButtons(vm),
+            if (!vm.isFinalizado) _buildInfoPanel(vm),
+            const Expanded(child: SizedBox()),
+            if (vm.isFinalizado) _buildFinalResult(vm) else _buildBottomBar(vm),
+          ],
         ),
-      ],
+      ),
     );
   }
 
@@ -291,80 +158,39 @@ class _MatchScreenState extends State<MatchScreen> {
       title: const Text('Partido', style: TextStyle(color: Colors.white, fontSize: 15)),
       centerTitle: true,
       actions: [
-        IconButton(
-          icon: Icon(Icons.people_alt, color: vm.jugadores.length > 6 ? AppColors.accent : Colors.white54),
-          onPressed: () => Scaffold.of(context).openEndDrawer(),
-          tooltip: 'Plantilla',
-        ),
         _pausePlayBtn(vm),
-        _moreBtn(context, vm),
+        _settingsBtn(context, vm),
       ],
     );
   }
 
-  Widget _buildDesktopAppBar(BuildContext context, PartidoViewModel vm) {
-    return Container(
-      height: 48,
-      color: AppColors.surface,
-      child: Row(
-        children: [
-          IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () => Navigator.pop(context),
-          ),
-          const Expanded(
-            child: Text('Partido', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w500)),
-          ),
-          IconButton(
-            icon: Icon(Icons.people_alt, color: vm.jugadores.length > 6 ? AppColors.accent : Colors.white54),
-            onPressed: () => Scaffold.of(context).openEndDrawer(),
-            tooltip: 'Plantilla',
-          ),
-          _pausePlayBtn(vm),
-          _moreBtn(context, vm),
-        ],
-      ),
-    );
-  }
-
   Widget _pausePlayBtn(PartidoViewModel vm) {
+    if (vm.isFinalizado) return const SizedBox.shrink();
     return IconButton(
-      icon: Icon(vm.isPartidoActivo ? Icons.pause : Icons.play_arrow, color: Colors.white),
+      icon: Icon(
+        vm.isPartidoActivo ? Icons.pause : Icons.play_arrow,
+        color: Colors.white,
+      ),
       onPressed: vm.pausarReanudar,
     );
   }
 
-  Widget _moreBtn(BuildContext context, PartidoViewModel vm) {
+  Widget _settingsBtn(BuildContext context, PartidoViewModel vm) {
     return PopupMenuButton<String>(
       icon: const Icon(Icons.more_vert, color: Colors.white),
       onSelected: (v) {
         switch (v) {
+          case 'config':
+            _showConfigDialog(context, vm);
           case 'undo':
             vm.undoLastPoint();
           case 'end':
-            showDialog(
-              context: context,
-              builder: (ctx) => AlertDialog(
-                backgroundColor: AppColors.surface,
-                title: const Text('Finalizar partido', style: TextStyle(color: Colors.white)),
-                content: const Text('¿Seguro que quieres finalizar el partido?', style: TextStyle(color: Colors.white70)),
-                actions: [
-                  TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar', style: TextStyle(color: Colors.white54))),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pop(ctx);
-                      vm.finalizarPartido();
-                    },
-                    child: const Text('Finalizar', style: TextStyle(color: Colors.red)),
-                  ),
-                ],
-              ),
-            );
+            _confirmEndDialog(context, vm);
         }
       },
       itemBuilder: (context) => [
         PopupMenuItem(
-          value: 'undo',
+          value: 'config',
           child: Row(
             children: [
               Container(
@@ -373,21 +199,374 @@ class _MatchScreenState extends State<MatchScreen> {
                   color: AppColors.accent.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(4),
                 ),
-                child: const Icon(Icons.undo, color: AppColors.accent, size: 18),
+                child: const Icon(Icons.tune, color: AppColors.accent, size: 18),
               ),
               const SizedBox(width: 8),
-              const Text('Deshacer último punto'),
+              const Text('Configuración'),
             ],
           ),
         ),
-        const PopupMenuDivider(),
-        const PopupMenuItem(
-          value: 'end',
-          child: Row(
-            children: [Icon(Icons.stop, color: Colors.red, size: 20), SizedBox(width: 8), Text('Finalizar')],
+        if (!vm.isFinalizado) ...[
+          const PopupMenuDivider(),
+          PopupMenuItem(
+            value: 'undo',
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    color: AppColors.accent.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: const Icon(Icons.undo, color: AppColors.accent, size: 18),
+                ),
+                const SizedBox(width: 8),
+                const Text('Deshacer último punto'),
+              ],
+            ),
           ),
-        ),
+          const PopupMenuDivider(),
+          const PopupMenuItem(
+            value: 'end',
+            child: Row(
+              children: [
+                Icon(Icons.stop, color: Colors.red, size: 20),
+                SizedBox(width: 8),
+                Text('Finalizar', style: TextStyle(color: Colors.red)),
+              ],
+            ),
+          ),
+        ],
       ],
+    );
+  }
+
+  void _showConfigDialog(BuildContext context, PartidoViewModel vm) {
+    int puntos = vm.puntosPorSet;
+    int sets = vm.setsPorPartido;
+    int tiempo = vm.tiempoPorSet;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: AppColors.surface,
+          title: const Row(
+            children: [
+              Icon(Icons.tune, color: AppColors.accent, size: 20),
+              SizedBox(width: 8),
+              Text('Configuración', style: TextStyle(color: Colors.white, fontSize: 16)),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _configLabel('Puntos para ganar el set'),
+                const SizedBox(height: 8),
+                _configChips(ctx, [15, 21, 25], puntos, (v) {
+                  setDialogState(() => puntos = v);
+                }),
+                const SizedBox(height: 16),
+                _configLabel('Sets por partido'),
+                const SizedBox(height: 8),
+                _configChips(ctx, [3, 5], sets, (v) {
+                  setDialogState(() => sets = v);
+                }),
+                const SizedBox(height: 16),
+                _configLabel('Tiempo por set'),
+                const SizedBox(height: 8),
+                _configChips(ctx, [0, 5, 10], tiempo, (v) {
+                  setDialogState(() => tiempo = v);
+                }, labels: {0: 'Sin límite', 5: '5 min', 10: '10 min'}),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancelar', style: TextStyle(color: Colors.white54)),
+            ),
+            TextButton(
+              onPressed: () {
+                vm.actualizarConfiguracion(
+                  puntosPorSet: puntos,
+                  setsPorPartido: sets,
+                  tiempoPorSet: tiempo,
+                );
+                Navigator.pop(ctx);
+              },
+              child: const Text('Aplicar', style: TextStyle(color: AppColors.accent)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _configLabel(String text) {
+    return Text(
+      text,
+      style: const TextStyle(
+        color: Colors.white54,
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+      ),
+    );
+  }
+
+  Widget _configChips(
+    BuildContext ctx,
+    List<int> values,
+    int selected,
+    ValueChanged<int> onChanged, {
+    Map<int, String>? labels,
+  }) {
+    return Row(
+      children: values.map((v) {
+        final isSelected = v == selected;
+        final label = labels?[v] ?? '$v';
+        return Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: GestureDetector(
+            onTap: () => onChanged(v),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: isSelected ? AppColors.accent : Colors.transparent,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: isSelected ? AppColors.accent : Colors.white24,
+                ),
+              ),
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: isSelected ? Colors.white : Colors.white54,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  void _confirmEndDialog(BuildContext context, PartidoViewModel vm) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: const Text('Finalizar partido', style: TextStyle(color: Colors.white)),
+        content: const Text('¿Seguro que quieres finalizar el partido?', style: TextStyle(color: Colors.white70)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar', style: TextStyle(color: Colors.white54)),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              vm.finalizarPartido();
+            },
+            child: const Text('Finalizar', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildScoreButtons(PartidoViewModel vm) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      child: Row(
+        children: [
+          Expanded(
+            child: ElevatedButton.icon(
+              onPressed: vm.isPartidoActivo ? vm.sumarPuntoLocal : null,
+              icon: const Icon(Icons.add, size: 20),
+              label: Text(
+                vm.nombreLocal.toUpperCase(),
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.accent,
+                foregroundColor: Colors.white,
+                disabledBackgroundColor: Colors.grey.shade800,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: ElevatedButton.icon(
+              onPressed: vm.isPartidoActivo ? vm.sumarPuntoVisitante : null,
+              icon: const Icon(Icons.add, size: 20),
+              label: Text(
+                vm.nombreVisitante.toUpperCase(),
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                disabledBackgroundColor: Colors.grey.shade800,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoPanel(PartidoViewModel vm) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      child: Row(
+        children: [
+          _infoChip(
+            Icons.emoji_events,
+            '${vm.setsLocal} - ${vm.setsVisitante}',
+            'Sets',
+          ),
+          const SizedBox(width: 8),
+          _infoChip(
+            Icons.timer_outlined,
+            vm.isPartidoActivo ? 'En juego' : 'Pausado',
+            'Estado',
+          ),
+          if (vm.tiempoPorSet > 0) ...[
+            const SizedBox(width: 8),
+            _infoChip(
+              Icons.access_time,
+              '${vm.tiempoPorSet} min',
+              'Tiempo',
+            ),
+          ],
+          const Spacer(),
+          Text(
+            '${vm.puntosPorSet} pts/set',
+            style: const TextStyle(color: Colors.white24, fontSize: 10),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _infoChip(IconData icon, String value, String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: AppColors.accent, size: 14),
+          const SizedBox(width: 4),
+          Text(
+            value,
+            style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomBar(PartidoViewModel vm) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        border: Border(top: BorderSide(color: Colors.white12)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Row(
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: Text(
+                vm.nombreLocal.toUpperCase(),
+                style: const TextStyle(
+                  color: AppColors.accent,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 11,
+                ),
+              ),
+            ),
+            _restarBtn(vm.restarPuntoLocal, vm.puntosLocal > 0 && vm.isPartidoActivo),
+            const Spacer(),
+            _restarBtn(vm.restarPuntoVisitante, vm.puntosVisitante > 0 && vm.isPartidoActivo),
+            Padding(
+              padding: const EdgeInsets.only(left: 12),
+              child: Text(
+                vm.nombreVisitante.toUpperCase(),
+                style: const TextStyle(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 11,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _restarBtn(VoidCallback? onPressed, bool enabled) {
+    return FloatingActionButton.small(
+      onPressed: enabled ? onPressed : null,
+      backgroundColor: AppColors.surfaceLight,
+      child: const Icon(Icons.remove, color: Colors.white70),
+    );
+  }
+
+  Widget _buildFinalResult(PartidoViewModel vm) {
+    final winner = vm.setsLocal > vm.setsVisitante ? vm.nombreLocal : vm.nombreVisitante;
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.emoji_events, color: Colors.amber, size: 40),
+          const SizedBox(height: 8),
+          const Text('FINALIZADO', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 16, letterSpacing: 2)),
+          const SizedBox(height: 8),
+          Text(
+            '$winner GANA',
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '${vm.setsLocal} - ${vm.setsVisitante}',
+            style: const TextStyle(color: AppColors.accent, fontWeight: FontWeight.w900, fontSize: 28),
+          ),
+          const SizedBox(height: 16),
+          FilledButton.icon(
+            onPressed: () => Navigator.pop(context),
+            icon: const Icon(Icons.arrow_back, size: 18),
+            label: const Text('Volver'),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.accent,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -411,7 +590,10 @@ class _MatchScreenState extends State<MatchScreen> {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar', style: TextStyle(color: Colors.white54))),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar', style: TextStyle(color: Colors.white54)),
+          ),
           TextButton(
             onPressed: () {
               final name = controller.text.trim();
@@ -429,204 +611,5 @@ class _MatchScreenState extends State<MatchScreen> {
         ],
       ),
     );
-  }
-
-  Widget _buildTeamSelector(BuildContext context, PartidoViewModel vm) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
-      child: Row(
-        children: [
-          Expanded(
-            child: GestureDetector(
-              onTap: () => vm.seleccionarTeam(0),
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                decoration: BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(
-                      color: vm.teamSeleccionado == 0 ? AppColors.accent : Colors.transparent,
-                      width: 2,
-                    ),
-                  ),
-                ),
-                child: Text(
-                  vm.nombreLocal,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: vm.teamSeleccionado == 0 ? AppColors.accent : Colors.white54,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Text('vs', style: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 11)),
-          ),
-          Expanded(
-            child: GestureDetector(
-              onTap: () => vm.seleccionarTeam(1),
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                decoration: BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(
-                      color: vm.teamSeleccionado == 1 ? AppColors.accent : Colors.transparent,
-                      width: 2,
-                    ),
-                  ),
-                ),
-                child: Text(
-                  vm.nombreVisitante,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: vm.teamSeleccionado == 1 ? AppColors.accent : Colors.white54,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBenchBar(PartidoViewModel vm) {
-    final benchPlayers = vm.jugadores.length > 6 ? vm.jugadores.sublist(6) : <Player>[];
-    if (benchPlayers.isEmpty) return const SizedBox.shrink();
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        border: Border(top: BorderSide(color: Colors.white12)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.check_box_outlined, color: AppColors.accent, size: 16),
-              const SizedBox(width: 6),
-              const Text('BANCA', style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.bold, fontSize: 11)),
-              const Spacer(),
-              Text('${benchPlayers.length} jugadores', style: const TextStyle(color: Colors.white24, fontSize: 9)),
-            ],
-          ),
-          const SizedBox(height: 4),
-          SizedBox(
-            height: 44,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: benchPlayers.length,
-              itemBuilder: (context, index) {
-                final j = benchPlayers[index];
-                return Padding(
-                  padding: const EdgeInsets.only(right: 12),
-                  child: GestureDetector(
-                    onTap: vm.isPartidoActivo ? () => vm.seleccionarJugador(j) : null,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        CircleAvatar(
-                          radius: 14,
-                          backgroundColor: j.id == vm.jugadorSeleccionado?.id ? AppColors.accent : Colors.grey.shade700,
-                          child: Text(
-                            '${j.numero}',
-                            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(j.posicionLabel, style: const TextStyle(fontSize: 7, color: Colors.grey)),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBottomNav(BuildContext context, PartidoViewModel vm, bool isWide) {
-    return BottomAppBar(
-      shape: isWide ? null : const CircularNotchedRectangle(),
-      notchMargin: 8,
-      color: AppColors.surface,
-      elevation: 12,
-      child: SizedBox(
-        height: 56,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _navItem(Icons.people_outline, 'PLANTILLA', false, onTap: () => _abrirPlantilla(context, vm)),
-            _navItem(Icons.analytics_outlined, 'ANALYTICS', false),
-            if (!isWide) const SizedBox(width: 48),
-            _navItem(Icons.grid_view_outlined, 'TACTICS', false),
-            _navItem(Icons.settings_outlined, 'SETTINGS', false),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _navItem(IconData icon, String label, bool active, {VoidCallback? onTap}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: active ? AppColors.primary : Colors.grey, size: 22),
-          Text(
-            label,
-            style: TextStyle(fontSize: 9, color: active ? AppColors.primary : Colors.grey, fontWeight: FontWeight.w600),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _abrirPlantilla(BuildContext context, PartidoViewModel vm) async {
-    final messenger = ScaffoldMessenger.of(context);
-    try {
-      await DatabaseService.instance.initialize();
-      if (!mounted) return;
-      final result = await showModalBottomSheet<List<Player>>(
-        context: context,
-        isScrollControlled: true,
-        backgroundColor: Colors.transparent,
-        builder: (_) => RosterManagementSheet(currentRoster: vm.jugadores),
-      );
-      if (result != null && mounted) {
-        vm.setJugadores(result);
-      }
-    } catch (e) {
-      if (mounted) {
-        messenger.showSnackBar(
-          SnackBar(content: Text('Error al abrir plantilla: $e'), backgroundColor: Colors.red),
-        );
-      }
-    }
-  }
-
-  Widget _buildFab(PartidoViewModel vm, bool isWide) {
-    return FloatingActionButton(
-      onPressed: vm.isPartidoActivo ? () => vm.rotarJugadores() : null,
-      backgroundColor: AppColors.primary,
-      elevation: 8,
-      child: const Text('ROTAR', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
-    );
-  }
-
-  String _zoneLabel(int index) {
-    const labels = ['Z4', 'Z3', 'Z2', 'Z5', 'Z6', 'Z1'];
-    return index < labels.length ? labels[index] : 'Z?';
   }
 }

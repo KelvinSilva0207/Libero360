@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../core/themes/app_colors.dart';
 
 class AppTextField extends StatefulWidget {
   final TextEditingController controller;
   final String label;
   final String? hint;
-  final IconData? prefixIcon;
+  final FaIconData? prefixIcon;
   final Widget? suffixIcon;
   final bool obscureText;
   final bool isPassword;
@@ -93,13 +94,13 @@ class _AppTextFieldState extends State<AppTextField> {
               fontSize: 15,
             ),
             prefixIcon: widget.prefixIcon != null
-                ? Icon(widget.prefixIcon, size: 20)
+                ? FaIcon(widget.prefixIcon, size: 18)
                 : null,
             suffixIcon: widget.isPassword
                 ? IconButton(
-                    icon: Icon(
-                      _obscured ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                      size: 20,
+                    icon: FaIcon(
+                      _obscured ? FontAwesomeIcons.eyeSlash : FontAwesomeIcons.eye,
+                      size: 18,
                     ),
                     onPressed: () => setState(() => _obscured = !_obscured),
                   )

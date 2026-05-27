@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import 'core/themes/app_theme.dart';
 import 'features/auth/auth.dart';
@@ -148,7 +149,7 @@ class HomeScreen extends StatelessWidget {
                 value: 'logout',
                 child: Row(
                   children: [
-                    Icon(Icons.logout_rounded, color: Color(0xFFEF4444), size: 20),
+                    FaIcon(FontAwesomeIcons.rightFromBracket, color: Color(0xFFEF4444), size: 18),
                     SizedBox(width: 10),
                     Text('Cerrar sesión'),
                   ],
@@ -201,7 +202,7 @@ class HomeScreen extends StatelessWidget {
                       alignment: WrapAlignment.center,
                       children: [
                         _FeatureButton(
-                          icon: Icons.people_rounded,
+                          icon: FontAwesomeIcons.peopleGroup,
                           label: 'Atletas',
                           isWide: isWide,
                           onTap: () => Navigator.push(
@@ -209,7 +210,7 @@ class HomeScreen extends StatelessWidget {
                           ),
                         ),
                         _FeatureButton(
-                          icon: Icons.sports_volleyball_rounded,
+                          icon: FontAwesomeIcons.volleyball,
                           label: 'Partidos',
                           isWide: isWide,
                           onTap: () => Navigator.push(
@@ -217,7 +218,7 @@ class HomeScreen extends StatelessWidget {
                           ),
                         ),
                         _FeatureButton(
-                          icon: Icons.analytics_rounded,
+                          icon: FontAwesomeIcons.chartSimple,
                           label: 'Estadísticas',
                           isWide: isWide,
                           onTap: () => Navigator.push(
@@ -225,7 +226,7 @@ class HomeScreen extends StatelessWidget {
                           ),
                         ),
                         _FeatureButton(
-                          icon: Icons.checklist_rounded,
+                          icon: FontAwesomeIcons.clipboardCheck,
                           label: 'Asistencia',
                           isWide: isWide,
                           onTap: () => Navigator.push(
@@ -246,7 +247,7 @@ class HomeScreen extends StatelessWidget {
 }
 
 class _FeatureButton extends StatelessWidget {
-  final IconData icon;
+  final FaIconData icon;
   final String label;
   final VoidCallback? onTap;
   final bool isWide;
@@ -262,7 +263,7 @@ class _FeatureButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return ElevatedButton.icon(
       onPressed: onTap,
-      icon: Icon(icon, size: isWide ? 26 : 20),
+      icon: FaIcon(icon, size: isWide ? 22 : 18),
       label: Text(label, style: TextStyle(fontSize: isWide ? 15 : 13, fontWeight: FontWeight.w600)),
       style: ElevatedButton.styleFrom(
         backgroundColor: const Color(0xFF1A1F3D),

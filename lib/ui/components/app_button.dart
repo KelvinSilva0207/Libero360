@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../core/themes/app_colors.dart';
 
 class AppButton extends StatelessWidget {
   final String label;
-  final IconData? icon;
+  final FaIconData? icon;
   final VoidCallback? onPressed;
   final bool isLoading;
   final bool expanded;
@@ -40,7 +41,7 @@ class AppButton extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           if (icon != null) ...[
-            Icon(icon, size: 20),
+            FaIcon(icon, size: 18),
             const SizedBox(width: 10),
           ],
           Text(label, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, letterSpacing: 0.3)),
@@ -93,7 +94,7 @@ enum AppButtonType { primary, secondary, ghost, social }
 
 class SocialButton extends StatelessWidget {
   final String label;
-  final IconData icon;
+  final FaIconData icon;
   final Color iconColor;
   final VoidCallback? onPressed;
 
@@ -120,7 +121,7 @@ class SocialButton extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: iconColor, size: 20),
+            FaIcon(icon, color: iconColor, size: 20),
             const SizedBox(width: 10),
             Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
           ],

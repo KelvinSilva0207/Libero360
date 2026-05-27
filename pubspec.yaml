@@ -12,7 +12,7 @@ dependencies:
 
   # UI
   cupertino_icons: ^1.0.6
-  font_awesome_flutter: ^10.7.0
+  font_awesome_flutter: ^11.0.0
 
   # Base de datos local - Sembast (web + nativo)
   sembast: ^3.8.7

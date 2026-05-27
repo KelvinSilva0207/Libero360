@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../../../../ui/components/app_logo.dart';
 import '../../../../ui/components/app_text_field.dart';
-import '../../../../ui/components/app_button.dart';
 import '../viewmodels/auth_viewmodel.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -68,36 +68,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       key: _formKey,
                       child: Column(
                         children: [
-                          const SizedBox(height: 16),
-                          InkWell(
-                            onTap: () => Navigator.pop(context),
-                            borderRadius: BorderRadius.circular(8),
-                            child: const Row(
-                              children: [
-                                Icon(Icons.arrow_back_rounded, color: AppColors.textSecondary, size: 22),
-                                SizedBox(width: 4),
-                                Text('Volver', style: TextStyle(color: AppColors.textSecondary, fontSize: 14)),
-                              ],
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: TextButton.icon(
+                              onPressed: () => Navigator.pop(context),
+                              icon: const FaIcon(FontAwesomeIcons.arrowLeft, size: 16),
+                              label: const Text('Volver', style: TextStyle(fontSize: 14)),
                             ),
                           ),
+                          const SizedBox(height: 8),
+                          const AppLogo(size: 72, showText: false),
                           const SizedBox(height: 24),
-                          const AppLogo(size: 64),
-                          const SizedBox(height: 32),
                           const Text(
                             'Crear tu cuenta',
-                            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.textPrimary, letterSpacing: -0.3),
                           ),
                           const SizedBox(height: 6),
                           Text(
                             'Comienza a gestionar tu equipo',
                             style: TextStyle(fontSize: 14, color: Colors.white.withValues(alpha: 0.5)),
                           ),
-                          const SizedBox(height: 32),
+                          const SizedBox(height: 36),
                           AppTextField(
                             controller: _nombreCtrl,
-                            label: 'Nombre completo',
-                            hint: 'Tu nombre',
-                            prefixIcon: Icons.person_outlined,
+                            label: 'Nombre del equipo / entrenador',
+                            hint: 'Tu nombre o el de tu equipo',
+                            prefixIcon: FontAwesomeIcons.user,
                             textCapitalization: TextCapitalization.words,
                             validator: (v) {
                               if (v == null || v.trim().isEmpty) return 'Ingresa tu nombre';
@@ -110,7 +106,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             controller: _emailCtrl,
                             label: 'Correo electrónico',
                             hint: 'ejemplo@correo.com',
-                            prefixIcon: Icons.email_outlined,
+                            prefixIcon: FontAwesomeIcons.envelope,
                             keyboardType: TextInputType.emailAddress,
                             validator: (v) {
                               if (v == null || v.trim().isEmpty) return 'Ingresa tu correo';
@@ -124,7 +120,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             controller: _passwordCtrl,
                             label: 'Contraseña',
                             hint: 'Mínimo 6 caracteres',
-                            prefixIcon: Icons.lock_outlined,
+                            prefixIcon: FontAwesomeIcons.lock,
                             isPassword: true,
                             validator: (v) {
                               if (v == null || v.isEmpty) return 'Ingresa una contraseña';
@@ -139,22 +135,42 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             controller: _confirmCtrl,
                             label: 'Confirmar contraseña',
                             hint: 'Repite la contraseña',
-                            prefixIcon: Icons.lock_outlined,
+                            prefixIcon: FontAwesomeIcons.lock,
                             isPassword: true,
                             validator: (v) {
                               if (v != _passwordCtrl.text) return 'Las contraseñas no coinciden';
                               return null;
                             },
                           ),
-                          const SizedBox(height: 28),
-                          AppButton(
-                            label: 'Crear Cuenta',
-                            icon: Icons.person_add_rounded,
-                            isLoading: vm.isLoading,
-                            onPressed: () => _submit(vm),
-                          ),
                           const SizedBox(height: 24),
-                          _buildTerms(),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 52,
+                            child: FilledButton(
+                              onPressed: vm.isLoading ? null : () => _submit(vm),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: AppColors.accent,
+                                disabledBackgroundColor: AppColors.accent.withValues(alpha: 0.4),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                              child: vm.isLoading
+                                  ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: AppColors.textOnAccent))
+                                  : const Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        FaIcon(FontAwesomeIcons.userPlus, size: 18),
+                                        SizedBox(width: 10),
+                                        Text('Crear Cuenta', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, letterSpacing: 0.3)),
+                                      ],
+                                    ),
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          Text(
+                            'Al registrarte, aceptas nuestros Términos y Condiciones y Política de Privacidad.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.white.withValues(alpha: 0.35), fontSize: 11, height: 1.4),
+                          ),
                           const SizedBox(height: 24),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -177,14 +193,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildTerms() {
-    return Text(
-      'Al registrarte, aceptas nuestros Términos y Condiciones y Política de Privacidad.',
-      textAlign: TextAlign.center,
-      style: TextStyle(color: Colors.white.withValues(alpha: 0.35), fontSize: 11, height: 1.4),
     );
   }
 }

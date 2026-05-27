@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../../../../ui/components/app_logo.dart';
 import '../../../../ui/components/app_text_field.dart';
-import '../../../../ui/components/app_button.dart';
 import '../viewmodels/auth_viewmodel.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -67,36 +67,32 @@ class _LoginScreenState extends State<LoginScreen> {
                       key: _formKey,
                       child: Column(
                         children: [
-                          const SizedBox(height: 16),
-                          InkWell(
-                            onTap: () => Navigator.pop(context),
-                            borderRadius: BorderRadius.circular(8),
-                            child: const Row(
-                              children: [
-                                Icon(Icons.arrow_back_rounded, color: AppColors.textSecondary, size: 22),
-                                SizedBox(width: 4),
-                                Text('Volver', style: TextStyle(color: AppColors.textSecondary, fontSize: 14)),
-                              ],
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: TextButton.icon(
+                              onPressed: () => Navigator.pop(context),
+                              icon: const FaIcon(FontAwesomeIcons.arrowLeft, size: 16),
+                              label: const Text('Volver', style: TextStyle(fontSize: 14)),
                             ),
                           ),
+                          const SizedBox(height: 8),
+                          const AppLogo(size: 72, showText: false),
                           const SizedBox(height: 24),
-                          const AppLogo(size: 64),
-                          const SizedBox(height: 32),
                           const Text(
                             'Bienvenido de nuevo',
-                            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.textPrimary, letterSpacing: -0.3),
                           ),
                           const SizedBox(height: 6),
                           Text(
                             'Ingresa tus credenciales para continuar',
                             style: TextStyle(fontSize: 14, color: Colors.white.withValues(alpha: 0.5)),
                           ),
-                          const SizedBox(height: 32),
+                          const SizedBox(height: 36),
                           AppTextField(
                             controller: _emailCtrl,
                             label: 'Correo electrónico',
                             hint: 'ejemplo@correo.com',
-                            prefixIcon: Icons.email_outlined,
+                            prefixIcon: FontAwesomeIcons.envelope,
                             keyboardType: TextInputType.emailAddress,
                             validator: (v) {
                               if (v == null || v.trim().isEmpty) return 'Ingresa tu correo';
@@ -110,7 +106,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             controller: _passwordCtrl,
                             label: 'Contraseña',
                             hint: 'Mínimo 6 caracteres',
-                            prefixIcon: Icons.lock_outlined,
+                            prefixIcon: FontAwesomeIcons.lock,
                             isPassword: true,
                             validator: (v) {
                               if (v == null || v.isEmpty) return 'Ingresa tu contraseña';
@@ -118,38 +114,57 @@ class _LoginScreenState extends State<LoginScreen> {
                               return null;
                             },
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 4),
                           Align(
                             alignment: Alignment.centerRight,
                             child: TextButton(
                               onPressed: () {},
-                              child: const Text('¿Olvidaste tu contraseña?', style: TextStyle(fontSize: 12, color: AppColors.primary)),
+                              child: const Text(
+                                '¿Olvidaste tu contraseña?',
+                                style: TextStyle(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.w500),
+                              ),
                             ),
                           ),
-                          const SizedBox(height: 16),
-                          AppButton(
-                            label: 'Iniciar Sesión',
-                            icon: Icons.login_rounded,
-                            isLoading: vm.isLoading,
-                            onPressed: () => _submit(vm),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 52,
+                            child: FilledButton(
+                              onPressed: vm.isLoading ? null : () => _submit(vm),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: AppColors.accent,
+                                disabledBackgroundColor: AppColors.accent.withValues(alpha: 0.4),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                              child: vm.isLoading
+                                  ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: AppColors.textOnAccent))
+                                  : const Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        FaIcon(FontAwesomeIcons.rightToBracket, size: 18),
+                                        SizedBox(width: 10),
+                                        Text('Iniciar Sesión', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, letterSpacing: 0.3)),
+                                      ],
+                                    ),
+                            ),
                           ),
                           const SizedBox(height: 24),
                           _buildDivider(),
                           const SizedBox(height: 20),
-                          SocialButton(
+                          _SocialButton(
                             label: 'Continuar con Google',
-                            icon: Icons.g_mobiledata_rounded,
+                            icon: FontAwesomeIcons.google,
                             iconColor: AppColors.google,
                             onPressed: () {},
                           ),
                           const SizedBox(height: 12),
-                          SocialButton(
+                          _SocialButton(
                             label: 'Continuar con Facebook',
-                            icon: Icons.facebook_rounded,
+                            icon: FontAwesomeIcons.facebook,
                             iconColor: AppColors.facebook,
                             onPressed: () {},
                           ),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 28),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
@@ -184,6 +199,44 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         Expanded(child: Container(height: 1, color: AppColors.border)),
       ],
+    );
+  }
+}
+
+class _SocialButton extends StatelessWidget {
+  final String label;
+  final FaIconData icon;
+  final Color iconColor;
+  final VoidCallback? onPressed;
+
+  const _SocialButton({
+    required this.label,
+    required this.icon,
+    required this.iconColor,
+    this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      height: 48,
+      child: OutlinedButton(
+        onPressed: onPressed,
+        style: OutlinedButton.styleFrom(
+          side: const BorderSide(color: AppColors.borderLight),
+          foregroundColor: AppColors.textPrimary,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            FaIcon(icon, color: iconColor, size: 20),
+            const SizedBox(width: 10),
+            Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+          ],
+        ),
+      ),
     );
   }
 }

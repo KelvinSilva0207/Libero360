@@ -8,24 +8,36 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
-      colorScheme: const ColorScheme.dark(
+      colorScheme: ColorScheme.dark(
         primary: AppColors.primary,
-        secondary: AppColors.accent,
-        surface: AppColors.surface,
-        error: AppColors.error,
         onPrimary: AppColors.textOnPrimary,
+        primaryContainer: AppColors.primary.withValues(alpha: 0.15),
+        secondary: AppColors.accent,
         onSecondary: AppColors.textOnAccent,
+        secondaryContainer: AppColors.accent.withValues(alpha: 0.15),
+        surface: AppColors.surface,
         onSurface: AppColors.textPrimary,
+        surfaceContainerHighest: AppColors.surfaceLight,
+        onSurfaceVariant: AppColors.textSecondary,
+        error: AppColors.error,
         onError: AppColors.textOnPrimary,
+        errorContainer: AppColors.error.withValues(alpha: 0.15),
         outline: AppColors.border,
+        outlineVariant: AppColors.border.withValues(alpha: 0.5),
+        inverseSurface: AppColors.textPrimary,
+        inversePrimary: AppColors.primaryLight,
+        shadow: AppColors.overlay,
       ),
       scaffoldBackgroundColor: AppColors.background,
-      appBarTheme: const AppBarTheme(
+      appBarTheme: AppBarTheme(
         backgroundColor: AppColors.surface,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
         centerTitle: true,
         scrolledUnderElevation: 2,
+        titleTextStyle: const TextStyle(
+          fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.textPrimary, letterSpacing: -0.3,
+        ),
       ),
       cardTheme: CardThemeData(
         color: AppColors.surface,
@@ -36,13 +48,6 @@ class AppTheme {
         ),
         clipBehavior: Clip.antiAlias,
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      ),
-      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        backgroundColor: AppColors.surface,
-        selectedItemColor: AppColors.accent,
-        unselectedItemColor: AppColors.textTertiary,
-        type: BottomNavigationBarType.fixed,
-        elevation: 8,
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: AppColors.surface,
@@ -84,7 +89,7 @@ class AppTheme {
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: AppColors.error, width: 1.5),
         ),
-        labelStyle: const TextStyle(color: AppColors.textTertiary, fontSize: 14),
+        labelStyle: const TextStyle(color: AppColors.textTertiary, fontSize: 14, fontWeight: FontWeight.w500),
         hintStyle: const TextStyle(color: AppColors.textTertiary, fontSize: 14),
         prefixIconColor: AppColors.textTertiary,
         suffixIconColor: AppColors.textTertiary,
@@ -124,35 +129,27 @@ class AppTheme {
           textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
         ),
       ),
-      floatingActionButtonTheme: const FloatingActionButtonThemeData(
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: AppColors.primary,
         foregroundColor: AppColors.textOnPrimary,
         elevation: 4,
-        shape: CircleBorder(),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
       bottomSheetTheme: BottomSheetThemeData(
         backgroundColor: AppColors.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: const Radius.circular(20)),
         ),
+        dragHandleColor: AppColors.textTertiary,
+        dragHandleSize: const Size(40, 4),
       ),
       dialogTheme: DialogThemeData(
         backgroundColor: AppColors.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        titleTextStyle: const TextStyle(
-          fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.textPrimary,
-        ),
-        contentTextStyle: const TextStyle(
-          fontSize: 14, color: AppColors.textSecondary,
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        titleTextStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+        contentTextStyle: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
       ),
-      dividerTheme: const DividerThemeData(
-        color: AppColors.border,
-        thickness: 0.5,
-        space: 0,
-      ),
+      dividerTheme: const DividerThemeData(color: AppColors.border, thickness: 0.5, space: 0),
       chipTheme: ChipThemeData(
         backgroundColor: AppColors.surfaceLight,
         selectedColor: AppColors.primary.withValues(alpha: 0.2),
@@ -169,13 +166,25 @@ class AppTheme {
         behavior: SnackBarBehavior.floating,
         actionTextColor: AppColors.accent,
       ),
-      drawerTheme: const DrawerThemeData(
-        backgroundColor: AppColors.surface,
-      ),
+      drawerTheme: const DrawerThemeData(backgroundColor: AppColors.surface),
       popupMenuTheme: PopupMenuThemeData(
         color: AppColors.surfaceLight,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         textStyle: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+      ),
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return AppColors.accent;
+          return AppColors.textTertiary;
+        }),
+        trackColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return AppColors.accent.withValues(alpha: 0.3);
+          return AppColors.border;
+        }),
+      ),
+      progressIndicatorTheme: const ProgressIndicatorThemeData(
+        color: AppColors.accent,
+        circularTrackColor: AppColors.border,
       ),
     );
   }

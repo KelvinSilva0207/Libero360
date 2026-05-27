@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../../../../ui/components/app_logo.dart';
-import '../../../../ui/components/app_button.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
@@ -33,25 +33,49 @@ class WelcomeScreen extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const SizedBox(height: 40),
+                    const SizedBox(height: 48),
                     const AppLogo(size: 100),
                     const SizedBox(height: 48),
-                    _buildFeatureList(),
-                    const SizedBox(height: 48),
-                    AppButton(
-                      label: 'Iniciar Sesión',
-                      icon: Icons.login_rounded,
-                      onPressed: () => Navigator.pushReplacementNamed(context, '/login'),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: FilledButton.icon(
+                        onPressed: () => Navigator.pushReplacementNamed(context, '/login'),
+                        icon: const FaIcon(FontAwesomeIcons.rightToBracket, size: 18),
+                        label: const Text(
+                          'Iniciar Sesión',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, letterSpacing: 0.3),
+                        ),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.accent,
+                          foregroundColor: AppColors.textOnAccent,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 14),
-                    AppButton(
-                      label: 'Crear Cuenta',
-                      icon: Icons.person_add_rounded,
-                      type: AppButtonType.secondary,
-                      onPressed: () => Navigator.pushReplacementNamed(context, '/register'),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: OutlinedButton.icon(
+                        onPressed: () => Navigator.pushReplacementNamed(context, '/register'),
+                        icon: const FaIcon(FontAwesomeIcons.userPlus, size: 16),
+                        label: const Text(
+                          'Registrar Nuevo Equipo',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, letterSpacing: 0.3),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.textPrimary,
+                          side: const BorderSide(color: AppColors.borderLight, width: 1.5),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
                     ),
-                    const SizedBox(height: 32),
-                    _buildFooter(context),
+                    const SizedBox(height: 64),
+                    Text(
+                      'v1.0.0',
+                      style: TextStyle(color: Colors.white.withValues(alpha: 0.15), fontSize: 11),
+                    ),
                   ],
                 ),
               ),
@@ -59,115 +83,6 @@ class WelcomeScreen extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildFeatureList() {
-    return Column(
-      children: [
-        _FeatureItem(
-          icon: Icons.sports_volleyball_rounded,
-          title: 'Gestión de Partidos',
-          subtitle: 'Control en vivo con rotaciones y estadísticas',
-        ),
-        const SizedBox(height: 20),
-        _FeatureItem(
-          icon: Icons.analytics_rounded,
-          title: 'Estadísticas en Tiempo Real',
-          subtitle: 'Kills, bloqueos, saques y eficiencia por jugadora',
-        ),
-        const SizedBox(height: 20),
-        _FeatureItem(
-          icon: Icons.people_rounded,
-          title: 'Plantilla y Asistencia',
-          subtitle: 'Control de atletas, posiciones y asistencia',
-        ),
-      ],
-    );
-  }
-
-  Widget _buildFooter(BuildContext context) {
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              '¿Ya tienes cuenta? ',
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 13),
-            ),
-            GestureDetector(
-              onTap: () => Navigator.pushReplacementNamed(context, '/login'),
-              child: const Text(
-                'Inicia sesión',
-                style: TextStyle(
-                  color: AppColors.accent,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 24),
-        Text(
-          'v1.0.0',
-          style: TextStyle(color: Colors.white.withValues(alpha: 0.2), fontSize: 11),
-        ),
-      ],
-    );
-  }
-}
-
-class _FeatureItem extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-
-  const _FeatureItem({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: AppColors.primary.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(icon, color: AppColors.primary, size: 22),
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  color: AppColors.textPrimary,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                subtitle,
-                style: const TextStyle(
-                  color: AppColors.textTertiary,
-                  fontSize: 12,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 }

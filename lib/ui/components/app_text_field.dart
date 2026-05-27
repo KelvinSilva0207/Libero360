@@ -94,7 +94,10 @@ class _AppTextFieldState extends State<AppTextField> {
               fontSize: 15,
             ),
             prefixIcon: widget.prefixIcon != null
-                ? FaIcon(widget.prefixIcon, size: 18)
+                ? Padding(
+                    padding: const EdgeInsetsDirectional.only(start: 12, end: 8),
+                    child: FaIcon(widget.prefixIcon, size: 18),
+                  )
                 : null,
             suffixIcon: widget.isPassword
                 ? IconButton(

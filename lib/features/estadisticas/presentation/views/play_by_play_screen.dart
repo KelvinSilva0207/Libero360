@@ -1,13 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
+import '../../../../core/themes/app_colors.dart';
 import '../../data/models/models.dart';
 import '../viewmodels/play_by_play_viewmodel.dart';
 
-/// Pantalla principal de Play-by-Play
-///
-/// Muestra el marcador en tiempo real, permite registrar acciones
-/// y visualizar el timeline de eventos del partido.
 class PlayByPlayScreen extends StatelessWidget {
   const PlayByPlayScreen({super.key});
 
@@ -26,9 +22,10 @@ class _PlayByPlayContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Play-by-Play'),
-        backgroundColor: Colors.deepOrange,
+        backgroundColor: AppColors.surface,
         foregroundColor: Colors.white,
         actions: [
           Consumer<PlayByPlayViewModel>(
@@ -66,9 +63,51 @@ class _PlayByPlayContent extends StatelessWidget {
           if (vm.partidoActual == null) {
             return _buildNuevoPartido(context, vm);
           }
-          return _buildPartidoEnProgreso(context, vm);
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              final isWide = constraints.maxWidth >= 768;
+              return isWide
+                  ? _buildDesktopLayout(context, vm, constraints)
+                  : _buildMobileLayout(context, vm);
+            },
+          );
         },
       ),
+    );
+  }
+
+  Widget _buildMobileLayout(BuildContext context, PlayByPlayViewModel vm) {
+    return Column(
+      children: [
+        _buildMarcador(context, vm),
+        _buildSelectorEquipo(context, vm),
+        Expanded(child: _buildJugadores(context, vm)),
+        _buildAcciones(context, vm),
+      ],
+    );
+  }
+
+  Widget _buildDesktopLayout(BuildContext context, PlayByPlayViewModel vm, BoxConstraints constraints) {
+    return Row(
+      children: [
+        SizedBox(
+          width: 380,
+          child: Column(
+            children: [
+              _buildMarcador(context, vm),
+              _buildSelectorEquipo(context, vm),
+              Expanded(child: _buildAcciones(context, vm)),
+            ],
+          ),
+        ),
+        const VerticalDivider(width: 1, color: Colors.white12),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: _buildJugadores(context, vm),
+          ),
+        ),
+      ],
     );
   }
 
@@ -76,208 +115,176 @@ class _PlayByPlayContent extends StatelessWidget {
     final controllerLocal = TextEditingController();
     final controllerVisitante = TextEditingController();
 
-    return Padding(
-      padding: const EdgeInsets.all(24.0),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(
-            Icons.sports_volleyball,
-            size: 80,
-            color: Colors.deepOrange,
-          ),
-          const SizedBox(height: 24),
-          const Text(
-            'Nuevo Partido',
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 32),
-          TextField(
-            controller: controllerLocal,
-            decoration: const InputDecoration(
-              labelText: 'Equipo Local',
-              border: OutlineInputBorder(),
-              prefixIcon: Icon(Icons.home),
-            ),
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: controllerVisitante,
-            decoration: const InputDecoration(
-              labelText: 'Equipo Visitante',
-              border: OutlineInputBorder(),
-              prefixIcon: Icon(Icons.sports_score),
-            ),
-          ),
-          const SizedBox(height: 32),
-          SizedBox(
-            width: double.infinity,
-            height: 56,
-            child: ElevatedButton(
-              onPressed: () {
-                if (controllerLocal.text.isNotEmpty &&
-                    controllerVisitante.text.isNotEmpty) {
-                  vm.iniciarNuevoPartido(
-                    equipoLocal: controllerLocal.text,
-                    equipoVisitante: controllerVisitante.text,
-                  );
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.deepOrange,
-                foregroundColor: Colors.white,
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 480),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.sports_volleyball, size: 80, color: AppColors.accent),
+              const SizedBox(height: 24),
+              const Text(
+                'Nuevo Partido',
+                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
               ),
-              child: const Text(
-                'INICIAR PARTIDO',
-                style: TextStyle(fontSize: 18),
+              const SizedBox(height: 32),
+              TextField(
+                controller: controllerLocal,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  labelText: 'Equipo Local',
+                  labelStyle: const TextStyle(color: Colors.white54),
+                  prefixIcon: const Icon(Icons.home, color: AppColors.primary, size: 20),
+                  filled: true,
+                  fillColor: AppColors.surfaceLight,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                ),
               ),
-            ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: controllerVisitante,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  labelText: 'Equipo Visitante',
+                  labelStyle: const TextStyle(color: Colors.white54),
+                  prefixIcon: const Icon(Icons.sports_score, color: AppColors.primary, size: 20),
+                  filled: true,
+                  fillColor: AppColors.surfaceLight,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                ),
+              ),
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: FilledButton(
+                  onPressed: () {
+                    if (controllerLocal.text.isNotEmpty && controllerVisitante.text.isNotEmpty) {
+                      vm.iniciarNuevoPartido(
+                        equipoLocal: controllerLocal.text,
+                        equipoVisitante: controllerVisitante.text,
+                      );
+                    }
+                  },
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.accent,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text('INICIAR PARTIDO', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                ),
+              ),
+              if (vm.error != null) ...[
+                const SizedBox(height: 16),
+                Text(vm.error!, style: const TextStyle(color: Colors.red)),
+              ],
+            ],
           ),
-          if (vm.error != null) ...[
-            const SizedBox(height: 16),
-            Text(
-              vm.error!,
-              style: const TextStyle(color: Colors.red),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPartidoEnProgreso(BuildContext context, PlayByPlayViewModel vm) {
-    return Column(
-      children: [
-        // Marcador
-        _buildMarcador(context, vm),
-        // Selector de equipo
-        _buildSelectorEquipo(context, vm),
-        // Jugadores
-        Expanded(
-          child: _buildJugadores(context, vm),
         ),
-        // Acciones rápidas
-        _buildAcciones(context, vm),
-      ],
+      ),
     );
   }
 
   Widget _buildMarcador(BuildContext context, PlayByPlayViewModel vm) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.grey[100],
-        border: Border(
-          bottom: BorderSide(color: Colors.grey[300]!),
-        ),
+        color: AppColors.surface,
+        border: const Border(bottom: BorderSide(color: Colors.white12)),
       ),
       child: Column(
         children: [
-          // Set actual
-          Text(
-            'SET ${vm.setActual}',
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey,
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            decoration: BoxDecoration(
+              color: AppColors.accent.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              'SET ${vm.setActual}',
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.accent),
             ),
           ),
-          const SizedBox(height: 8),
-          // Equipos y puntos
+          const SizedBox(height: 12),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              // Equipo Local
               Expanded(
                 child: Column(
                   children: [
                     Text(
                       vm.partidoActual?.equipoLocal ?? 'Local',
                       style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: vm.esEquipoLocal ? Colors.deepOrange : Colors.black,
+                        fontSize: 14, fontWeight: FontWeight.bold,
+                        color: vm.esEquipoLocal ? AppColors.accent : Colors.white70,
                       ),
                       textAlign: TextAlign.center,
+                      maxLines: 1, overflow: TextOverflow.ellipsis,
                     ),
+                    const SizedBox(height: 4),
                     Text(
                       vm.partidoActual?.puntosLocal.toString() ?? '0',
                       style: TextStyle(
-                        fontSize: 48,
-                        fontWeight: FontWeight.bold,
-                        color: vm.esEquipoLocal ? Colors.deepOrange : Colors.black,
+                        fontSize: 48, fontWeight: FontWeight.bold,
+                        color: vm.esEquipoLocal ? AppColors.accent : Colors.white,
                       ),
                     ),
                     Text(
                       '${vm.partidoActual?.setsLocal ?? 0} sets',
-                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                      style: const TextStyle(fontSize: 12, color: Colors.white38),
                     ),
                   ],
                 ),
               ),
-              // Separador
-              const Text(
-                '-',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey,
-                ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text('-', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white.withValues(alpha: 0.3))),
               ),
-              // Equipo Visitante
               Expanded(
                 child: Column(
                   children: [
                     Text(
                       vm.partidoActual?.equipoVisitante ?? 'Visitante',
                       style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: !vm.esEquipoLocal ? Colors.deepOrange : Colors.black,
+                        fontSize: 14, fontWeight: FontWeight.bold,
+                        color: !vm.esEquipoLocal ? AppColors.accent : Colors.white70,
                       ),
                       textAlign: TextAlign.center,
+                      maxLines: 1, overflow: TextOverflow.ellipsis,
                     ),
+                    const SizedBox(height: 4),
                     Text(
                       vm.partidoActual?.puntosVisitante.toString() ?? '0',
                       style: TextStyle(
-                        fontSize: 48,
-                        fontWeight: FontWeight.bold,
-                        color: !vm.esEquipoLocal ? Colors.deepOrange : Colors.black,
+                        fontSize: 48, fontWeight: FontWeight.bold,
+                        color: !vm.esEquipoLocal ? AppColors.accent : Colors.white,
                       ),
                     ),
                     Text(
                       '${vm.partidoActual?.setsVisitante ?? 0} sets',
-                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                      style: const TextStyle(fontSize: 12, color: Colors.white38),
                     ),
                   ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          // Indicador de turno
+          const SizedBox(height: 8),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.deepOrange.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(20),
+              color: AppColors.primary.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(16),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  Icons.arrow_right,
-                  color: vm.esEquipoLocal ? Colors.deepOrange : Colors.blue,
-                ),
+                Icon(Icons.arrow_right, color: vm.esEquipoLocal ? AppColors.accent : AppColors.primary, size: 20),
+                const SizedBox(width: 4),
                 Text(
                   'Turno: ${vm.esEquipoLocal ? vm.partidoActual?.equipoLocal : vm.partidoActual?.equipoVisitante}',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: vm.esEquipoLocal ? Colors.deepOrange : Colors.blue,
-                  ),
+                  style: TextStyle(fontWeight: FontWeight.bold, color: vm.esEquipoLocal ? AppColors.accent : AppColors.primary, fontSize: 12),
                 ),
               ],
             ),
@@ -292,76 +299,50 @@ class _PlayByPlayContent extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       child: Row(
         children: [
-          Expanded(
-            child: _buildEquipoTab(
-              context,
-              vm,
-              esLocal: true,
-              nombre: vm.partidoActual?.equipoLocal ?? 'Local',
-            ),
-          ),
+          Expanded(child: _buildEquipoTab(context, vm, esLocal: true, nombre: vm.partidoActual?.equipoLocal ?? 'Local')),
           const SizedBox(width: 8),
-          Expanded(
-            child: _buildEquipoTab(
-              context,
-              vm,
-              esLocal: false,
-              nombre: vm.partidoActual?.equipoVisitante ?? 'Visitante',
-            ),
-          ),
+          Expanded(child: _buildEquipoTab(context, vm, esLocal: false, nombre: vm.partidoActual?.equipoVisitante ?? 'Visitante')),
         ],
       ),
     );
   }
 
-  Widget _buildEquipoTab(
-    BuildContext context,
-    PlayByPlayViewModel vm, {
-    required bool esLocal,
-    required String nombre,
-  }) {
+  Widget _buildEquipoTab(BuildContext context, PlayByPlayViewModel vm, {required bool esLocal, required String nombre}) {
     final isSelected = vm.esEquipoLocal == esLocal;
     return GestureDetector(
       onTap: () => vm.cambiarEquipo(esLocal),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.deepOrange : Colors.grey[200],
+          color: isSelected ? AppColors.accent : AppColors.surfaceLight,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Text(
           nombre,
           textAlign: TextAlign.center,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: isSelected ? Colors.white : Colors.grey[700],
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold, color: isSelected ? Colors.white : Colors.white54, fontSize: 13),
         ),
       ),
     );
   }
 
   Widget _buildJugadores(BuildContext context, PlayByPlayViewModel vm) {
-    final jugadores = vm.esEquipoLocal
-        ? vm.jugadoresLocal
-        : vm.jugadoresVisitante;
+    final jugadores = vm.esEquipoLocal ? vm.jugadoresLocal : vm.jugadoresVisitante;
 
     if (jugadores.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.people_outline, size: 64, color: Colors.grey),
+            const Icon(Icons.people_outline, size: 64, color: Colors.white24),
             const SizedBox(height: 16),
-            const Text(
-              'No hay jugadores configurados',
-              style: TextStyle(color: Colors.grey),
-            ),
+            const Text('No hay jugadores configurados', style: TextStyle(color: Colors.white54)),
             const SizedBox(height: 16),
-            ElevatedButton.icon(
+            FilledButton.icon(
               onPressed: () => _agregarJugadorDemo(vm),
-              icon: const Icon(Icons.add),
+              icon: const Icon(Icons.add, size: 18),
               label: const Text('Agregar jugadores demo'),
+              style: FilledButton.styleFrom(backgroundColor: AppColors.accent),
             ),
           ],
         ),
@@ -370,8 +351,8 @@ class _PlayByPlayContent extends StatelessWidget {
 
     return GridView.builder(
       padding: const EdgeInsets.all(16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
+      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: 140,
         childAspectRatio: 1,
         crossAxisSpacing: 8,
         mainAxisSpacing: 8,
@@ -385,42 +366,25 @@ class _PlayByPlayContent extends StatelessWidget {
           onTap: () => vm.seleccionarJugador(jugador),
           child: Container(
             decoration: BoxDecoration(
-              color: isSelected ? Colors.deepOrange : Colors.white,
+              color: isSelected ? AppColors.accent : AppColors.surfaceLight,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: isSelected ? Colors.deepOrange : Colors.grey[300]!,
-                width: 2,
-              ),
-              boxShadow: isSelected
-                  ? [
-                      BoxShadow(
-                        color: Colors.deepOrange.withOpacity(0.3),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ]
-                  : null,
+              border: Border.all(color: isSelected ? AppColors.accent : Colors.white12, width: isSelected ? 2 : 1),
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
                   jugador.numero.toString(),
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: isSelected ? Colors.white : Colors.deepOrange,
-                  ),
+                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: isSelected ? Colors.white : AppColors.accent),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  jugador.nombre,
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: isSelected ? Colors.white70 : Colors.grey[600],
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: Text(
+                    jugador.nombre,
+                    style: TextStyle(fontSize: 10, color: isSelected ? Colors.white70 : Colors.white38),
+                    maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -432,162 +396,54 @@ class _PlayByPlayContent extends StatelessWidget {
 
   Widget _buildAcciones(BuildContext context, PlayByPlayViewModel vm) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.2),
-            blurRadius: 8,
-            offset: const Offset(0, -2),
-          ),
-        ],
+        color: AppColors.surface,
+        border: const Border(top: BorderSide(color: Colors.white12)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Jugador seleccionado
           if (vm.jugadorSeleccionado != null)
             Container(
-              padding: const EdgeInsets.all(12),
-              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(10),
+              margin: const EdgeInsets.only(bottom: 10),
               decoration: BoxDecoration(
-                color: Colors.deepOrange.withOpacity(0.1),
+                color: AppColors.accent.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
                 children: [
                   CircleAvatar(
-                    backgroundColor: Colors.deepOrange,
-                    child: Text(
-                      vm.jugadorSeleccionado!.numero.toString(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    radius: 16,
+                    backgroundColor: AppColors.accent,
+                    child: Text(vm.jugadorSeleccionado!.numero.toString(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          vm.jugadorSeleccionado!.nombre,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        Text(
-                          _posicionToString(vm.jugadorSeleccionado!.posicion),
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey,
-                          ),
-                        ),
+                        Text(vm.jugadorSeleccionado!.nombre, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13)),
+                        Text(_posicionToString(vm.jugadorSeleccionado!.posicion), style: const TextStyle(fontSize: 11, color: Colors.white54)),
                       ],
                     ),
                   ),
                 ],
               ),
             ),
-          // Botones de acciones
-          Row(
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            alignment: WrapAlignment.center,
             children: [
-              Expanded(
-                child: _buildAccionButton(
-                  context,
-                  vm,
-                  icon: Icons.sports_volleyball,
-                  label: 'Ataque +',
-                  color: Colors.green,
-                  onPressed: vm.jugadorSeleccionado != null
-                      ? () => vm.registrarAtaque(esPositivo: true)
-                      : null,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _buildAccionButton(
-                  context,
-                  vm,
-                  icon: Icons.sports_volleyball,
-                  label: 'Ataque -',
-                  color: Colors.red,
-                  onPressed: vm.jugadorSeleccionado != null
-                      ? () => vm.registrarAtaque(esPositivo: false)
-                      : null,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: _buildAccionButton(
-                  context,
-                  vm,
-                  icon: Icons.wifi_tethering,
-                  label: 'Saque +',
-                  color: Colors.green,
-                  onPressed: vm.jugadorSeleccionado != null
-                      ? () => vm.registrarSaque(esPositivo: true)
-                      : null,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _buildAccionButton(
-                  context,
-                  vm,
-                  icon: Icons.wifi_tethering,
-                  label: 'Saque -',
-                  color: Colors.red,
-                  onPressed: vm.jugadorSeleccionado != null
-                      ? () => vm.registrarSaque(esPositivo: false)
-                      : null,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: _buildAccionButton(
-                  context,
-                  vm,
-                  icon: Icons.block,
-                  label: 'Bloqueo',
-                  color: Colors.orange,
-                  onPressed: vm.jugadorSeleccionado != null
-                      ? () => vm.registrarBloqueo(esPositivo: true)
-                      : null,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _buildAccionButton(
-                  context,
-                  vm,
-                  icon: Icons.pan_tool,
-                  label: 'Defensa',
-                  color: Colors.blue,
-                  onPressed: vm.jugadorSeleccionado != null
-                      ? () => vm.registrarDefensa()
-                      : null,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _buildAccionButton(
-                  context,
-                  vm,
-                  icon: Icons.error_outline,
-                  label: 'Error Rival',
-                  color: Colors.grey,
-                  onPressed: () => vm.registrarErrorContrario(),
-                ),
-              ),
+              _accionBtn(icon: Icons.sports_volleyball, label: 'Ataque +', color: Colors.green, onPressed: vm.jugadorSeleccionado != null ? () => vm.registrarAtaque(esPositivo: true) : null),
+              _accionBtn(icon: Icons.sports_volleyball, label: 'Ataque -', color: Colors.red, onPressed: vm.jugadorSeleccionado != null ? () => vm.registrarAtaque(esPositivo: false) : null),
+              _accionBtn(icon: Icons.wifi_tethering, label: 'Saque +', color: Colors.green, onPressed: vm.jugadorSeleccionado != null ? () => vm.registrarSaque(esPositivo: true) : null),
+              _accionBtn(icon: Icons.wifi_tethering, label: 'Saque -', color: Colors.red, onPressed: vm.jugadorSeleccionado != null ? () => vm.registrarSaque(esPositivo: false) : null),
+              _accionBtn(icon: Icons.block, label: 'Bloqueo', color: Colors.orange, onPressed: vm.jugadorSeleccionado != null ? () => vm.registrarBloqueo(esPositivo: true) : null),
+              _accionBtn(icon: Icons.pan_tool, label: 'Defensa', color: AppColors.primary, onPressed: vm.jugadorSeleccionado != null ? () => vm.registrarDefensa() : null),
+              _accionBtn(icon: Icons.error_outline, label: 'Error Rival', color: Colors.grey, onPressed: () => vm.registrarErrorContrario()),
             ],
           ),
         ],
@@ -595,65 +451,48 @@ class _PlayByPlayContent extends StatelessWidget {
     );
   }
 
-  Widget _buildAccionButton(
-    BuildContext context,
-    PlayByPlayViewModel vm, {
-    required IconData icon,
-    required String label,
-    required Color color,
-    required VoidCallback? onPressed,
-  }) {
-    return ElevatedButton(
-      onPressed: onPressed,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: color.withOpacity(0.1),
-        foregroundColor: color,
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-          side: BorderSide(color: color.withOpacity(0.5)),
+  Widget _accionBtn({required IconData icon, required String label, required Color color, required VoidCallback? onPressed}) {
+    return SizedBox(
+      width: 96,
+      height: 56,
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color.withValues(alpha: 0.15),
+          foregroundColor: color,
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+            side: BorderSide(color: color.withValues(alpha: 0.4)),
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 18),
+            const SizedBox(height: 2),
+            Text(label, style: const TextStyle(fontSize: 9), textAlign: TextAlign.center),
+          ],
         ),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 20),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: const TextStyle(fontSize: 10),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
     );
   }
 
-  void _mostrarDialogoFinalizar(
-    BuildContext context,
-    PlayByPlayViewModel vm,
-  ) {
+  void _mostrarDialogoFinalizar(BuildContext context, PlayByPlayViewModel vm) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Finalizar Partido'),
-        content: const Text(
-          '¿Estás seguro de que quieres finalizar el partido? Esta acción no se puede deshacer.',
-        ),
+        backgroundColor: AppColors.surface,
+        title: const Text('Finalizar Partido', style: TextStyle(color: Colors.white)),
+        content: const Text('¿Estás seguro de que quieres finalizar el partido? Esta acción no se puede deshacer.', style: TextStyle(color: Colors.white70)),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton(
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar', style: TextStyle(color: Colors.white54))),
+          FilledButton(
             onPressed: () {
               Navigator.pop(context);
               vm.finalizarPartido();
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-            ),
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
             child: const Text('Finalizar'),
           ),
         ],
@@ -662,75 +501,26 @@ class _PlayByPlayContent extends StatelessWidget {
   }
 
   void _agregarJugadorDemo(PlayByPlayViewModel vm) {
-    // Jugadores demo para pruebas
     final jugadoresDemo = [
-      Player.create(
-        nombre: 'Juan Pérez',
-        cedula: '001-0000001-1',
-        fechaNacimiento: DateTime(2000, 5, 15),
-        numero: 1,
-        posicion: Posicion.receptor,
-      ),
-      Player.create(
-        nombre: 'Carlos López',
-        cedula: '001-0000002-2',
-        fechaNacimiento: DateTime(1999, 8, 22),
-        numero: 2,
-        posicion: Posicion.colocador,
-      ),
-      Player.create(
-        nombre: 'María García',
-        cedula: '001-0000003-3',
-        fechaNacimiento: DateTime(2001, 3, 10),
-        numero: 3,
-        posicion: Posicion.central,
-      ),
-      Player.create(
-        nombre: 'Ana Martínez',
-        cedula: '001-0000004-4',
-        fechaNacimiento: DateTime(2002, 11, 5),
-        numero: 4,
-        posicion: Posicion.opuesto,
-      ),
-      Player.create(
-        nombre: 'Pedro Sánchez',
-        cedula: '001-0000005-5',
-        fechaNacimiento: DateTime(2000, 7, 30),
-        numero: 5,
-        posicion: Posicion.receptor,
-      ),
-      Player.create(
-        nombre: 'Luis Rodríguez',
-        cedula: '001-0000006-6',
-        fechaNacimiento: DateTime(1998, 12, 18),
-        numero: 6,
-        posicion: Posicion.central,
-      ),
-      Player.create(
-        nombre: 'Sofia Díaz',
-        cedula: '001-0000007-7',
-        fechaNacimiento: DateTime(2001, 9, 25),
-        numero: 7,
-        posicion: Posicion.libre,
-      ),
+      Player.create(nombre: 'Juan Pérez', cedula: '001-0000001-1', fechaNacimiento: DateTime(2000, 5, 15), numero: 1, posicion: Posicion.receptor),
+      Player.create(nombre: 'Carlos López', cedula: '001-0000002-2', fechaNacimiento: DateTime(1999, 8, 22), numero: 2, posicion: Posicion.colocador),
+      Player.create(nombre: 'María García', cedula: '001-0000003-3', fechaNacimiento: DateTime(2001, 3, 10), numero: 3, posicion: Posicion.central),
+      Player.create(nombre: 'Ana Martínez', cedula: '001-0000004-4', fechaNacimiento: DateTime(2002, 11, 5), numero: 4, posicion: Posicion.opuesto),
+      Player.create(nombre: 'Pedro Sánchez', cedula: '001-0000005-5', fechaNacimiento: DateTime(2000, 7, 30), numero: 5, posicion: Posicion.receptor),
+      Player.create(nombre: 'Luis Rodríguez', cedula: '001-0000006-6', fechaNacimiento: DateTime(1998, 12, 18), numero: 6, posicion: Posicion.central),
+      Player.create(nombre: 'Sofia Díaz', cedula: '001-0000007-7', fechaNacimiento: DateTime(2001, 9, 25), numero: 7, posicion: Posicion.libre),
     ];
-
     vm.setJugadoresLocal(jugadoresDemo);
     vm.setJugadoresVisitante(jugadoresDemo);
   }
 
   String _posicionToString(Posicion posicion) {
     switch (posicion) {
-      case Posicion.colocador:
-        return 'Colocador';
-      case Posicion.opuesto:
-        return 'Opuesto';
-      case Posicion.central:
-        return 'Central';
-      case Posicion.receptor:
-        return 'Receptor';
-      case Posicion.libre:
-        return 'Líbero';
+      case Posicion.colocador: return 'Armador';
+      case Posicion.opuesto: return 'Opuesto';
+      case Posicion.central: return 'Central';
+      case Posicion.receptor: return 'Punta (Receptor)';
+      case Posicion.libre: return 'Líbero';
     }
   }
 }

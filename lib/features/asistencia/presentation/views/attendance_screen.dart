@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/themes/app_colors.dart';
 import '../../../estadisticas/data/models/models.dart';
 import '../../../estadisticas/data/local_db/database_service.dart';
 
@@ -52,7 +53,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       builder: (context, child) => Theme(
         data: ThemeData.dark().copyWith(
           colorScheme: const ColorScheme.dark(
-            primary: Color(0xFFFF8C00),
+            primary: AppColors.accent,
             onPrimary: Colors.white,
           ),
         ),
@@ -79,7 +80,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Asistencia guardada'),
-            backgroundColor: Color(0xFF0081CF),
+            backgroundColor: AppColors.primary,
           ),
         );
       }
@@ -116,9 +117,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         '${_selectedDate.year}';
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1E293B),
+        backgroundColor: AppColors.surface,
         title: const Text('Asistencia', style: TextStyle(color: Colors.white)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -127,7 +128,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         actions: [
           if (!_loading)
             IconButton(
-              icon: const Icon(Icons.save, color: Color(0xFFFF8C00)),
+              icon: const Icon(Icons.save, color: AppColors.accent),
               onPressed: _saving ? null : _save,
               tooltip: 'Guardar',
             ),
@@ -139,7 +140,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
   Widget _buildBody(String dateStr) {
     if (_loading) {
-      return const Center(child: CircularProgressIndicator(color: Color(0xFFFF8C00)));
+      return const Center(child: CircularProgressIndicator(color: AppColors.accent));
     }
     if (_error != null) {
       return Center(
@@ -154,7 +155,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               onPressed: _load,
               icon: const Icon(Icons.refresh),
               label: const Text('Reintentar'),
-              style: FilledButton.styleFrom(backgroundColor: const Color(0xFFFF8C00)),
+              style: FilledButton.styleFrom(backgroundColor: AppColors.accent),
             ),
           ],
         ),
@@ -180,10 +181,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   Widget _dateHeader(String dateStr) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      color: const Color(0xFF1E293B),
+      color: AppColors.surface,
       child: Row(
         children: [
-          const Icon(Icons.calendar_today, color: Color(0xFFFF8C00), size: 18),
+          const Icon(Icons.calendar_today, color: AppColors.accent, size: 18),
           const SizedBox(width: 12),
           const Text('Fecha:', style: TextStyle(color: Colors.white54, fontSize: 13)),
           const SizedBox(width: 8),
@@ -192,13 +193,13 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                border: Border.all(color: const Color(0xFFFF8C00).withOpacity(0.5)),
+                border: Border.all(color: AppColors.accent.withOpacity(0.5)),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
                 dateStr,
                 style: const TextStyle(
-                  color: Color(0xFFFF8C00),
+                  color: AppColors.accent,
                   fontWeight: FontWeight.w600,
                   fontSize: 14,
                 ),
@@ -230,7 +231,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             onPressed: () => Navigator.pop(context),
             icon: const Icon(Icons.arrow_back),
             label: const Text('Volver'),
-            style: FilledButton.styleFrom(backgroundColor: const Color(0xFF1E293B)),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.surface),
           ),
         ],
       ),
@@ -244,7 +245,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: asistio ? Colors.green.withOpacity(0.3) : Colors.red.withOpacity(0.3),
@@ -255,7 +256,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
         leading: CircleAvatar(
           radius: 18,
-          backgroundColor: p.esCapitan ? const Color(0xFFFF8C00) : const Color(0xFF0081CF),
+          backgroundColor: p.esCapitan ? AppColors.accent : AppColors.primary,
           child: Text(
             '${p.numero}',
             style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13),
@@ -266,7 +267,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             Text(p.nombre, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500)),
             if (p.esCapitan) ...[
               const SizedBox(width: 4),
-              const Icon(Icons.star, color: Color(0xFFFF8C00), size: 14),
+              const Icon(Icons.star, color: AppColors.accent, size: 14),
             ],
           ],
         ),
@@ -323,7 +324,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: const BoxDecoration(
-        color: Color(0xFF1E293B),
+        color: AppColors.surface,
         border: Border(top: BorderSide(color: Colors.white12)),
       ),
       child: Row(
@@ -340,7 +341,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 : const Icon(Icons.save, size: 18),
             label: Text(_saving ? 'Guardando...' : 'Guardar'),
             style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFFFF8C00),
+              backgroundColor: AppColors.accent,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),

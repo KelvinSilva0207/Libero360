@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/themes/app_colors.dart';
 import '../../../estadisticas/data/models/models.dart';
 import '../../../estadisticas/data/local_db/database_service.dart';
 import 'athlete_form_screen.dart';
@@ -51,9 +52,9 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1E293B),
+        backgroundColor: AppColors.surface,
         title: const Text('Atletas', style: TextStyle(color: Colors.white)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -69,7 +70,7 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
       body: _buildBody(),
       floatingActionButton: FloatingActionButton(
         onPressed: _addAthlete,
-        backgroundColor: const Color(0xFFFF8C00),
+        backgroundColor: AppColors.accent,
         child: const Icon(Icons.add, color: Colors.white),
       ),
     );
@@ -92,7 +93,7 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
               onPressed: _load,
               icon: const Icon(Icons.refresh),
               label: const Text('Reintentar'),
-              style: FilledButton.styleFrom(backgroundColor: const Color(0xFFFF8C00)),
+              style: FilledButton.styleFrom(backgroundColor: AppColors.accent),
             ),
           ],
         ),
@@ -113,7 +114,7 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
       );
     }
     return RefreshIndicator(
-      color: const Color(0xFFFF8C00),
+      color: AppColors.accent,
       onRefresh: _load,
       child: ListView.builder(
         padding: const EdgeInsets.all(12),
@@ -130,14 +131,14 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(14),
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         leading: CircleAvatar(
           radius: 22,
-          backgroundColor: p.esCapitan ? const Color(0xFFFF8C00) : const Color(0xFF0081CF),
+          backgroundColor: p.esCapitan ? AppColors.accent : AppColors.primary,
           child: Text(
             '${p.numero}',
             style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),

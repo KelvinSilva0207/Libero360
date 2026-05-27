@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/themes/app_colors.dart';
 import '../../../estadisticas/data/models/models.dart';
 import '../../data/match_config.dart';
 import 'player_selection_screen.dart';
@@ -50,55 +51,60 @@ class _MatchSetupScreenState extends State<MatchSetupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1E293B),
+        backgroundColor: AppColors.surface,
         title: const Text('Configurar Partido', style: TextStyle(color: Colors.white)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Image.asset('assets/images/logo_libero.png', width: 80, height: 80),
-            const SizedBox(height: 20),
-            const Text(
-              'NUEVO PARTIDO',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Color(0xFFFF8C00), fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 2),
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 520),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Image.asset('assets/images/logo_libero.png', width: 80, height: 80),
+                const SizedBox(height: 20),
+                const Text(
+                  'NUEVO PARTIDO',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: AppColors.accent, fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 2),
+                ),
+                const SizedBox(height: 32),
+                _section('Equipos'),
+                const SizedBox(height: 12),
+                _buildTextField(_localCtrl, 'Equipo Local', Icons.shield),
+                const SizedBox(height: 12),
+                _buildTextField(_visitorCtrl, 'Equipo Visitante', Icons.shield_outlined),
+                const SizedBox(height: 24),
+                _section('Detalles'),
+                const SizedBox(height: 12),
+                _buildTipoDropdown(),
+                const SizedBox(height: 12),
+                _buildSetsSelector(),
+                const SizedBox(height: 12),
+                _buildTextField(_lugarCtrl, 'Lugar (opcional)', Icons.location_on),
+                const SizedBox(height: 32),
+                FilledButton.icon(
+                  onPressed: _continuar,
+                  icon: const Icon(Icons.arrow_forward, size: 20),
+                  label: const Text('Seleccionar Jugadores'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.accent,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+                const SizedBox(height: 24),
+              ],
             ),
-            const SizedBox(height: 32),
-            _section('Equipos'),
-            const SizedBox(height: 12),
-            _buildTextField(_localCtrl, 'Equipo Local', Icons.shield),
-            const SizedBox(height: 12),
-            _buildTextField(_visitorCtrl, 'Equipo Visitante', Icons.shield_outlined),
-            const SizedBox(height: 24),
-            _section('Detalles'),
-            const SizedBox(height: 12),
-            _buildTipoDropdown(),
-            const SizedBox(height: 12),
-            _buildSetsSelector(),
-            const SizedBox(height: 12),
-            _buildTextField(_lugarCtrl, 'Lugar (opcional)', Icons.location_on),
-            const SizedBox(height: 32),
-            FilledButton.icon(
-              onPressed: _continuar,
-              icon: const Icon(Icons.arrow_forward),
-              label: const Text('Seleccionar Jugadores'),
-              style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFFFF8C00),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
-            const SizedBox(height: 24),
-          ],
+          ),
         ),
       ),
     );
@@ -108,7 +114,7 @@ class _MatchSetupScreenState extends State<MatchSetupScreen> {
     return Text(
       title,
       style: const TextStyle(
-        color: Color(0xFFFF8C00), fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 1.2,
+        color: AppColors.accent, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 1.2,
       ),
     );
   }
@@ -120,13 +126,16 @@ class _MatchSetupScreenState extends State<MatchSetupScreen> {
       decoration: InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(color: Colors.white54),
-        prefixIcon: Icon(icon, color: const Color(0xFF0081CF), size: 20),
+        prefixIcon: Padding(
+          padding: const EdgeInsetsDirectional.only(start: 12, end: 8),
+          child: Icon(icon, color: AppColors.primary, size: 20),
+        ),
         filled: true,
-        fillColor: const Color(0xFF1E293B),
+        fillColor: AppColors.surfaceLight,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFFF8C00)),
+          borderSide: const BorderSide(color: AppColors.accent),
         ),
       ),
     );
@@ -135,14 +144,17 @@ class _MatchSetupScreenState extends State<MatchSetupScreen> {
   Widget _buildTipoDropdown() {
     return DropdownButtonFormField<TipoPartido>(
       value: _tipoPartido,
-      dropdownColor: const Color(0xFF1E293B),
+      dropdownColor: AppColors.surfaceLight,
       style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
         labelText: 'Tipo de Partido',
         labelStyle: const TextStyle(color: Colors.white54),
-        prefixIcon: const Icon(Icons.category, color: Color(0xFF0081CF), size: 20),
+        prefixIcon: const Padding(
+          padding: EdgeInsetsDirectional.only(start: 12, end: 8),
+          child: Icon(Icons.category, color: AppColors.primary, size: 20),
+        ),
         filled: true,
-        fillColor: const Color(0xFF1E293B),
+        fillColor: AppColors.surfaceLight,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
       ),
       items: const [
@@ -160,13 +172,15 @@ class _MatchSetupScreenState extends State<MatchSetupScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
+        color: AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         children: [
-          const Icon(Icons.format_list_numbered, color: Color(0xFF0081CF), size: 20),
-          const SizedBox(width: 12),
+          const Padding(
+            padding: EdgeInsetsDirectional.only(start: 4, end: 8),
+            child: Icon(Icons.format_list_numbered, color: AppColors.primary, size: 20),
+          ),
           const Text('Sets a ganar:', style: TextStyle(color: Colors.white70, fontSize: 14)),
           const Spacer(),
           _setChip(3),
@@ -184,11 +198,9 @@ class _MatchSetupScreenState extends State<MatchSetupScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         decoration: BoxDecoration(
-          color: selected ? const Color(0xFFFF8C00) : Colors.transparent,
+          color: selected ? AppColors.accent : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: selected ? const Color(0xFFFF8C00) : Colors.white24,
-          ),
+          border: Border.all(color: selected ? AppColors.accent : Colors.white24),
         ),
         child: Text(
           '$n',

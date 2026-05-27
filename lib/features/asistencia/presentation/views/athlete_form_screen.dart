@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../../../core/themes/app_colors.dart';
 import '../../../estadisticas/data/models/models.dart';
 import '../../../estadisticas/data/local_db/database_service.dart';
 
@@ -43,7 +44,7 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
       builder: (context, child) => Theme(
         data: ThemeData.dark().copyWith(
           colorScheme: const ColorScheme.dark(
-            primary: Color(0xFFFF8C00),
+            primary: AppColors.accent,
             onPrimary: Colors.white,
           ),
         ),
@@ -100,9 +101,9 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: AppColors.surfaceDark,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1E293B),
+        backgroundColor: AppColors.surfaceLight,
         title: const Text('Nuevo Atleta', style: TextStyle(color: Colors.white)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -165,7 +166,7 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
                     : const Icon(Icons.save),
                 label: Text(_saving ? 'Guardando...' : 'Guardar Atleta'),
                 style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFFFF8C00),
+                  backgroundColor: AppColors.accent,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -183,7 +184,7 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
     return Text(
       title,
       style: const TextStyle(
-        color: Color(0xFFFF8C00),
+        color: AppColors.accent,
         fontWeight: FontWeight.bold,
         fontSize: 14,
         letterSpacing: 1.2,
@@ -208,13 +209,16 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
       decoration: InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(color: Colors.white54),
-        prefixIcon: Icon(icon, color: const Color(0xFF0081CF), size: 20),
+        prefixIcon: Padding(
+          padding: const EdgeInsetsDirectional.only(start: 12, end: 8),
+          child: Icon(icon, color: AppColors.primary, size: 20),
+        ),
         filled: true,
-        fillColor: const Color(0xFF1E293B),
+        fillColor: AppColors.surfaceLight,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFFF8C00)),
+          borderSide: const BorderSide(color: AppColors.accent),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -233,13 +237,16 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
           decoration: InputDecoration(
             labelText: 'Fecha de Nacimiento ($_edadCalculada)',
             labelStyle: const TextStyle(color: Colors.white54),
-            prefixIcon: const Icon(Icons.cake, color: Color(0xFF0081CF), size: 20),
+            prefixIcon: const Padding(
+              padding: EdgeInsetsDirectional.only(start: 12, end: 8),
+              child: Icon(Icons.cake, color: AppColors.primary, size: 20),
+            ),
             filled: true,
-            fillColor: const Color(0xFF1E293B),
+            fillColor: AppColors.surfaceLight,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFFF8C00)),
+              borderSide: const BorderSide(color: AppColors.accent),
             ),
             suffixIcon: const Icon(Icons.calendar_today, color: Colors.white38, size: 18),
           ),
@@ -256,14 +263,17 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
   Widget _buildPosicionDropdown() {
     return DropdownButtonFormField<Posicion>(
       value: _posicion,
-      dropdownColor: const Color(0xFF1E293B),
+      dropdownColor: AppColors.surfaceLight,
       style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
         labelText: 'Posición Principal',
         labelStyle: const TextStyle(color: Colors.white54),
-        prefixIcon: const Icon(Icons.sports, color: Color(0xFF0081CF), size: 20),
+        prefixIcon: const Padding(
+          padding: EdgeInsetsDirectional.only(start: 12, end: 8),
+          child: Icon(Icons.sports, color: AppColors.primary, size: 20),
+        ),
         filled: true,
-        fillColor: const Color(0xFF1E293B),
+        fillColor: AppColors.surfaceLight,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
       ),
       items: [
@@ -287,14 +297,17 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
   Widget _buildSaludDropdown() {
     return DropdownButtonFormField<EstadoSalud>(
       value: _estadoSalud,
-      dropdownColor: const Color(0xFF1E293B),
+      dropdownColor: AppColors.surfaceLight,
       style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
         labelText: 'Estado de Salud',
         labelStyle: const TextStyle(color: Colors.white54),
-        prefixIcon: const Icon(Icons.health_and_safety, color: Color(0xFF0081CF), size: 20),
+        prefixIcon: const Padding(
+          padding: EdgeInsetsDirectional.only(start: 12, end: 8),
+          child: Icon(Icons.health_and_safety, color: AppColors.primary, size: 20),
+        ),
         filled: true,
-        fillColor: const Color(0xFF1E293B),
+        fillColor: AppColors.surfaceLight,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
       ),
       items: EstadoSalud.values.map((e) {
@@ -313,19 +326,19 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
+        color: AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         children: [
-          Icon(icon, color: const Color(0xFF0081CF), size: 20),
+          Icon(icon, color: AppColors.primary, size: 20),
           const SizedBox(width: 12),
           Text(label, style: const TextStyle(color: Colors.white, fontSize: 14)),
           const Spacer(),
           Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: const Color(0xFFFF8C00),
+            activeColor: AppColors.accent,
           ),
         ],
       ),

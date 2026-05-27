@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/themes/app_colors.dart';
 import '../../../estadisticas/data/models/models.dart';
 import '../../../estadisticas/data/local_db/database_service.dart';
 import '../../data/match_config.dart';
@@ -86,9 +87,9 @@ class _PlayerSelectionScreenState extends State<PlayerSelectionScreen> {
   Widget build(BuildContext context) {
     final nombres = '${widget.config.localName} vs ${widget.config.visitorName}';
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1E293B),
+        backgroundColor: AppColors.surface,
         title: Text(nombres, style: const TextStyle(color: Colors.white, fontSize: 14)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -102,7 +103,7 @@ class _PlayerSelectionScreenState extends State<PlayerSelectionScreen> {
 
   Widget _buildBody() {
     if (_loading) {
-      return const Center(child: CircularProgressIndicator(color: Color(0xFFFF8C00)));
+      return const Center(child: CircularProgressIndicator(color: AppColors.accent));
     }
     if (_error != null) {
       return Center(
@@ -115,9 +116,9 @@ class _PlayerSelectionScreenState extends State<PlayerSelectionScreen> {
             const SizedBox(height: 16),
             FilledButton.icon(
               onPressed: _load,
-              icon: const Icon(Icons.refresh),
+              icon: const Icon(Icons.refresh, size: 18),
               label: const Text('Reintentar'),
-              style: FilledButton.styleFrom(backgroundColor: const Color(0xFFFF8C00)),
+              style: FilledButton.styleFrom(backgroundColor: AppColors.accent),
             ),
           ],
         ),
@@ -139,10 +140,10 @@ class _PlayerSelectionScreenState extends State<PlayerSelectionScreen> {
         : widget.config.tipoPartido == TipoPartido.liga ? 'Liga' : 'Torneo';
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      color: const Color(0xFF1E293B),
+      color: AppColors.surface,
       child: Row(
         children: [
-          const Icon(Icons.info_outline, color: Color(0xFFFF8C00), size: 16),
+          const Icon(Icons.info_outline, color: AppColors.accent, size: 16),
           const SizedBox(width: 8),
           Text(
             '$tipoStr · ${widget.config.setsTotales} sets',
@@ -185,9 +186,12 @@ class _PlayerSelectionScreenState extends State<PlayerSelectionScreen> {
               decoration: InputDecoration(
                 hintText: 'Buscar atleta...',
                 hintStyle: const TextStyle(color: Colors.white24),
-                prefixIcon: const Icon(Icons.search, color: Colors.white24, size: 18),
+                prefixIcon: const Padding(
+                  padding: EdgeInsetsDirectional.only(start: 12, end: 8),
+                  child: Icon(Icons.search, color: Colors.white24, size: 18),
+                ),
                 filled: true,
-                fillColor: const Color(0xFF1E293B),
+                fillColor: AppColors.surfaceLight,
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
                 contentPadding: const EdgeInsets.symmetric(vertical: 8),
               ),
@@ -210,10 +214,10 @@ class _PlayerSelectionScreenState extends State<PlayerSelectionScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
+        color: AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: selected ? const Color(0xFFFF8C00).withOpacity(0.5) : Colors.transparent,
+          color: selected ? AppColors.accent.withValues(alpha: 0.5) : Colors.transparent,
           width: 1.5,
         ),
       ),
@@ -226,7 +230,7 @@ class _PlayerSelectionScreenState extends State<PlayerSelectionScreen> {
             children: [
               CircleAvatar(
                 radius: 18,
-                backgroundColor: selected ? const Color(0xFFFF8C00) : const Color(0xFF0081CF),
+                backgroundColor: selected ? AppColors.accent : AppColors.primary,
                 child: Text('${p.numero}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13)),
               ),
               const SizedBox(width: 10),
@@ -243,10 +247,10 @@ class _PlayerSelectionScreenState extends State<PlayerSelectionScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF0081CF).withOpacity(0.2),
+                            color: AppColors.primary.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(4),
                           ),
-                          child: Text(p.posicionLabel, style: const TextStyle(color: Color(0xFF0081CF), fontSize: 10, fontWeight: FontWeight.w500)),
+                          child: Text(p.posicionLabel, style: const TextStyle(color: AppColors.primary, fontSize: 10, fontWeight: FontWeight.w500)),
                         ),
                         const SizedBox(width: 6),
                         Container(
@@ -260,7 +264,7 @@ class _PlayerSelectionScreenState extends State<PlayerSelectionScreen> {
               ),
               Icon(
                 selected ? Icons.check_circle : Icons.radio_button_unchecked,
-                color: selected ? const Color(0xFFFF8C00) : Colors.white24,
+                color: selected ? AppColors.accent : Colors.white24,
                 size: 22,
               ),
             ],
@@ -274,18 +278,18 @@ class _PlayerSelectionScreenState extends State<PlayerSelectionScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: const BoxDecoration(
-        color: Color(0xFF1E293B),
+        color: AppColors.surface,
         border: Border(top: BorderSide(color: Colors.white12)),
       ),
       child: SafeArea(
         child: FilledButton.icon(
           onPressed: _selectedIds.length < 6 ? null : _iniciarPartido,
-          icon: const Icon(Icons.play_arrow),
+          icon: const Icon(Icons.play_arrow, size: 20),
           label: Text(_selectedIds.length < 6
               ? 'Selecciona ${6 - _selectedIds.length} más'
               : 'Iniciar Partido'),
           style: FilledButton.styleFrom(
-            backgroundColor: const Color(0xFFFF8C00),
+            backgroundColor: AppColors.accent,
             foregroundColor: Colors.white,
             disabledBackgroundColor: Colors.grey.shade800,
             padding: const EdgeInsets.symmetric(vertical: 14),

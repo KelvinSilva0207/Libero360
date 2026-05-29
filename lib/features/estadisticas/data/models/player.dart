@@ -4,6 +4,7 @@ enum Posicion {
   central,
   receptor,
   libre,
+  sinDefinir,
 }
 
 enum EstadoSalud {
@@ -18,7 +19,7 @@ class Player {
   String cedula = '';
   DateTime fechaNacimiento = DateTime.now();
   int numero = 0;
-  Posicion posicion = Posicion.colocador;
+  Posicion posicion = Posicion.sinDefinir;
   bool esCapitan = false;
   String? fotoUrl;
   EstadoSalud estadoSalud = EstadoSalud.disponible;
@@ -32,7 +33,7 @@ class Player {
     required String cedula,
     required DateTime fechaNacimiento,
     required int numero,
-    required Posicion posicion,
+    Posicion posicion = Posicion.sinDefinir,
     bool esCapitan = false,
     String? fotoUrl,
     EstadoSalud estadoSalud = EstadoSalud.disponible,
@@ -68,6 +69,7 @@ class Player {
       case Posicion.central: return 'Central';
       case Posicion.receptor: return 'Punta';
       case Posicion.libre: return 'Líbero';
+      case Posicion.sinDefinir: return 'Sin definir';
     }
   }
 

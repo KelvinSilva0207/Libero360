@@ -20,7 +20,7 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
   final _fotoUrlCtrl = TextEditingController();
 
   DateTime _fechaNacimiento = DateTime.now().subtract(const Duration(days: 365 * 20));
-  Posicion _posicion = Posicion.colocador;
+  Posicion _posicion = Posicion.sinDefinir;
   bool _esCapitan = false;
   EstadoSalud _estadoSalud = EstadoSalud.disponible;
   bool _saving = false;
@@ -276,13 +276,7 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
         fillColor: AppColors.surfaceLight,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
       ),
-      items: [
-        Posicion.colocador,
-        Posicion.opuesto,
-        Posicion.receptor,
-        Posicion.central,
-        Posicion.libre,
-      ].map((p) {
+      items: Posicion.values.map((p) {
         return DropdownMenuItem(
           value: p,
           child: Text(_posicionLabel(p)),
@@ -352,6 +346,7 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
       case Posicion.receptor: return 'Punta (Receptor)';
       case Posicion.central: return 'Central';
       case Posicion.libre: return 'Líbero';
+      case Posicion.sinDefinir: return 'Ninguna / Sin definir';
     }
   }
 

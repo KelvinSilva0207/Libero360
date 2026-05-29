@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/themes/app_colors.dart';
+import '../../../estadisticas/data/models/models.dart';
 import '../../data/match_config.dart';
 import '../viewmodels/partido_viewmodel.dart';
 import '../widgets/scoreboard_widget.dart';
@@ -66,6 +67,7 @@ class _MatchScreenState extends State<MatchScreen> {
               final isWide = constraints.maxWidth >= 768;
               return Scaffold(
                 backgroundColor: AppColors.background,
+                endDrawer: _buildEndDrawer(context),
                 body: SafeArea(
                   child: isWide
                       ? _buildDesktopLayout(context, vm)
@@ -158,6 +160,14 @@ class _MatchScreenState extends State<MatchScreen> {
       title: const Text('Partido', style: TextStyle(color: Colors.white, fontSize: 15)),
       centerTitle: true,
       actions: [
+        if (widget.config?.selectedPlayers.isNotEmpty == true)
+          Builder(
+            builder: (ctx) => IconButton(
+              icon: const Icon(Icons.menu, color: Colors.white),
+              onPressed: () => Scaffold.of(ctx).openEndDrawer(),
+              tooltip: 'Ver atletas',
+            ),
+          ),
         _pausePlayBtn(vm),
         _settingsBtn(context, vm),
       ],
@@ -375,6 +385,98 @@ class _MatchScreenState extends State<MatchScreen> {
             child: const Text('Finalizar', style: TextStyle(color: Colors.red)),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildEndDrawer(BuildContext context) {
+    final config = widget.config;
+    if (config == null || config.selectedPlayers.isEmpty) return const SizedBox.shrink();
+
+    final players = List<Player>.from(config.selectedPlayers)
+      ..sort((a, b) => a.numero.compareTo(b.numero));
+
+    return Drawer(
+      backgroundColor: AppColors.surface,
+      child: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              decoration: const BoxDecoration(
+                border: Border(bottom: BorderSide(color: Colors.white10)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.people, color: AppColors.accent, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Atletas (${players.length})',
+                    style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white54, size: 20),
+                    onPressed: () => Navigator.of(context).pop(),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: ListView.separated(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                itemCount: players.length,
+                separatorBuilder: (_, __) => const Divider(height: 1, color: Colors.white10),
+                itemBuilder: (_, i) {
+                  final p = players[i];
+                  final parts = p.nombre.trim().split(RegExp(r'\s+'));
+                  final firstName = parts.isNotEmpty ? parts[0] : p.nombre;
+                  final lastNameInitial = parts.length > 1 ? parts.last[0].toUpperCase() : '';
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 14,
+                          backgroundColor: AppColors.primary,
+                          child: Text(
+                            '${p.numero}',
+                            style: const TextStyle(
+                              color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            '$firstName ${lastNameInitial.isNotEmpty ? '$lastNameInitial.' : ''}',
+                            style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppColors.accent.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            p.posicionLabel,
+                            style: const TextStyle(
+                              color: AppColors.accent, fontSize: 9, fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -454,16 +454,12 @@ class _LiveStatsWidgetState extends State<LiveStatsWidget> {
 
   String _getPosicionCompleta(Posicion posicion) {
     switch (posicion) {
-      case Posicion.colocador:
-        return 'Colocador';
-      case Posicion.opuesto:
-        return 'Opuesto';
-      case Posicion.central:
-        return 'Central';
-      case Posicion.receptor:
-        return 'Receptor';
-      case Posicion.libre:
-        return 'Líbero';
+      case Posicion.colocador: return 'Colocador';
+      case Posicion.opuesto: return 'Opuesto';
+      case Posicion.central: return 'Central';
+      case Posicion.receptor: return 'Receptor';
+      case Posicion.libre: return 'Líbero';
+      case Posicion.sinDefinir: return 'Sin definir';
     }
   }
 }

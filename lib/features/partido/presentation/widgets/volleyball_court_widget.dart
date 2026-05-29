@@ -264,6 +264,7 @@ class _PlayerAvatarState extends State<_PlayerAvatar> {
       case Posicion.central: return 'CTR';
       case Posicion.receptor: return 'PUN';
       case Posicion.libre: return 'LIB';
+      case Posicion.sinDefinir: return '—';
     }
   }
 }

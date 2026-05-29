@@ -3,7 +3,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import 'core/themes/app_theme.dart';
 import 'features/auth/auth.dart';
-import 'features/partido/presentation/views/match_setup_screen.dart';
+import 'features/partido/presentation/views/match_start_dialog.dart';
 import 'features/asistencia/asistencia.dart';
 import 'features/estadisticas/presentation/views/play_by_play_screen.dart';
 
@@ -213,8 +213,9 @@ class HomeScreen extends StatelessWidget {
                           icon: FontAwesomeIcons.volleyball,
                           label: 'Partidos',
                           isWide: isWide,
-                          onTap: () => Navigator.push(
-                            context, MaterialPageRoute(builder: (_) => const MatchSetupScreen()),
+                          onTap: () => showDialog(
+                            context: context,
+                            builder: (_) => const MatchStartDialog(),
                           ),
                         ),
                         _FeatureButton(

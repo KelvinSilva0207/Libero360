@@ -236,16 +236,12 @@ class _StatRecorderWidgetState extends State<StatRecorderWidget> {
 
   String _getPosicionCorta(Posicion posicion) {
     switch (posicion) {
-      case Posicion.colocador:
-        return 'COL';
-      case Posicion.opuesto:
-        return 'OPP';
-      case Posicion.central:
-        return 'CEN';
-      case Posicion.receptor:
-        return 'REC';
-      case Posicion.libre:
-        return 'LIB';
+      case Posicion.colocador: return 'COL';
+      case Posicion.opuesto: return 'OPP';
+      case Posicion.central: return 'CEN';
+      case Posicion.receptor: return 'REC';
+      case Posicion.libre: return 'LIB';
+      case Posicion.sinDefinir: return '—';
     }
   }
 
@@ -429,16 +425,12 @@ class _StatRecorderWidgetState extends State<StatRecorderWidget> {
 
   String _getPosicionCompleta(Posicion posicion) {
     switch (posicion) {
-      case Posicion.colocador:
-        return 'Colocador';
-      case Posicion.opuesto:
-        return 'Opuesto';
-      case Posicion.central:
-        return 'Central';
-      case Posicion.receptor:
-        return 'Receptor';
-      case Posicion.libre:
-        return 'Líbero';
+      case Posicion.colocador: return 'Colocador';
+      case Posicion.opuesto: return 'Opuesto';
+      case Posicion.central: return 'Central';
+      case Posicion.receptor: return 'Receptor';
+      case Posicion.libre: return 'Líbero';
+      case Posicion.sinDefinir: return 'Sin definir';
     }
   }
 

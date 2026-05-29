@@ -521,6 +521,7 @@ class _PlayByPlayContent extends StatelessWidget {
       case Posicion.central: return 'Central';
       case Posicion.receptor: return 'Punta (Receptor)';
       case Posicion.libre: return 'Líbero';
+      case Posicion.sinDefinir: return 'Sin definir';
     }
   }
 }

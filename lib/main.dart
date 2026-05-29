@@ -3,7 +3,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import 'core/themes/app_theme.dart';
 import 'features/auth/auth.dart';
-import 'features/partido/partido.dart';
+import 'features/partido/presentation/views/match_setup_screen.dart';
 import 'features/asistencia/asistencia.dart';
 import 'features/estadisticas/presentation/views/play_by_play_screen.dart';
 
@@ -214,7 +214,7 @@ class HomeScreen extends StatelessWidget {
                           label: 'Partidos',
                           isWide: isWide,
                           onTap: () => Navigator.push(
-                            context, MaterialPageRoute(builder: (_) => const MatchScreen()),
+                            context, MaterialPageRoute(builder: (_) => const MatchSetupScreen()),
                           ),
                         ),
                         _FeatureButton(

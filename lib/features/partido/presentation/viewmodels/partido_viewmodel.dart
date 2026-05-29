@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:collection';
 import 'package:flutter/foundation.dart';
 import '../../../estadisticas/data/models/models.dart';
@@ -37,6 +38,22 @@ class PartidoViewModel extends ChangeNotifier {
   int get setsPorPartido => _setsPorPartido;
   int get tiempoPorSet => _tiempoPorSet;
 
+  // Timer
+  Timer? _timer;
+  int _duracionSegundos = 0;
+  int get duracionSegundos => _duracionSegundos;
+  int get duracionSegundosMatch => _duracionSegundos;
+
+  String get tiempoTranscurrido {
+    final h = _duracionSegundos ~/ 3600;
+    final m = (_duracionSegundos % 3600) ~/ 60;
+    final s = _duracionSegundos % 60;
+    if (h > 0) {
+      return '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+    }
+    return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+  }
+
   int get totalPuntosLocal =>
       _setScores.fold(0, (sum, e) => sum + e.key);
   int get totalPuntosVisitante =>
@@ -61,6 +78,7 @@ class PartidoViewModel extends ChangeNotifier {
       _match!.iniciar();
       await _matchRepository.guardar(_match!);
       _setScores = List.generate(_setsPorPartido, (_) => const MapEntry(0, 0));
+      _iniciarTimer();
     } catch (e) {
       _error = 'Error al iniciar partido: $e';
     } finally {
@@ -82,6 +100,16 @@ class PartidoViewModel extends ChangeNotifier {
         oldVisitorPts: oldVisitor,
         localScored: true,
       );
+
+      if (_match!.setActual > oldSet) {
+        await _guardarDuracion();
+        if (!_match!.isFinalizado) {
+          await _matchRepository.pausarPartido(_match!.id);
+        } else {
+          _detenerTimer();
+        }
+      }
+
       notifyListeners();
     } catch (e) {
       _error = 'Error: $e';
@@ -103,6 +131,16 @@ class PartidoViewModel extends ChangeNotifier {
         oldVisitorPts: oldVisitor,
         localScored: false,
       );
+
+      if (_match!.setActual > oldSet) {
+        await _guardarDuracion();
+        if (!_match!.isFinalizado) {
+          await _matchRepository.pausarPartido(_match!.id);
+        } else {
+          _detenerTimer();
+        }
+      }
+
       notifyListeners();
     } catch (e) {
       _error = 'Error: $e';
@@ -243,12 +281,38 @@ class PartidoViewModel extends ChangeNotifier {
   Future<void> finalizarPartido() async {
     if (_match == null) return;
     try {
+      _detenerTimer();
+      await _guardarDuracion();
       _match = await _matchRepository.finalizarPartido(_match!.id);
       notifyListeners();
     } catch (e) {
       _error = 'Error: $e';
       notifyListeners();
     }
+  }
+
+  // ========== TIMER ==========
+
+  void _iniciarTimer() {
+    _detenerTimer();
+    _duracionSegundos = 0;
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (_match?.isActivo == true) {
+        _duracionSegundos++;
+        notifyListeners();
+      }
+    });
+  }
+
+  void _detenerTimer() {
+    _timer?.cancel();
+    _timer = null;
+  }
+
+  Future<void> _guardarDuracion() async {
+    if (_match == null) return;
+    _match!.duracionSegundos = _duracionSegundos;
+    await _matchRepository.guardar(_match!);
   }
 
   void _setLoading(bool v) {

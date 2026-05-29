@@ -440,12 +440,18 @@ class _MatchScreenState extends State<MatchScreen> {
             vm.isPartidoActivo ? 'En juego' : 'Pausado',
             'Estado',
           ),
+          const SizedBox(width: 8),
+          _infoChip(
+            Icons.access_time,
+            vm.tiempoTranscurrido,
+            vm.isPartidoActivo ? 'Tiempo' : 'Detenido',
+          ),
           if (vm.tiempoPorSet > 0) ...[
             const SizedBox(width: 8),
             _infoChip(
-              Icons.access_time,
+              Icons.hourglass_empty,
               '${vm.tiempoPorSet} min',
-              'Tiempo',
+              'Límite',
             ),
           ],
           const Spacer(),

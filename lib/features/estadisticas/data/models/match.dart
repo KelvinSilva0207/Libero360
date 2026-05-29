@@ -31,6 +31,7 @@ class Match {
   String? resultadoFinal;
   String? lugar;
   int? seasonId;
+  int duracionSegundos = 0;
 
   Match();
 

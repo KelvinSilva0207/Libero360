@@ -29,15 +29,9 @@ class _MatchSetupScreenState extends State<MatchSetupScreen> {
   void _continuar() {
     final local = _localCtrl.text.trim();
     final visitor = _visitorCtrl.text.trim();
-    if (local.isEmpty || visitor.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Ingresa los nombres de ambos equipos'), backgroundColor: Colors.red),
-      );
-      return;
-    }
     final config = MatchConfig(
-      localName: local,
-      visitorName: visitor,
+      localName: local.isNotEmpty ? local : 'Local',
+      visitorName: visitor.isNotEmpty ? visitor : 'Visitante',
       setsTotales: _setsTotales,
       tipoPartido: _tipoPartido,
       lugar: _lugarCtrl.text.trim().isEmpty ? null : _lugarCtrl.text.trim(),

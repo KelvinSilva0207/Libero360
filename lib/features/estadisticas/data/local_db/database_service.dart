@@ -555,6 +555,7 @@ class DatabaseService {
     'resultadoFinal': m.resultadoFinal ?? '',
     'lugar': m.lugar ?? '',
     'seasonId': m.seasonId ?? 0,
+    'duracionSegundos': m.duracionSegundos,
   };
 
   Match _matchFromMap(Map<String, dynamic> map) => Match()
@@ -574,7 +575,8 @@ class DatabaseService {
     ..setsTotales = map['setsTotales'] as int? ?? 5
     ..resultadoFinal = (map['resultadoFinal'] as String?)?.isNotEmpty == true ? map['resultadoFinal'] as String? : null
     ..lugar = (map['lugar'] as String?)?.isNotEmpty == true ? map['lugar'] as String? : null
-    ..seasonId = map['seasonId'] as int? ?? 0;
+    ..seasonId = map['seasonId'] as int? ?? 0
+    ..duracionSegundos = map['duracionSegundos'] as int? ?? 0;
 
   Map<String, dynamic> _attendanceToMap(AttendanceRecord r) => {
     'playerId': r.playerId,

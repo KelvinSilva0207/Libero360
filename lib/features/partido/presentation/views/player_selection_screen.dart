@@ -58,15 +58,6 @@ class _PlayerSelectionScreenState extends State<PlayerSelectionScreen> {
   }
 
   void _iniciarPartido() {
-    if (_selectedIds.length < 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Selecciona al menos 6 jugadores'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
     final selected = _allPlayers.where((p) => _selectedIds.contains(p.id)).toList();
     widget.config.selectedPlayers = selected.take(12).toList();
     Navigator.pushReplacement(
@@ -282,19 +273,39 @@ class _PlayerSelectionScreenState extends State<PlayerSelectionScreen> {
         border: Border(top: BorderSide(color: Colors.white12)),
       ),
       child: SafeArea(
-        child: FilledButton.icon(
-          onPressed: _selectedIds.length < 6 ? null : _iniciarPartido,
-          icon: const Icon(Icons.play_arrow, size: 20),
-          label: Text(_selectedIds.length < 6
-              ? 'Selecciona ${6 - _selectedIds.length} más'
-              : 'Iniciar Partido'),
-          style: FilledButton.styleFrom(
-            backgroundColor: AppColors.accent,
-            foregroundColor: Colors.white,
-            disabledBackgroundColor: Colors.grey.shade800,
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
+        child: Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: _iniciarPartido,
+                icon: const Icon(Icons.skip_next, size: 18),
+                label: const Text('Saltar'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.white54,
+                  side: const BorderSide(color: Colors.white24),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              flex: 2,
+              child: FilledButton.icon(
+                onPressed: _iniciarPartido,
+                icon: const Icon(Icons.play_arrow, size: 20),
+                label: Text(_selectedIds.isEmpty
+                    ? 'Comenzar Partido'
+                    : 'Iniciar (${_selectedIds.length})'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.accent,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

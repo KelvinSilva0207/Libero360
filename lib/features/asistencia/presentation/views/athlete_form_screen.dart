@@ -15,7 +15,7 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nombreCtrl = TextEditingController();
   final _cedulaCtrl = TextEditingController();
-  final _numeroCtrl = TextEditingController(text: '1');
+  final _numeroCtrl = TextEditingController();
   final _condicionFisicaCtrl = TextEditingController(text: 'Excelente');
   final _fotoUrlCtrl = TextEditingController();
 
@@ -75,7 +75,7 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
         nombre: _nombreCtrl.text.trim(),
         cedula: _cedulaCtrl.text.trim(),
         fechaNacimiento: _fechaNacimiento,
-        numero: int.parse(_numeroCtrl.text.trim()),
+        numero: _numeroCtrl.text.trim().isEmpty ? null : int.parse(_numeroCtrl.text.trim()),
         posicion: _posicion,
         esCapitan: _esCapitan,
         fotoUrl: _fotoUrlCtrl.text.trim().isEmpty ? null : _fotoUrlCtrl.text.trim(),
@@ -132,13 +132,9 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
               _buildDateField(),
               const SizedBox(height: 12),
               _buildTextField(
-                _numeroCtrl, 'Número de Camisa', Icons.numbers,
+                _numeroCtrl, 'Número de Camisa (opcional)', Icons.numbers,
                 keyboardType: TextInputType.number,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                validator: (v) {
-                  if (v == null || v.trim().isEmpty) return 'Ingrese el número';
-                  return null;
-                },
               ),
               const SizedBox(height: 20),
               _section('Posición y Rol'),
@@ -213,6 +209,8 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
           padding: const EdgeInsetsDirectional.only(start: 12, end: 8),
           child: Icon(icon, color: AppColors.primary, size: 20),
         ),
+        prefixIconConstraints: const BoxConstraints(minWidth: 44, minHeight: 20),
+        contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
         filled: true,
         fillColor: AppColors.surfaceLight,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
@@ -249,6 +247,8 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
               borderSide: const BorderSide(color: AppColors.accent),
             ),
             suffixIcon: const Icon(Icons.calendar_today, color: Colors.white38, size: 18),
+            prefixIconConstraints: const BoxConstraints(minWidth: 44, minHeight: 20),
+            contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
           ),
           controller: TextEditingController(
             text:
@@ -275,6 +275,8 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
         filled: true,
         fillColor: AppColors.surfaceLight,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+        prefixIconConstraints: const BoxConstraints(minWidth: 44, minHeight: 20),
+        contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
       ),
       items: Posicion.values.map((p) {
         return DropdownMenuItem(
@@ -303,6 +305,8 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
         filled: true,
         fillColor: AppColors.surfaceLight,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+        prefixIconConstraints: const BoxConstraints(minWidth: 44, minHeight: 20),
+        contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
       ),
       items: EstadoSalud.values.map((e) {
         return DropdownMenuItem(

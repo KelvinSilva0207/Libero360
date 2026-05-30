@@ -18,7 +18,7 @@ class Player {
   String nombre = '';
   String cedula = '';
   DateTime fechaNacimiento = DateTime.now();
-  int numero = 0;
+  int? numero;
   Posicion posicion = Posicion.sinDefinir;
   bool esCapitan = false;
   String? fotoUrl;
@@ -32,7 +32,7 @@ class Player {
     required String nombre,
     required String cedula,
     required DateTime fechaNacimiento,
-    required int numero,
+    int? numero,
     Posicion posicion = Posicion.sinDefinir,
     bool esCapitan = false,
     String? fotoUrl,
@@ -82,5 +82,5 @@ class Player {
   }
 
   @override
-  String toString() => 'Player(id: $id, nombre: $nombre, #$numero, ${posicionLabel})';
+  String toString() => 'Player(id: $id, nombre: $nombre, #${numero ?? 0}, ${posicionLabel})';
 }

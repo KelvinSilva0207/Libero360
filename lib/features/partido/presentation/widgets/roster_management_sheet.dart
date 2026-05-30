@@ -55,7 +55,7 @@ class _RosterManagementSheetState extends State<RosterManagementSheet> {
         if (q.isEmpty) return true;
         return p.nombre.toLowerCase().contains(lower) ||
             p.cedula.toLowerCase().contains(lower) ||
-            p.numero.toString().contains(lower);
+            (p.numero?.toString() ?? '').contains(lower);
       }).toList();
     });
   }

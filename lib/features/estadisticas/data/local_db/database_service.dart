@@ -59,7 +59,7 @@ class DatabaseService {
     final lower = query.toLowerCase();
     return all.where((p) =>
       p.nombre.toLowerCase().contains(lower) ||
-      p.numero.toString().contains(lower)
+      (p.numero?.toString() ?? '').contains(lower)
     ).toList();
   }
 
@@ -516,7 +516,7 @@ class DatabaseService {
     'nombre': p.nombre,
     'cedula': p.cedula,
     'fechaNacimiento': p.fechaNacimiento.millisecondsSinceEpoch,
-    'numero': p.numero,
+    'numero': p.numero ?? 0,
     'posicion': p.posicion.index,
     'esCapitan': p.esCapitan ? 1 : 0,
     'fotoUrl': p.fotoUrl ?? '',
@@ -529,7 +529,7 @@ class DatabaseService {
     ..nombre = map['nombre'] as String? ?? ''
     ..cedula = map['cedula'] as String? ?? ''
     ..fechaNacimiento = DateTime.fromMillisecondsSinceEpoch(map['fechaNacimiento'] as int? ?? DateTime.now().millisecondsSinceEpoch)
-    ..numero = map['numero'] as int? ?? 0
+    ..numero = map['numero'] as int?
     ..posicion = Posicion.values[map['posicion'] as int? ?? 0]
     ..esCapitan = (map['esCapitan'] as int? ?? 0) == 1
     ..fotoUrl = (map['fotoUrl'] as String?)?.isNotEmpty == true ? map['fotoUrl'] as String? : null

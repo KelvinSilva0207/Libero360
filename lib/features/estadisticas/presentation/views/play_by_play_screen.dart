@@ -417,7 +417,7 @@ class _PlayByPlayContent extends StatelessWidget {
                   CircleAvatar(
                     radius: 16,
                     backgroundColor: AppColors.accent,
-                    child: Text(vm.jugadorSeleccionado!.numero.toString(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                    child: Text(vm.jugadorSeleccionado?.numero?.toString() ?? '—', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
                   ),
                   const SizedBox(width: 10),
                   Expanded(

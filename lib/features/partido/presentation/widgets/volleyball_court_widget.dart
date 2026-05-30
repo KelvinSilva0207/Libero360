@@ -136,14 +136,14 @@ class _PlayerAvatarState extends State<_PlayerAvatar> {
   @override
   void initState() {
     super.initState();
-    _numeroCtrl = TextEditingController(text: '${widget.player.numero}');
+      _numeroCtrl = TextEditingController(text: widget.player.numero?.toString() ?? '');
   }
 
   @override
   void didUpdateWidget(_PlayerAvatar old) {
     super.didUpdateWidget(old);
     if (old.player.numero != widget.player.numero) {
-      _numeroCtrl.text = '${widget.player.numero}';
+      _numeroCtrl.text = widget.player.numero?.toString() ?? '';
     }
   }
 

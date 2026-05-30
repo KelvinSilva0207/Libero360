@@ -159,121 +159,106 @@ class HomeScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final isWide = constraints.maxWidth >= 600;
-          return Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 600),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: 90, height: 90,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF0081CF), Color(0xFFFF8C00)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(45),
-                        child: Image.asset('assets/images/logo_libero.png', fit: BoxFit.cover),
-                      ),
+      body: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Bienvenido, ${user?.nombre ?? "Usuario"}',
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              '¿Qué deseas hacer hoy?',
+              style: TextStyle(fontSize: 14, color: Colors.white54),
+            ),
+            const SizedBox(height: 28),
+            Expanded(
+              child: GridView.count(
+                crossAxisCount: 2,
+                mainAxisSpacing: 16,
+                crossAxisSpacing: 16,
+                childAspectRatio: 1,
+                children: [
+                  _HomeCard(
+                    icon: FontAwesomeIcons.peopleGroup,
+                    label: 'Atletas',
+                    onTap: () => Navigator.push(
+                      context, MaterialPageRoute(builder: (_) => const AthleteListScreen()),
                     ),
-                    const SizedBox(height: 20),
-                    Text(
-                      'Bienvenido, ${user?.nombre ?? "Usuario"}',
-                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
+                  ),
+                  _HomeCard(
+                    icon: FontAwesomeIcons.volleyball,
+                    label: 'Partidos',
+                    onTap: () => showDialog(
+                      context: context,
+                      builder: (_) => const MatchStartDialog(),
                     ),
-                    const SizedBox(height: 6),
-                    const Text(
-                      '¿Qué deseas hacer hoy?',
-                      style: TextStyle(fontSize: 15, color: Colors.white54),
+                  ),
+                  _HomeCard(
+                    icon: FontAwesomeIcons.chartSimple,
+                    label: 'Estadísticas',
+                    onTap: () => Navigator.push(
+                      context, MaterialPageRoute(builder: (_) => const PlayByPlayScreen()),
                     ),
-                    const SizedBox(height: 40),
-                    Wrap(
-                      spacing: isWide ? 20 : 12,
-                      runSpacing: isWide ? 16 : 12,
-                      alignment: WrapAlignment.center,
-                      children: [
-                        _FeatureButton(
-                          icon: FontAwesomeIcons.peopleGroup,
-                          label: 'Atletas',
-                          isWide: isWide,
-                          onTap: () => Navigator.push(
-                            context, MaterialPageRoute(builder: (_) => const AthleteListScreen()),
-                          ),
-                        ),
-                        _FeatureButton(
-                          icon: FontAwesomeIcons.volleyball,
-                          label: 'Partidos',
-                          isWide: isWide,
-                          onTap: () => showDialog(
-                            context: context,
-                            builder: (_) => const MatchStartDialog(),
-                          ),
-                        ),
-                        _FeatureButton(
-                          icon: FontAwesomeIcons.chartSimple,
-                          label: 'Estadísticas',
-                          isWide: isWide,
-                          onTap: () => Navigator.push(
-                            context, MaterialPageRoute(builder: (_) => const PlayByPlayScreen()),
-                          ),
-                        ),
-                        _FeatureButton(
-                          icon: FontAwesomeIcons.clipboardCheck,
-                          label: 'Asistencia',
-                          isWide: isWide,
-                          onTap: () => Navigator.push(
-                            context, MaterialPageRoute(builder: (_) => const AttendanceScreen()),
-                          ),
-                        ),
-                      ],
+                  ),
+                  _HomeCard(
+                    icon: FontAwesomeIcons.clipboardCheck,
+                    label: 'Asistencia',
+                    onTap: () => Navigator.push(
+                      context, MaterialPageRoute(builder: (_) => const AttendanceScreen()),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
-          );
-        },
+          ],
+        ),
       ),
     );
   }
 }
 
-class _FeatureButton extends StatelessWidget {
+class _HomeCard extends StatelessWidget {
   final FaIconData icon;
   final String label;
   final VoidCallback? onTap;
-  final bool isWide;
 
-  const _FeatureButton({
+  const _HomeCard({
     required this.icon,
     required this.label,
     this.onTap,
-    this.isWide = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return ElevatedButton.icon(
-      onPressed: onTap,
-      icon: FaIcon(icon, size: isWide ? 22 : 18),
-      label: Text(label, style: TextStyle(fontSize: isWide ? 15 : 13, fontWeight: FontWeight.w600)),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF1A1F3D),
-        foregroundColor: Colors.white,
-        elevation: 0,
-        padding: EdgeInsets.symmetric(horizontal: isWide ? 32 : 20, vertical: isWide ? 22 : 16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-          side: const BorderSide(color: Color(0xFF2D3361), width: 0.5),
+    return Material(
+      color: const Color(0xFF1A1F3D),
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFF2D3361), width: 0.5),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              FaIcon(icon, size: 40, color: const Color(0xFFFF8C00)),
+              const SizedBox(height: 16),
+              Text(
+                label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

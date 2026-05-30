@@ -128,7 +128,7 @@ class StatsChartsWidget extends StatelessWidget {
             ],
           ),
         );
-        labels.add('#${jugador.numero}');
+        labels.add('#${jugador.numero ?? '—'}');
         index++;
       }
     }

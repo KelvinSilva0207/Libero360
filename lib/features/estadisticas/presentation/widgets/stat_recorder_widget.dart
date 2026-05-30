@@ -141,7 +141,7 @@ class _StatRecorderWidgetState extends State<StatRecorderWidget> {
                   const Icon(Icons.person, color: Colors.white, size: 16),
                   const SizedBox(width: 4),
                   Text(
-                    '#${_jugadorSeleccionado!.numero}',
+                    _jugadorSeleccionado?.numero?.toString() ?? '—',
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -265,7 +265,7 @@ class _StatRecorderWidgetState extends State<StatRecorderWidget> {
                     backgroundColor: _accentOrange,
                     radius: 20,
                     child: Text(
-                      '${_jugadorSeleccionado!.numero}',
+                      _jugadorSeleccionado?.numero?.toString() ?? '—',
                       style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,

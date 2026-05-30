@@ -43,7 +43,7 @@ class _PlayerSelectionScreenState extends State<PlayerSelectionScreen> {
     return _allPlayers.where((p) =>
       p.nombre.toLowerCase().contains(q) ||
       p.cedula.toLowerCase().contains(q) ||
-      '${p.numero}'.contains(q)
+      (p.numero?.toString() ?? '').contains(q)
     ).toList();
   }
 

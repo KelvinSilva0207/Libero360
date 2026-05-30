@@ -394,7 +394,7 @@ class _MatchScreenState extends State<MatchScreen> {
     if (config == null || config.selectedPlayers.isEmpty) return const SizedBox.shrink();
 
     final players = List<Player>.from(config.selectedPlayers)
-      ..sort((a, b) => a.numero.compareTo(b.numero));
+      ..sort((a, b) => (a.numero ?? 0).compareTo(b.numero ?? 0));
 
     return Drawer(
       backgroundColor: AppColors.surface,

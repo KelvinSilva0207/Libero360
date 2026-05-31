@@ -27,7 +27,6 @@ function Start-Server {
     }
   }
 
-  Write-Host "Iniciando servidor en http://localhost:$port ..." -ForegroundColor Cyan
   $startInfo = New-Object System.Diagnostics.ProcessStartInfo
   $startInfo.FileName = "npx"
   $startInfo.Arguments = "serve build/web -p $port --no-clipboard"
@@ -38,16 +37,16 @@ function Start-Server {
   $startInfo.CreateNoWindow = $true
 
   $proc = [System.Diagnostics.Process]::Start($startInfo)
+  $proc.PriorityClass = [System.Diagnostics.ProcessPriorityClass]::Normal
   $proc.Id | Out-File -FilePath $pidFile -Encoding ascii
 
-  Start-Sleep 1
   Write-Host ""
-  Write-Host "========================================" -ForegroundColor Green
-  Write-Host "  App lista en:" -ForegroundColor Green
+  Write-Host "===================================" -ForegroundColor Green
+  Write-Host "  Servidor iniciado en:" -ForegroundColor Green
   Write-Host "  http://localhost:$port" -ForegroundColor Cyan
-  Write-Host "========================================" -ForegroundColor Green
+  Write-Host "===================================" -ForegroundColor Green
   Write-Host ""
-  Write-Host "Para detener: .\serve.ps1 -Stop" -ForegroundColor Yellow
+  Write-Host "Para detenerlo: .\serve.ps1 -Stop" -ForegroundColor Yellow
   Write-Host ""
 }
 

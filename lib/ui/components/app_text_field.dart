@@ -99,6 +99,7 @@ class _AppTextFieldState extends State<AppTextField> {
                     child: FaIcon(widget.prefixIcon, size: 18),
                   )
                 : null,
+            prefixIconConstraints: const BoxConstraints(minWidth: 44, minHeight: 0),
             suffixIcon: widget.isPassword
                 ? IconButton(
                     icon: FaIcon(

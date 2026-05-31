@@ -6,6 +6,7 @@ import 'features/auth/auth.dart';
 import 'features/partido/presentation/views/match_start_dialog.dart';
 import 'features/asistencia/asistencia.dart';
 import 'features/estadisticas/presentation/views/play_by_play_screen.dart';
+import 'features/settings/presentation/views/settings_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -131,6 +132,8 @@ class HomeScreen extends StatelessWidget {
             onSelected: (value) {
               if (value == 'logout') {
                 context.read<AuthViewModel>().logout();
+              } else if (value == 'settings') {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
               }
             },
             itemBuilder: (context) => [
@@ -141,6 +144,17 @@ class HomeScreen extends StatelessWidget {
                   children: [
                     Text(user?.nombre ?? 'Usuario', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
                     if (user?.email != null) Text(user!.email, style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                  ],
+                ),
+              ),
+              const PopupMenuDivider(),
+              PopupMenuItem(
+                value: 'settings',
+                child: const Row(
+                  children: [
+                    FaIcon(FontAwesomeIcons.gear, color: Colors.white70, size: 18),
+                    SizedBox(width: 10),
+                    Text('Configuración'),
                   ],
                 ),
               ),

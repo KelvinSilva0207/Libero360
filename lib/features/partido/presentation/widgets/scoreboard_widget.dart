@@ -19,6 +19,7 @@ class ScoreboardWidget extends StatelessWidget {
   final VoidCallback? onLocalScoreLongPress;
   final VoidCallback? onVisitorScoreTap;
   final VoidCallback? onVisitorScoreLongPress;
+  final void Function(int setIndex)? onSetTap;
 
   const ScoreboardWidget({
     super.key,
@@ -39,6 +40,7 @@ class ScoreboardWidget extends StatelessWidget {
     this.onLocalScoreLongPress,
     this.onVisitorScoreTap,
     this.onVisitorScoreLongPress,
+    this.onSetTap,
   });
 
   @override
@@ -96,27 +98,30 @@ class ScoreboardWidget extends StatelessWidget {
         children: [
           for (int i = 0; i < totalSets; i++)
             Expanded(
-              child: Center(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 4),
-                  decoration: BoxDecoration(
-                    color: (i + 1) == currentSet && isActive
-                        ? AppColors.accent.withValues(alpha: 0.15)
-                        : null,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    'S${i + 1}',
-                    style: TextStyle(
+              child: GestureDetector(
+                onTap: onSetTap != null ? () => onSetTap!(i + 1) : null,
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 4),
+                    decoration: BoxDecoration(
                       color: (i + 1) == currentSet && isActive
-                          ? AppColors.accent
-                          : Colors.white38,
-                      fontSize: 9,
-                      fontWeight: (i + 1) == currentSet
-                          ? FontWeight.bold
-                          : FontWeight.normal,
+                          ? AppColors.accent.withValues(alpha: 0.15)
+                          : null,
+                      borderRadius: BorderRadius.circular(4),
                     ),
-                    textAlign: TextAlign.center,
+                    child: Text(
+                      'S${i + 1}',
+                      style: TextStyle(
+                        color: (i + 1) == currentSet && isActive
+                            ? AppColors.accent
+                            : Colors.white38,
+                        fontSize: 9,
+                        fontWeight: (i + 1) == currentSet
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
                   ),
                 ),
               ),

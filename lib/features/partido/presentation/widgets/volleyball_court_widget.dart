@@ -7,6 +7,10 @@ class VolleyballCourtWidget extends StatelessWidget {
   final Player? seleccionado;
   final ValueChanged<Player> onSeleccionar;
   final bool esLocal;
+  final int rotacion;
+  final bool isServing;
+  final VoidCallback? onRotar;
+  final VoidCallback? onCambiarServicio;
   final void Function(int index, int numero)? onNumeroEdit;
 
   const VolleyballCourtWidget({
@@ -15,67 +19,175 @@ class VolleyballCourtWidget extends StatelessWidget {
     required this.seleccionado,
     required this.onSeleccionar,
     this.esLocal = true,
+    this.rotacion = 0,
+    this.isServing = false,
+    this.onRotar,
+    this.onCambiarServicio,
     this.onNumeroEdit,
   });
 
   @override
   Widget build(BuildContext context) {
-    final displayPlayers = jugadores.length >= 6 ? jugadores.take(6).toList() : <Player>[];
+    final displayPlayers = jugadores.length >= 6 ? jugadores : <Player>[];
 
     return Container(
-      margin: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.surface,
         border: Border.all(color: Colors.white24, width: 2),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(10),
-        child: CustomPaint(
-          painter: const _CourtPainter(),
-          child: displayPlayers.isEmpty
-              ? const Center(
-                  child: Text('Sin jugadores', style: TextStyle(color: Colors.white38, fontSize: 14)),
-                )
-              : LayoutBuilder(
-                  builder: (context, constraints) {
-                    return Stack(
-                      children: [
-                        for (int i = 0; i < displayPlayers.length; i++)
-                          Positioned(
-                            left: _pos(i, constraints).dx,
-                            top: _pos(i, constraints).dy,
-                            child: _PlayerAvatar(
-                              player: displayPlayers[i],
-                              index: i,
-                              isSelected: displayPlayers[i].id == seleccionado?.id,
-                              isLibero: displayPlayers[i].posicion == Posicion.libre,
-                              onTap: () => onSeleccionar(displayPlayers[i]),
-                              onNumeroEdit: onNumeroEdit,
-                            ),
-                          ),
-                        _buildZoneLabels(constraints),
-                      ],
-                    );
-                  },
-                ),
+        borderRadius: BorderRadius.circular(14),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildHeader(),
+            AspectRatio(
+              aspectRatio: 16 / 10,
+              child: CustomPaint(
+                painter: _CourtPainter(esLocal: esLocal),
+                child: displayPlayers.isEmpty
+                    ? const Center(
+                        child: Text('Selecciona 6 jugadores',
+                            style: TextStyle(color: Colors.white38, fontSize: 13)),
+                      )
+                    : LayoutBuilder(
+                        builder: (context, constraints) {
+                          return Stack(
+                            children: [
+                              for (int i = 0; i < 6 && i < displayPlayers.length; i++)
+                                Positioned(
+                                  left: _posX(_servingOrderToDisplay(i), constraints),
+                                  top: _posY(_servingOrderToDisplay(i), constraints),
+                                  child: _PlayerAvatar(
+                                    player: displayPlayers[i],
+                                    posIndex: _servingOrderToDisplay(i),
+                                    isSelected: displayPlayers[i].id == seleccionado?.id,
+                                    isLibero: displayPlayers[i].posicion == Posicion.libre,
+                                    isServer: isServing && i == 0,
+                                    onTap: () => onSeleccionar(displayPlayers[i]),
+                                    onNumeroEdit: onNumeroEdit,
+                                  ),
+                                ),
+                              _buildZoneLabels(constraints),
+                            ],
+                          );
+                        },
+                      ),
+              ),
+            ),
+            _buildControls(),
+          ],
         ),
       ),
     );
   }
 
-  Offset _pos(int index, BoxConstraints c) {
-    final w = c.maxWidth;
-    final h = c.maxHeight;
-    switch (index) {
-      case 0: return Offset(w * 0.12, h * 0.07);
-      case 1: return Offset(w * 0.5 - 22, h * 0.07);
-      case 2: return Offset(w * 0.75, h * 0.07);
-      case 3: return Offset(w * 0.12, h * 0.62);
-      case 4: return Offset(w * 0.5 - 22, h * 0.78);
-      case 5: return Offset(w * 0.75, h * 0.62);
-      default: return Offset.zero;
+  Widget _buildHeader() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: const BoxDecoration(
+        color: Colors.black26,
+        border: Border(bottom: BorderSide(color: Colors.white10)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: isServing ? Colors.green.withValues(alpha: 0.2) : Colors.white10,
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  isServing ? Icons.volunteer_activism : Icons.sports_volleyball,
+                  size: 12,
+                  color: isServing ? Colors.green : Colors.white38,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  isServing ? 'SACANDO' : 'RECIBE',
+                  style: TextStyle(
+                    fontSize: 9,
+                    fontWeight: FontWeight.bold,
+                    color: isServing ? Colors.green : Colors.white38,
+                    letterSpacing: 1,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Spacer(),
+          Text(
+            esLocal ? 'LOCAL' : 'VISITANTE',
+            style: const TextStyle(color: Colors.white38, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 1),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildControls() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: const BoxDecoration(
+        color: Colors.black26,
+        border: Border(top: BorderSide(color: Colors.white10)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.rotate_left, size: 18, color: Colors.white54),
+            onPressed: onRotar,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+            tooltip: 'Rotar (sentido horario)',
+          ),
+          if (onCambiarServicio != null) ...[
+            const SizedBox(width: 8),
+            TextButton.icon(
+              onPressed: onCambiarServicio,
+              icon: Icon(Icons.swap_horiz, size: 14, color: isServing ? Colors.green : Colors.white38),
+              label: Text(
+                isServing ? 'Quitar saque' : 'Dar saque',
+                style: TextStyle(fontSize: 10, color: isServing ? Colors.green : Colors.white38),
+              ),
+              style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2)),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  int _servingOrderToDisplay(int servingIdx) {
+    const baseMapping = [5, 2, 1, 0, 3, 4];
+    const rotPerm = [1, 2, 5, 0, 3, 4];
+    int pos = baseMapping[servingIdx];
+    for (int r = 0; r < rotacion; r++) {
+      pos = rotPerm[pos];
     }
+    return pos;
+  }
+
+  double _posX(int displayIdx, BoxConstraints c) {
+    final w = c.maxWidth;
+    final col = displayIdx % 3;
+    switch (col) {
+      case 0: return w * 0.10;
+      case 1: return w * 0.42;
+      case 2: return w * 0.74;
+      default: return 0;
+    }
+  }
+
+  double _posY(int displayIdx, BoxConstraints c) {
+    final h = c.maxHeight;
+    final row = displayIdx < 3 ? 0 : 1;
+    return row == 0 ? h * 0.06 : h * 0.56;
   }
 
   Widget _buildZoneLabels(BoxConstraints c) {
@@ -83,26 +195,26 @@ class VolleyballCourtWidget extends StatelessWidget {
     final h = c.maxHeight;
     return Stack(
       children: [
-        Positioned(left: w * 0.5 - 16, top: h * 0.5 - 10,
-          child: const Text('RED', style: TextStyle(color: Colors.white24, fontSize: 10, fontWeight: FontWeight.bold)),
+        Positioned(left: w * 0.50 - 10, top: h * 0.50 - 8,
+          child: Text('NET', style: TextStyle(color: Colors.white.withValues(alpha: 0.12), fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 1)),
         ),
-        Positioned(left: 4, top: h * 0.2,
-          child: const Text('Z4', style: TextStyle(color: Colors.white10, fontSize: 9)),
+        Positioned(left: w * 0.05, top: h * 0.27,
+          child: const Text('Z4', style: TextStyle(color: Colors.white10, fontSize: 8)),
         ),
-        Positioned(left: w * 0.5 - 8, top: h * 0.2,
-          child: const Text('Z3', style: TextStyle(color: Colors.white10, fontSize: 9)),
+        Positioned(left: w * 0.44, top: h * 0.27,
+          child: const Text('Z3', style: TextStyle(color: Colors.white10, fontSize: 8)),
         ),
-        Positioned(right: 4, top: h * 0.2,
-          child: const Text('Z2', style: TextStyle(color: Colors.white10, fontSize: 9)),
+        Positioned(right: w * 0.05, top: h * 0.27,
+          child: const Text('Z2', style: TextStyle(color: Colors.white10, fontSize: 8)),
         ),
-        Positioned(left: 4, bottom: h * 0.2,
-          child: const Text('Z5', style: TextStyle(color: Colors.white10, fontSize: 9)),
+        Positioned(left: w * 0.05, bottom: h * 0.27,
+          child: const Text('Z5', style: TextStyle(color: Colors.white10, fontSize: 8)),
         ),
-        Positioned(left: w * 0.5 - 8, bottom: h * 0.2,
-          child: const Text('Z6', style: TextStyle(color: Colors.white10, fontSize: 9)),
+        Positioned(left: w * 0.44, bottom: h * 0.27,
+          child: const Text('Z6', style: TextStyle(color: Colors.white10, fontSize: 8)),
         ),
-        Positioned(right: 4, bottom: h * 0.2,
-          child: const Text('Z1', style: TextStyle(color: Colors.white10, fontSize: 9)),
+        Positioned(right: w * 0.05, bottom: h * 0.27,
+          child: const Text('Z1', style: TextStyle(color: Colors.white10, fontSize: 8)),
         ),
       ],
     );
@@ -111,17 +223,19 @@ class VolleyballCourtWidget extends StatelessWidget {
 
 class _PlayerAvatar extends StatefulWidget {
   final Player player;
-  final int index;
+  final int posIndex;
   final bool isSelected;
   final bool isLibero;
+  final bool isServer;
   final VoidCallback onTap;
   final void Function(int index, int numero)? onNumeroEdit;
 
   const _PlayerAvatar({
     required this.player,
-    required this.index,
+    required this.posIndex,
     required this.isSelected,
     required this.isLibero,
+    required this.isServer,
     required this.onTap,
     this.onNumeroEdit,
   });
@@ -136,7 +250,7 @@ class _PlayerAvatarState extends State<_PlayerAvatar> {
   @override
   void initState() {
     super.initState();
-      _numeroCtrl = TextEditingController(text: widget.player.numero?.toString() ?? '');
+    _numeroCtrl = TextEditingController(text: widget.player.numero?.toString() ?? '');
   }
 
   @override
@@ -158,17 +272,17 @@ class _PlayerAvatarState extends State<_PlayerAvatar> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.surface,
-        title: Text('Zona ${_zoneLabel(widget.index)} · #${widget.player.numero}',
+        title: Text('${_zoneLabel(widget.posIndex)} · #${widget.player.numero ?? "?"}',
             style: const TextStyle(color: Colors.white)),
         content: TextField(
           controller: _numeroCtrl,
           keyboardType: TextInputType.number,
           autofocus: true,
           style: const TextStyle(color: Colors.white),
-          decoration: InputDecoration(
+          decoration: const InputDecoration(
             labelText: 'Número de camiseta',
-            labelStyle: const TextStyle(color: Colors.white54),
-            border: const OutlineInputBorder(),
+            labelStyle: TextStyle(color: Colors.white54),
+            border: OutlineInputBorder(),
             filled: true,
             fillColor: AppColors.background,
           ),
@@ -178,7 +292,7 @@ class _PlayerAvatarState extends State<_PlayerAvatar> {
           TextButton(
             onPressed: () {
               final n = int.tryParse(_numeroCtrl.text.trim());
-              if (n != null) widget.onNumeroEdit?.call(widget.index, n);
+              if (n != null) widget.onNumeroEdit?.call(widget.posIndex, n);
               Navigator.pop(ctx);
             },
             child: const Text('Asignar', style: TextStyle(color: AppColors.accent)),
@@ -225,20 +339,31 @@ class _PlayerAvatarState extends State<_PlayerAvatar> {
                   radius: 22,
                   backgroundColor: avatarColor,
                   child: Text(
-                    '${widget.player.numero}',
+                    '${widget.player.numero ?? "?"}',
                     style: const TextStyle(fontWeight: FontWeight.w900, color: Colors.white, fontSize: 16),
                   ),
                 ),
               ),
+              if (widget.isServer)
+                Positioned(
+                  top: -2,
+                  right: -2,
+                  child: Container(
+                    width: 18,
+                    height: 18,
+                    decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.green),
+                    child: const Icon(Icons.sports_volleyball, size: 10, color: Colors.white),
+                  ),
+                ),
               if (widget.isSelected)
                 Positioned(
-                  top: 0,
+                  bottom: 0,
                   right: 0,
                   child: Container(
                     width: 14,
                     height: 14,
                     decoration: const BoxDecoration(shape: BoxShape.circle, color: AppColors.accent),
-                    child: const Icon(Icons.add, size: 10, color: Colors.white),
+                    child: const Icon(Icons.touch_app, size: 9, color: Colors.white),
                   ),
                 ),
             ],
@@ -270,7 +395,9 @@ class _PlayerAvatarState extends State<_PlayerAvatar> {
 }
 
 class _CourtPainter extends CustomPainter {
-  const _CourtPainter();
+  final bool esLocal;
+
+  const _CourtPainter({this.esLocal = true});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -292,10 +419,8 @@ class _CourtPainter extends CustomPainter {
 
     canvas.drawLine(Offset(0, h / 2), Offset(w, h / 2), linePaint);
 
-    canvas.drawLine(Offset(w * 0.25, h / 2), Offset(w * 0.25, h), faintPaint);
-    canvas.drawLine(Offset(w * 0.75, h / 2), Offset(w * 0.75, h), faintPaint);
-    canvas.drawLine(Offset(w * 0.25, 0), Offset(w * 0.25, h / 2), faintPaint);
-    canvas.drawLine(Offset(w * 0.75, 0), Offset(w * 0.75, h / 2), faintPaint);
+    canvas.drawLine(Offset(0, h * 0.25), Offset(w, h * 0.25), faintPaint);
+    canvas.drawLine(Offset(0, h * 0.75), Offset(w, h * 0.75), faintPaint);
 
     canvas.drawLine(Offset(w / 2, 0), Offset(w / 2, h / 2), faintPaint);
     canvas.drawLine(Offset(w / 2, h / 2), Offset(w / 2, h), faintPaint);

@@ -18,6 +18,11 @@ class PartidoViewModel extends ChangeNotifier {
   int _setsPorPartido = 5;
   int _tiempoPorSet = 0;
 
+  List<Player> _jugadores = [];
+  int _rotacionLocal = 0;
+  int _rotacionVisitante = 0;
+  bool _isLocalServing = true;
+
   Match? get match => _match;
   bool get isLoading => _isLoading;
   String? get error => _error;
@@ -37,6 +42,10 @@ class PartidoViewModel extends ChangeNotifier {
   int get puntosPorSet => _puntosPorSet;
   int get setsPorPartido => _setsPorPartido;
   int get tiempoPorSet => _tiempoPorSet;
+  List<Player> get jugadores => _jugadores;
+  int get rotacionLocal => _rotacionLocal;
+  int get rotacionVisitante => _rotacionVisitante;
+  bool get isLocalServing => _isLocalServing;
 
   // Timer
   Timer? _timer;
@@ -68,6 +77,10 @@ class PartidoViewModel extends ChangeNotifier {
 
       _setsPorPartido = config?.setsTotales ?? 5;
 
+      _jugadores = config?.selectedPlayers != null
+          ? List.from(config!.selectedPlayers)
+          : [];
+
       _match = await _matchRepository.crearNuevoPartido(
         equipoLocal: config?.localName ?? 'Local',
         equipoVisitante: config?.visitorName ?? 'Visitante',
@@ -78,6 +91,9 @@ class PartidoViewModel extends ChangeNotifier {
       _match!.iniciar();
       await _matchRepository.guardar(_match!);
       _setScores = List.generate(_setsPorPartido, (_) => const MapEntry(0, 0));
+      _rotacionLocal = 0;
+      _rotacionVisitante = 0;
+      _isLocalServing = true;
       _iniciarTimer();
     } catch (e) {
       _error = 'Error al iniciar partido: $e';
@@ -100,6 +116,11 @@ class PartidoViewModel extends ChangeNotifier {
         oldVisitorPts: oldVisitor,
         localScored: true,
       );
+
+      if (!_isLocalServing) {
+        _rotacionLocal = (_rotacionLocal + 1) % 6;
+        _isLocalServing = true;
+      }
 
       if (_match!.setActual > oldSet) {
         await _guardarDuracion();
@@ -131,6 +152,11 @@ class PartidoViewModel extends ChangeNotifier {
         oldVisitorPts: oldVisitor,
         localScored: false,
       );
+
+      if (_isLocalServing) {
+        _rotacionVisitante = (_rotacionVisitante + 1) % 6;
+        _isLocalServing = false;
+      }
 
       if (_match!.setActual > oldSet) {
         await _guardarDuracion();
@@ -188,6 +214,36 @@ class PartidoViewModel extends ChangeNotifier {
     }
   }
 
+  void rotarLocal() {
+    _rotacionLocal = (_rotacionLocal + 1) % 6;
+    notifyListeners();
+  }
+
+  void rotarVisitante() {
+    _rotacionVisitante = (_rotacionVisitante + 1) % 6;
+    notifyListeners();
+  }
+
+  void cambiarServicio() {
+    if (_match?.isFinalizado == true) return;
+    _isLocalServing = !_isLocalServing;
+    if (!_isLocalServing) {
+      _rotacionVisitante = (_rotacionVisitante + 1) % 6;
+    } else {
+      _rotacionLocal = (_rotacionLocal + 1) % 6;
+    }
+    notifyListeners();
+  }
+
+  Future<void> actualizarNumeroJugador(int posIndex, int numero) async {
+    if (posIndex < 0 || posIndex >= _jugadores.length) return;
+    _jugadores[posIndex].numero = numero;
+    try {
+      await DatabaseService.instance.savePlayer(_jugadores[posIndex]);
+    } catch (_) {}
+    notifyListeners();
+  }
+
   Future<void> undoLastPoint() async {
     if (_match == null || !_match!.isActivo) return;
     try {
@@ -237,6 +293,40 @@ class PartidoViewModel extends ChangeNotifier {
         _match!.puntosLocal,
         _match!.puntosVisitante,
       );
+    }
+  }
+
+  Future<void> cambiarSet(int nuevoSet) async {
+    if (_match == null || _match!.isFinalizado) return;
+    if (nuevoSet < 1 || nuevoSet > _setsPorPartido) return;
+    if (nuevoSet == _match!.setActual) return;
+
+    try {
+      final currentIdx = _match!.setActual - 1;
+      while (_setScores.length <= currentIdx) {
+        _setScores.add(const MapEntry(0, 0));
+      }
+      _setScores[currentIdx] = MapEntry(_match!.puntosLocal, _match!.puntosVisitante);
+
+      _match!.setActual = nuevoSet;
+      final newIdx = nuevoSet - 1;
+      if (newIdx < _setScores.length) {
+        _match!.puntosLocal = _setScores[newIdx].key;
+        _match!.puntosVisitante = _setScores[newIdx].value;
+      } else {
+        _match!.puntosLocal = 0;
+        _match!.puntosVisitante = 0;
+      }
+
+      if (_match!.isActivo) {
+        _match!.pausar();
+      }
+
+      await _matchRepository.guardar(_match!);
+      notifyListeners();
+    } catch (e) {
+      _error = 'Error al cambiar set: $e';
+      notifyListeners();
     }
   }
 

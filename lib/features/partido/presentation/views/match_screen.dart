@@ -5,6 +5,7 @@ import '../../../estadisticas/data/models/models.dart';
 import '../../data/match_config.dart';
 import '../viewmodels/partido_viewmodel.dart';
 import '../widgets/scoreboard_widget.dart';
+import '../widgets/volleyball_court_widget.dart';
 
 class MatchScreen extends StatefulWidget {
   final MatchConfig? config;
@@ -65,13 +66,20 @@ class _MatchScreenState extends State<MatchScreen> {
           return LayoutBuilder(
             builder: (context, constraints) {
               final isWide = constraints.maxWidth >= 768;
-              return Scaffold(
-                backgroundColor: AppColors.background,
-                endDrawer: _buildEndDrawer(context),
-                body: SafeArea(
-                  child: isWide
-                      ? _buildDesktopLayout(context, vm)
-                      : _buildMobileLayout(context, vm),
+              return PopScope(
+                canPop: false,
+                onPopInvokedWithResult: (didPop, _) async {
+                  if (didPop) return;
+                  if (context.mounted) _showExitConfirmation(context, vm);
+                },
+                child: Scaffold(
+                  backgroundColor: AppColors.background,
+                  endDrawer: _buildEndDrawer(context),
+                  body: SafeArea(
+                    child: isWide
+                        ? _buildDesktopLayout(context, vm)
+                        : _buildMobileLayout(context, vm),
+                  ),
                 ),
               );
             },
@@ -103,10 +111,26 @@ class _MatchScreenState extends State<MatchScreen> {
           onLocalScoreLongPress: () => vm.restarPuntoLocal(),
           onVisitorScoreTap: vm.sumarPuntoVisitante,
           onVisitorScoreLongPress: () => vm.restarPuntoVisitante(),
+          onSetTap: vm.isFinalizado ? null : (s) => vm.cambiarSet(s),
         ),
         if (!vm.isFinalizado) _buildScoreButtons(vm),
         if (!vm.isFinalizado) _buildInfoPanel(vm),
-        const Expanded(child: SizedBox()),
+        if (!vm.isFinalizado && vm.jugadores.length >= 6) Expanded(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
+            child: VolleyballCourtWidget(
+              jugadores: vm.jugadores,
+              seleccionado: null,
+              onSeleccionar: (_) {},
+              esLocal: true,
+              rotacion: vm.rotacionLocal,
+              isServing: vm.isLocalServing,
+              onRotar: vm.rotarLocal,
+              onCambiarServicio: vm.cambiarServicio,
+              onNumeroEdit: vm.actualizarNumeroJugador,
+            ),
+          ),
+        ),
         if (vm.isFinalizado) _buildFinalResult(vm) else _buildBottomBar(vm),
       ],
     );
@@ -137,10 +161,26 @@ class _MatchScreenState extends State<MatchScreen> {
               onLocalScoreLongPress: () => vm.restarPuntoLocal(),
               onVisitorScoreTap: vm.sumarPuntoVisitante,
               onVisitorScoreLongPress: () => vm.restarPuntoVisitante(),
+              onSetTap: vm.isFinalizado ? null : (s) => vm.cambiarSet(s),
             ),
             if (!vm.isFinalizado) _buildScoreButtons(vm),
             if (!vm.isFinalizado) _buildInfoPanel(vm),
-            const Expanded(child: SizedBox()),
+            if (!vm.isFinalizado && vm.jugadores.length >= 6) Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
+                child: VolleyballCourtWidget(
+                  jugadores: vm.jugadores,
+                  seleccionado: null,
+                  onSeleccionar: (_) {},
+                  esLocal: true,
+                  rotacion: vm.rotacionLocal,
+                  isServing: vm.isLocalServing,
+                  onRotar: vm.rotarLocal,
+                  onCambiarServicio: vm.cambiarServicio,
+                  onNumeroEdit: vm.actualizarNumeroJugador,
+                ),
+              ),
+            ),
             if (vm.isFinalizado) _buildFinalResult(vm) else _buildBottomBar(vm),
           ],
         ),
@@ -155,7 +195,7 @@ class _MatchScreenState extends State<MatchScreen> {
       toolbarHeight: 44,
       leading: IconButton(
         icon: const Icon(Icons.arrow_back, color: Colors.white),
-        onPressed: () => Navigator.pop(context),
+        onPressed: () => _showExitConfirmation(context, vm),
       ),
       title: const Text('Partido', style: TextStyle(color: Colors.white, fontSize: 15)),
       centerTitle: true,
@@ -383,6 +423,52 @@ class _MatchScreenState extends State<MatchScreen> {
               vm.finalizarPartido();
             },
             child: const Text('Finalizar', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showExitConfirmation(BuildContext context, PartidoViewModel vm) {
+    if (vm.match == null || vm.isFinalizado) {
+      Navigator.of(context).pop();
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 22),
+            SizedBox(width: 8),
+            Text('Salir del partido', style: TextStyle(color: Colors.white, fontSize: 16)),
+          ],
+        ),
+        content: const Text(
+          '¿Seguro que quieres salir?\n\nSi finalizas el partido se guardará el resultado actual.',
+          style: TextStyle(color: Colors.white70, fontSize: 13),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Volver al partido', style: TextStyle(color: AppColors.accent)),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              Navigator.of(context).pop();
+            },
+            child: const Text('Salir sin guardar', style: TextStyle(color: Colors.white54)),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await vm.finalizarPartido();
+              if (context.mounted) Navigator.of(context).pop();
+            },
+            child: const Text('Finalizar partido', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),

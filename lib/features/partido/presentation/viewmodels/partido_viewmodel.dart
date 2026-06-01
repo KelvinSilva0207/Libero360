@@ -19,6 +19,7 @@ class PartidoViewModel extends ChangeNotifier {
   int _tiempoPorSet = 0;
 
   List<Player> _jugadores = [];
+  List<Player> _jugadoresVisitante = [];
   int _rotacionLocal = 0;
   int _rotacionVisitante = 0;
   bool _isLocalServing = true;
@@ -43,6 +44,7 @@ class PartidoViewModel extends ChangeNotifier {
   int get setsPorPartido => _setsPorPartido;
   int get tiempoPorSet => _tiempoPorSet;
   List<Player> get jugadores => _jugadores;
+  List<Player> get jugadoresVisitante => _jugadoresVisitante;
   int get rotacionLocal => _rotacionLocal;
   int get rotacionVisitante => _rotacionVisitante;
   bool get isLocalServing => _isLocalServing;

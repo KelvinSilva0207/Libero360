@@ -5,7 +5,8 @@ import '../../../estadisticas/data/models/models.dart';
 import '../../data/match_config.dart';
 import '../viewmodels/partido_viewmodel.dart';
 import '../widgets/scoreboard_widget.dart';
-import '../widgets/volleyball_court_widget.dart';
+import '../widgets/full_court_widget.dart';
+import '../widgets/player_stats_dialog.dart';
 
 class MatchScreen extends StatefulWidget {
   final MatchConfig? config;
@@ -74,7 +75,7 @@ class _MatchScreenState extends State<MatchScreen> {
                 },
                 child: Scaffold(
                   backgroundColor: AppColors.background,
-                  endDrawer: _buildEndDrawer(context),
+                  endDrawer: _buildEndDrawer(context, vm),
                   body: SafeArea(
                     child: isWide
                         ? _buildDesktopLayout(context, vm)
@@ -118,16 +119,15 @@ class _MatchScreenState extends State<MatchScreen> {
         if (!vm.isFinalizado && vm.jugadores.length >= 6) Expanded(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
-            child: VolleyballCourtWidget(
-              jugadores: vm.jugadores,
-              seleccionado: null,
-              onSeleccionar: (_) {},
-              esLocal: true,
-              rotacion: vm.rotacionLocal,
-              isServing: vm.isLocalServing,
-              onRotar: vm.rotarLocal,
+            child: FullCourtWidget(
+              jugadoresLocal: vm.jugadores,
+              jugadoresVisitante: vm.jugadoresVisitante,
+              rotacionLocal: vm.rotacionLocal,
+              rotacionVisitante: vm.rotacionVisitante,
+              isLocalServing: vm.isLocalServing,
+              onRotarLocal: vm.rotarLocal,
+              onRotarVisitante: vm.rotarVisitante,
               onCambiarServicio: vm.cambiarServicio,
-              onNumeroEdit: vm.actualizarNumeroJugador,
             ),
           ),
         ),
@@ -168,16 +168,15 @@ class _MatchScreenState extends State<MatchScreen> {
             if (!vm.isFinalizado && vm.jugadores.length >= 6) Expanded(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
-                child: VolleyballCourtWidget(
-                  jugadores: vm.jugadores,
-                  seleccionado: null,
-                  onSeleccionar: (_) {},
-                  esLocal: true,
-                  rotacion: vm.rotacionLocal,
-                  isServing: vm.isLocalServing,
-                  onRotar: vm.rotarLocal,
+                child: FullCourtWidget(
+                  jugadoresLocal: vm.jugadores,
+                  jugadoresVisitante: vm.jugadoresVisitante,
+                  rotacionLocal: vm.rotacionLocal,
+                  rotacionVisitante: vm.rotacionVisitante,
+                  isLocalServing: vm.isLocalServing,
+                  onRotarLocal: vm.rotarLocal,
+                  onRotarVisitante: vm.rotarVisitante,
                   onCambiarServicio: vm.cambiarServicio,
-                  onNumeroEdit: vm.actualizarNumeroJugador,
                 ),
               ),
             ),
@@ -475,7 +474,7 @@ class _MatchScreenState extends State<MatchScreen> {
     );
   }
 
-  Widget _buildEndDrawer(BuildContext context) {
+  Widget _buildEndDrawer(BuildContext context, PartidoViewModel vm) {
     final config = widget.config;
     if (config == null || config.selectedPlayers.isEmpty) return const SizedBox.shrink();
 
@@ -522,7 +521,7 @@ class _MatchScreenState extends State<MatchScreen> {
                   final firstName = parts.isNotEmpty ? parts[0] : p.nombre;
                   final lastNameInitial = parts.length > 1 ? parts.last[0].toUpperCase() : '';
                   return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     child: Row(
                       children: [
                         CircleAvatar(
@@ -555,10 +554,44 @@ class _MatchScreenState extends State<MatchScreen> {
                             ),
                           ),
                         ),
+                        const SizedBox(width: 6),
+                        GestureDetector(
+                          onTap: () => showDialog(
+                            context: context,
+                            builder: (_) => PlayerStatsDialog(
+                              player: p,
+                              matchId: vm.match?.id ?? 0,
+                              setNumero: vm.setActual,
+                              puntoLocal: vm.puntosLocal,
+                              puntoVisitante: vm.puntosVisitante,
+                              esEquipoLocal: true,
+                            ),
+                          ),
+                          child: Container(
+                            width: 28,
+                            height: 28,
+                            decoration: BoxDecoration(
+                              color: AppColors.accent.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(Icons.add, color: AppColors.accent, size: 16),
+                          ),
+                        ),
                       ],
                     ),
                   );
                 },
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: const BoxDecoration(
+                border: Border(top: BorderSide(color: Colors.white10)),
+              ),
+              child: const Text(
+                'Toca + para registrar estadísticas',
+                style: TextStyle(color: Colors.white24, fontSize: 10, fontStyle: FontStyle.italic),
+                textAlign: TextAlign.center,
               ),
             ),
           ],
@@ -617,10 +650,13 @@ class _MatchScreenState extends State<MatchScreen> {
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
       child: Row(
         children: [
-          _infoChip(
-            Icons.emoji_events,
-            '${vm.setsLocal} - ${vm.setsVisitante}',
-            'Sets',
+          GestureDetector(
+            onTap: vm.isFinalizado ? null : () => _showSetSelector(context, vm),
+            child: _infoChip(
+              Icons.emoji_events,
+              '${vm.setsLocal} - ${vm.setsVisitante}',
+              'Set ${vm.setActual}/${vm.setsPorPartido}',
+            ),
           ),
           const SizedBox(width: 8),
           _infoChip(
@@ -648,6 +684,84 @@ class _MatchScreenState extends State<MatchScreen> {
             style: const TextStyle(color: Colors.white24, fontSize: 10),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showSetSelector(BuildContext context, PartidoViewModel vm) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(width: 36, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2))),
+            const SizedBox(height: 16),
+            const Row(
+              children: [
+                Icon(Icons.swap_horiz, color: AppColors.accent, size: 18),
+                SizedBox(width: 8),
+                Text('Seleccionar set', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+              ],
+            ),
+            const SizedBox(height: 16),
+            const Divider(height: 1, color: Colors.white12),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: List.generate(vm.setsPorPartido, (i) {
+                final setNum = i + 1;
+                final isCurrent = setNum == vm.setActual;
+                return GestureDetector(
+                  onTap: () {
+                    vm.cambiarSet(setNum);
+                    Navigator.pop(ctx);
+                  },
+                  child: Container(
+                    width: 70,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    decoration: BoxDecoration(
+                      color: isCurrent ? AppColors.accent : Colors.transparent,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isCurrent ? AppColors.accent : Colors.white24,
+                        width: isCurrent ? 1 : 1,
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          'SET $setNum',
+                          style: TextStyle(
+                            color: isCurrent ? Colors.white : Colors.white54,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${vm.setScores.length > i ? vm.setScores[i].key : 0} - ${vm.setScores.length > i ? vm.setScores[i].value : 0}',
+                          style: TextStyle(
+                            color: isCurrent ? Colors.white70 : Colors.white38,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -683,32 +797,19 @@ class _MatchScreenState extends State<MatchScreen> {
       child: SafeArea(
         top: false,
         child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Padding(
-              padding: const EdgeInsets.only(right: 12),
-              child: Text(
-                vm.nombreLocal.toUpperCase(),
-                style: const TextStyle(
-                  color: AppColors.accent,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 11,
-                ),
-              ),
-            ),
+            Text(vm.nombreLocal.toUpperCase(),
+              style: const TextStyle(color: AppColors.accent, fontWeight: FontWeight.bold, fontSize: 11)),
+            const SizedBox(width: 8),
             _restarBtn(vm.restarPuntoLocal, vm.puntosLocal > 0 && vm.isPartidoActivo),
-            const Spacer(),
+            const SizedBox(width: 24),
+            Text('QUITAR', style: TextStyle(color: Colors.white24, fontSize: 8, letterSpacing: 1)),
+            const SizedBox(width: 24),
             _restarBtn(vm.restarPuntoVisitante, vm.puntosVisitante > 0 && vm.isPartidoActivo),
-            Padding(
-              padding: const EdgeInsets.only(left: 12),
-              child: Text(
-                vm.nombreVisitante.toUpperCase(),
-                style: const TextStyle(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 11,
-                ),
-              ),
-            ),
+            const SizedBox(width: 8),
+            Text(vm.nombreVisitante.toUpperCase(),
+              style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 11)),
           ],
         ),
       ),

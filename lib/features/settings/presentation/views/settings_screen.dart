@@ -8,10 +8,10 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.surfaceDark,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: AppColors.surface,
-        title: const Text('Configuración'),
+        title: const Text('Configuración', style: TextStyle(color: Colors.white)),
         leading: IconButton(
           icon: const FaIcon(FontAwesomeIcons.arrowLeft, color: Colors.white, size: 18),
           onPressed: () => Navigator.pop(context),
@@ -23,12 +23,12 @@ class SettingsScreen extends StatelessWidget {
           _section('General'),
           const SizedBox(height: 8),
           _SettingsTile(
-            icon: FontAwesomeIcons.language,
+            icon: Icons.language,
             title: 'Idioma',
             subtitle: 'Español',
           ),
           _SettingsTile(
-            icon: FontAwesomeIcons.palette,
+            icon: Icons.palette,
             title: 'Tema',
             subtitle: 'Oscuro',
           ),
@@ -36,7 +36,7 @@ class SettingsScreen extends StatelessWidget {
           _section('Partido'),
           const SizedBox(height: 8),
           _SettingsTile(
-            icon: FontAwesomeIcons.rotate,
+            icon: Icons.sync_alt,
             title: 'Sistema de rotaciones',
             subtitle: 'Activar rotación automática',
             trailing: Switch(
@@ -46,7 +46,7 @@ class SettingsScreen extends StatelessWidget {
             ),
           ),
           _SettingsTile(
-            icon: FontAwesomeIcons.clock,
+            icon: Icons.access_time,
             title: 'Duración de sets',
             subtitle: '25 puntos, ventaja de 2',
           ),
@@ -54,12 +54,12 @@ class SettingsScreen extends StatelessWidget {
           _section('Sincronización'),
           const SizedBox(height: 8),
           _SettingsTile(
-            icon: FontAwesomeIcons.cloudArrowUp,
+            icon: Icons.cloud_upload,
             title: 'Sincronizar dispositivos',
             subtitle: 'No vinculado',
           ),
           _SettingsTile(
-            icon: FontAwesomeIcons.arrowRightArrowLeft,
+            icon: Icons.compare_arrows,
             title: 'Exportar datos',
             subtitle: 'JSON / CSV',
           ),
@@ -67,7 +67,7 @@ class SettingsScreen extends StatelessWidget {
           _section('Acerca de'),
           const SizedBox(height: 8),
           _SettingsTile(
-            icon: FontAwesomeIcons.circleInfo,
+            icon: Icons.info_outline,
             title: 'Versión',
             subtitle: '1.0.0',
           ),
@@ -90,7 +90,7 @@ class SettingsScreen extends StatelessWidget {
 }
 
 class _SettingsTile extends StatelessWidget {
-  final FaIconData icon;
+  final IconData icon;
   final String title;
   final String subtitle;
   final Widget? trailing;
@@ -112,10 +112,18 @@ class _SettingsTile extends StatelessWidget {
         border: Border.all(color: AppColors.border, width: 0.5),
       ),
       child: ListTile(
-        leading: FaIcon(icon, color: AppColors.primary, size: 20),
+        leading: Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: AppColors.primary.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, color: AppColors.primary, size: 18),
+        ),
         title: Text(title, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w500)),
-        subtitle: Text(subtitle, style: const TextStyle(color: Colors.white54, fontSize: 12)),
-        trailing: trailing ?? const FaIcon(FontAwesomeIcons.chevronRight, color: Colors.white24, size: 14),
+        subtitle: Text(subtitle, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+        trailing: trailing ?? const Icon(Icons.chevron_right, color: Colors.white24, size: 20),
         onTap: trailing != null ? null : () {},
       ),
     );

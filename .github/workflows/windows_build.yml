@@ -8,6 +8,8 @@ on:
 jobs:
   build:
     runs-on: windows-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
       - uses: actions/checkout@v4
@@ -23,8 +25,25 @@ jobs:
       - name: Build Windows
         run: flutter build windows --release
 
+      - name: Find build output
+        id: find_build
+        shell: pwsh
+        run: |
+          $paths = @(
+            "build\windows\runner\Release",
+            "build\windows\x64\runner\Release",
+            "build\windows\Win32\runner\Release"
+          )
+          foreach ($p in $paths) {
+            if (Test-Path $p) {
+              Write-Host "Found output at: $p"
+              Add-Content -Path $env:GITHUB_OUTPUT -Value "build_path=$p"
+              break
+            }
+          }
+
       - name: Upload Windows build
         uses: actions/upload-artifact@v4
         with:
           name: libero360-windows
-          path: build/windows/runner/Release/
+          path: ${{ steps.find_build.outputs.build_path || 'build/windows/runner/Release/' }}

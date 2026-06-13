@@ -1,0 +1,348 @@
+import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:provider/provider.dart';
+import '../core/themes/app_colors.dart';
+import '../features/auth/presentation/viewmodels/auth_viewmodel.dart';
+import '../features/asistencia/asistencia.dart';
+import '../features/partido/presentation/views/match_start_dialog.dart';
+import '../features/estadisticas/presentation/views/play_by_play_screen.dart';
+import '../features/settings/presentation/views/settings_screen.dart';
+import 'dashboard_screen.dart';
+
+enum NavItem { dashboard, athletes, matches, stats, attendance, settings }
+
+class AppShell extends StatefulWidget {
+  final Widget? initialScreen;
+  const AppShell({super.key, this.initialScreen});
+
+  @override
+  State<AppShell> createState() => _AppShellState();
+}
+
+class _AppShellState extends State<AppShell> {
+  int _selectedIndex = 0;
+  final List<Widget> _screens = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _screens.addAll([
+      const DashboardScreen(),
+      const AthleteListScreen(),
+      const _MatchLauncherPlaceholder(),
+      const PlayByPlayScreen(),
+      const AttendanceScreen(),
+      const SettingsScreen(),
+    ]);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final user = context.watch<AuthViewModel>().user;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isWide = constraints.maxWidth >= 768;
+        return Scaffold(
+          backgroundColor: AppColors.background,
+          extendBodyBehindAppBar: !isWide,
+          appBar: isWide
+              ? null
+              : AppBar(
+                  backgroundColor: AppColors.surface,
+                  title: Row(
+                    children: [
+                      Image.asset('assets/images/logo_libero.png', width: 24, height: 24),
+                      const SizedBox(width: 8),
+                      const Text('Libero360', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  actions: [_userMenu(context, user)],
+                ),
+          body: SafeArea(
+            left: false,
+            right: false,
+            child: Row(
+              children: [
+                if (isWide) _buildSidebar(context, user),
+                Expanded(
+                  child: _screens[_selectedIndex],
+                ),
+              ],
+            ),
+          ),
+          bottomNavigationBar: isWide
+              ? null
+              : _buildBottomNav(),
+        );
+      },
+    );
+  }
+
+  Widget _buildSidebar(BuildContext context, dynamic user) {
+    return Container(
+      width: 220,
+      color: AppColors.surface,
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+            decoration: const BoxDecoration(
+              border: Border(bottom: BorderSide(color: AppColors.border)),
+            ),
+            child: Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.asset('assets/images/logo_libero.png', width: 32, height: 32),
+                ),
+                const SizedBox(width: 10),
+                const Text('Libero360',
+                  style: TextStyle(
+                    color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: -0.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(child: _navItems()),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: const BoxDecoration(
+              border: Border(top: BorderSide(color: AppColors.border)),
+            ),
+            child: GestureDetector(
+              onTap: () => _showUserMenu(context, user),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 14,
+                    backgroundColor: AppColors.accent,
+                    child: Text(
+                      user?.nombre.isNotEmpty == true ? user!.nombre[0].toUpperCase() : '?',
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          user?.nombre ?? 'Usuario',
+                          style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (user?.email != null)
+                          Text(
+                            user!.email,
+                            style: const TextStyle(color: AppColors.textSecondary, fontSize: 10),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                      ],
+                    ),
+                  ),
+                  const FaIcon(FontAwesomeIcons.ellipsisVertical, color: AppColors.textSecondary, size: 14),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _navItems() {
+    return ListView(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      children: [
+        _navItem(NavItem.dashboard, FontAwesomeIcons.squarePollVertical, 'Dashboard', 0),
+        _navItem(NavItem.athletes, FontAwesomeIcons.peopleGroup, 'Atletas', 1),
+        _navItem(NavItem.matches, FontAwesomeIcons.volleyball, 'Partidos', 2),
+        _navItem(NavItem.stats, FontAwesomeIcons.chartSimple, 'Estadísticas', 3),
+        _navItem(NavItem.attendance, FontAwesomeIcons.clipboardCheck, 'Asistencia', 4),
+        _navItem(NavItem.settings, FontAwesomeIcons.gear, 'Configuración', 5),
+      ],
+    );
+  }
+
+  Widget _navItem(NavItem item, FaIconData icon, String label, int index) {
+    final isSelected = _selectedIndex == index;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      child: Material(
+        color: isSelected ? AppColors.primary.withValues(alpha: 0.15) : Colors.transparent,
+        borderRadius: BorderRadius.circular(10),
+        child: InkWell(
+          onTap: () => setState(() => _selectedIndex = index),
+          borderRadius: BorderRadius.circular(10),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+            child: Row(
+              children: [
+                FaIcon(icon, size: 18, color: isSelected ? AppColors.accent : AppColors.textSecondary),
+                const SizedBox(width: 12),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: isSelected ? Colors.white : AppColors.textSecondary,
+                    fontSize: 14,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBottomNav() {
+    return Container(
+      decoration: const BoxDecoration(
+        border: Border(top: BorderSide(color: AppColors.border)),
+      ),
+      child: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: AppColors.surface,
+        selectedItemColor: AppColors.accent,
+        unselectedItemColor: AppColors.textTertiary,
+        selectedFontSize: 11,
+        unselectedFontSize: 11,
+        currentIndex: _selectedIndex,
+        onTap: (i) => setState(() => _selectedIndex = i),
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.dashboard_rounded), label: 'Dashboard'),
+          BottomNavigationBarItem(icon: Icon(Icons.people_rounded), label: 'Atletas'),
+          BottomNavigationBarItem(icon: Icon(Icons.sports_volleyball_rounded), label: 'Partidos'),
+          BottomNavigationBarItem(icon: Icon(Icons.bar_chart_rounded), label: 'Estadísticas'),
+        ],
+      ),
+    );
+  }
+
+  Widget _userMenu(BuildContext context, dynamic user) {
+    return PopupMenuButton<String>(
+      icon: CircleAvatar(
+        backgroundColor: AppColors.accent,
+        radius: 15,
+        child: Text(
+          user?.nombre.isNotEmpty == true ? user!.nombre[0].toUpperCase() : '?',
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+        ),
+      ),
+      onSelected: (value) {
+        if (value == 'logout') context.read<AuthViewModel>().logout();
+        if (value == 'settings') setState(() => _selectedIndex = 5);
+      },
+      itemBuilder: (context) => [
+        PopupMenuItem(
+          enabled: false,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(user?.nombre ?? 'Usuario', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+            ],
+          ),
+        ),
+        const PopupMenuDivider(),
+        const PopupMenuItem(
+          value: 'settings',
+          child: Row(
+            children: [
+              FaIcon(FontAwesomeIcons.gear, color: Colors.white70, size: 16),
+              SizedBox(width: 10),
+              Text('Configuración'),
+            ],
+          ),
+        ),
+        const PopupMenuDivider(),
+        const PopupMenuItem(
+          value: 'logout',
+          child: Row(
+            children: [
+              FaIcon(FontAwesomeIcons.rightFromBracket, color: Color(0xFFEF4444), size: 16),
+              SizedBox(width: 10),
+              Text('Cerrar sesión'),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showUserMenu(BuildContext context, dynamic user) {
+    final loginVm = context.read<AuthViewModel>();
+    showMenu<String>(
+      context: context,
+      position: RelativeRect.fromLTRB(0, 1000, 220, 0),
+      color: AppColors.surfaceLight,
+      items: [
+        PopupMenuItem<String>(
+          enabled: false,
+          child: Text(user?.nombre ?? 'Usuario', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+        ),
+        const PopupMenuDivider(),
+        const PopupMenuItem<String>(
+          value: 'settings',
+          child: Row(
+            children: [
+              FaIcon(FontAwesomeIcons.gear, color: Colors.white70, size: 16),
+              SizedBox(width: 10),
+              Text('Configuración'),
+            ],
+          ),
+        ),
+        const PopupMenuDivider(),
+        const PopupMenuItem<String>(
+          value: 'logout',
+          child: Row(
+            children: [
+              FaIcon(FontAwesomeIcons.rightFromBracket, color: Color(0xFFEF4444), size: 16),
+              SizedBox(width: 10),
+              Text('Cerrar sesión'),
+            ],
+          ),
+        ),
+      ],
+    ).then((v) {
+      if (v == 'logout') loginVm.logout();
+    });
+  }
+}
+
+class _MatchLauncherPlaceholder extends StatelessWidget {
+  const _MatchLauncherPlaceholder();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const FaIcon(FontAwesomeIcons.volleyball, size: 48, color: AppColors.textTertiary),
+            const SizedBox(height: 16),
+            const Text('Partidos', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            const Text('Inicia o gestiona tus partidos', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+            const SizedBox(height: 24),
+            FilledButton.icon(
+              onPressed: () => showDialog(
+                context: context,
+                builder: (_) => const MatchStartDialog(),
+              ),
+              icon: const FaIcon(FontAwesomeIcons.play, size: 16),
+              label: const Text('Nuevo Partido'),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.accent,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

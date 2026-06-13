@@ -3,6 +3,7 @@ import '../../../../core/themes/app_colors.dart';
 import '../../../estadisticas/data/models/models.dart';
 import '../../../estadisticas/data/local_db/database_service.dart';
 import 'athlete_form_screen.dart';
+import 'player_detail_screen.dart';
 
 class AthleteListScreen extends StatefulWidget {
   const AthleteListScreen({super.key});
@@ -43,9 +44,9 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
 
   Color _saludColor(EstadoSalud e) {
     switch (e) {
-      case EstadoSalud.disponible: return Colors.green;
-      case EstadoSalud.lesionado: return Colors.red;
-      case EstadoSalud.enDuda: return Colors.orange;
+      case EstadoSalud.disponible: return const Color(0xFF22C55E);
+      case EstadoSalud.lesionado: return const Color(0xFFEF4444);
+      case EstadoSalud.enDuda: return const Color(0xFFF59E0B);
     }
   }
 
@@ -55,15 +56,33 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: AppColors.surface,
-        title: const Text('Atletas', style: TextStyle(color: Colors.white)),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
+        title: Row(
+          children: [
+            const Text('Roster', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+            if (!_loading && _players.isNotEmpty) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppColors.accent.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '${_players.length}',
+                  style: const TextStyle(color: AppColors.accent, fontSize: 12, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ],
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white),
-            onPressed: _load,
+            icon: const Icon(Icons.search, color: Colors.white54),
+            onPressed: () {},
+          ),
+          IconButton(
+            icon: const Icon(Icons.filter_list, color: Colors.white54),
+            onPressed: () {},
           ),
         ],
       ),
@@ -78,7 +97,7 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
 
   Widget _buildBody() {
     if (_loading) {
-      return const Center(child: CircularProgressIndicator(color: Color(0xFFFF8C00)));
+      return const Center(child: CircularProgressIndicator(color: AppColors.accent));
     }
     if (_error != null) {
       return Center(
@@ -104,74 +123,195 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.people_outline, color: Colors.white24, size: 64),
-            const SizedBox(height: 16),
-            const Text('No hay atletas registrados', style: TextStyle(color: Colors.white54, fontSize: 16)),
-            const SizedBox(height: 8),
-            const Text('Presiona + para agregar uno', style: TextStyle(color: Colors.white38, fontSize: 13)),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.people_outline, color: Colors.white24, size: 48),
+            ),
+            const SizedBox(height: 20),
+            const Text('Aún no hay atletas', style: TextStyle(color: Colors.white54, fontSize: 16)),
+            const SizedBox(height: 6),
+            const Text('Agrega tu primer atleta', style: TextStyle(color: Colors.white38, fontSize: 13)),
+            const SizedBox(height: 20),
+            FilledButton.icon(
+              onPressed: _addAthlete,
+              icon: const Icon(Icons.add),
+              label: const Text('Agregar Atleta'),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.accent,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              ),
+            ),
           ],
         ),
       );
     }
+
+    // Sort: captain first, then by number
+    _players.sort((a, b) {
+      if (a.esCapitan && !b.esCapitan) return -1;
+      if (!a.esCapitan && b.esCapitan) return 1;
+      return (a.numero ?? 999).compareTo(b.numero ?? 999);
+    });
+
     return RefreshIndicator(
       color: AppColors.accent,
       onRefresh: _load,
       child: ListView.builder(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
         itemCount: _players.length,
         itemBuilder: (context, index) {
-          final p = _players[index];
-          return _athleteCard(p);
+          return _athleteCard(_players[index]);
         },
       ),
     );
   }
 
   Widget _athleteCard(Player p) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(
+    final healthColor = _saludColor(p.estadoSalud);
+    final parts = p.nombre.trim().split(RegExp(r'\s+'));
+    final lastName = parts.length > 1 ? parts.sublist(1).join(' ') : '';
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Material(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-        leading: CircleAvatar(
-          radius: 22,
-          backgroundColor: p.esCapitan ? AppColors.accent : AppColors.primary,
-          child: Text(
-            '${p.numero}',
-            style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-          ),
-        ),
-        title: Row(
-          children: [
-            Text(p.nombre, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-            if (p.esCapitan) ...[
-              const SizedBox(width: 6),
-              const Icon(Icons.star, color: Color(0xFFFF8C00), size: 16),
-            ],
-          ],
-        ),
-        subtitle: Row(
-          children: [
-            Text(p.posicionLabel, style: const TextStyle(color: Colors.white54, fontSize: 12)),
-            const SizedBox(width: 12),
-            Text('${p.edad} años', style: const TextStyle(color: Colors.white38, fontSize: 12)),
-          ],
-        ),
-        trailing: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-          decoration: BoxDecoration(
-            color: _saludColor(p.estadoSalud).withOpacity(0.15),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Text(
-            p.estadoSaludLabel,
-            style: TextStyle(
-              color: _saludColor(p.estadoSalud),
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PlayerDetailScreen(player: p))),
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(12, 12, 14, 12),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Row(
+              children: [
+                // Number circle with position color
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    gradient: p.esCapitan
+                        ? const LinearGradient(colors: [AppColors.accent, Color(0xFFFFA940)])
+                        : LinearGradient(
+                            colors: [
+                              AppColors.primary.withValues(alpha: 0.8),
+                              AppColors.primary,
+                            ],
+                          ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Center(
+                    child: Text(
+                      '${p.numero ?? '-'}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 17,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // Name and position
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              parts.first,
+                              style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (lastName.isNotEmpty) ...[
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                lastName,
+                                style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 14),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                          if (p.esCapitan) ...[
+                            const SizedBox(width: 6),
+                            const Icon(Icons.star, color: AppColors.accent, size: 15),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              p.posicionLabel,
+                              style: const TextStyle(
+                                color: AppColors.primaryLight,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '${p.edad} años',
+                            style: const TextStyle(color: AppColors.textTertiary, fontSize: 11),
+                          ),
+                          if (p.cedula.isNotEmpty) ...[
+                            const SizedBox(width: 8),
+                            Text(
+                              p.cedula,
+                              style: const TextStyle(color: AppColors.textTertiary, fontSize: 10),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                // Health status
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: healthColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 6,
+                        height: 6,
+                        decoration: BoxDecoration(
+                          color: healthColor,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        p.estadoSaludLabel,
+                        style: TextStyle(color: healthColor, fontSize: 10, fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 4),
+                const Icon(Icons.chevron_right, color: AppColors.textTertiary, size: 18),
+              ],
             ),
           ),
         ),

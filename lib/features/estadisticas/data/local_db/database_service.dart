@@ -1,5 +1,6 @@
 import 'dart:convert';
-import 'package:sembast_web/sembast_web.dart';
+import 'package:sembast/sembast.dart';
+import '../../../../core/database/database_provider.dart';
 import '../models/models.dart';
 import '../../../auth/data/models/user_model.dart';
 import 'package:intl/intl.dart';
@@ -23,7 +24,8 @@ class DatabaseService {
 
   Future<void> initialize() async {
     if (_isInitialized) return;
-    _db = await databaseFactoryWeb.openDatabase('libero360.db');
+    final path = await databasePath;
+    _db = await databaseFactory.openDatabase(path);
     _isInitialized = true;
   }
 

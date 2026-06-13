@@ -19,6 +19,17 @@ jobs:
         with:
           channel: stable
 
+      - name: Create keystore for release signing
+        run: |
+          echo "storePassword=libero360" > android/key.properties
+          echo "keyPassword=libero360" >> android/key.properties
+          echo "keyAlias=upload" >> android/key.properties
+          echo "storeFile=upload-keystore.jks" >> android/key.properties
+          keytool -genkey -v -keystore android/app/upload-keystore.jks \
+            -storetype JKS -keyalg RSA -keysize 2048 -validity 10000 \
+            -storepass libero360 -keypass libero360 -alias upload \
+            -dname "CN=Libero360, OU=Dev, O=Libero360, L=City, ST=State, C=VE"
+
       - name: Install dependencies
         run: flutter pub get
 

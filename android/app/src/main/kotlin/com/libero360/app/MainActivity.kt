@@ -1,4 +1,4 @@
-package com.example.libero360
+package com.libero360.app
 
 import io.flutter.embedding.android.FlutterActivity
 

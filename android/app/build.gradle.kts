@@ -3,7 +3,6 @@ import java.util.Properties
 
 plugins {
     id("com.android.application")
-    id("kotlin-android")
     id("dev.flutter.flutter-gradle-plugin")
 }
 
@@ -46,8 +45,14 @@ android {
     buildTypes {
         release {
             signingConfig = signingConfigs.getByName("release")
+            isMinifyEnabled = false
         }
     }
+}
+
+dependencies {
+    // Play Core — needed by Flutter engine for deferred components
+    implementation("com.google.android.play:core:1.10.3")
 }
 
 flutter {

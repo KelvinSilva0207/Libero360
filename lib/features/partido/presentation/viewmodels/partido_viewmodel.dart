@@ -401,6 +401,19 @@ class PartidoViewModel extends ChangeNotifier {
     _timer = null;
   }
 
+  Future<void> eliminarPartido() async {
+    if (_match == null) return;
+    try {
+      _detenerTimer();
+      await _matchRepository.eliminar(_match!.id);
+      _match = null;
+      notifyListeners();
+    } catch (e) {
+      _error = 'Error: $e';
+      notifyListeners();
+    }
+  }
+
   Future<void> _guardarDuracion() async {
     if (_match == null) return;
     _match!.duracionSegundos = _duracionSegundos;

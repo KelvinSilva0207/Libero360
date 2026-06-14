@@ -224,7 +224,8 @@ class ScoreboardWidget extends StatelessWidget {
           GestureDetector(
             onTap: onScoreTap,
             onLongPress: onScoreLongPress,
-            child: Container(
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
               width: 32,
               height: 32,
               decoration: BoxDecoration(
@@ -232,12 +233,23 @@ class ScoreboardWidget extends StatelessWidget {
                 color: isActive ? color.withValues(alpha: 0.2) : Colors.white10,
               ),
               child: Center(
-                child: Text(
-                  '$points',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
-                    color: isActive ? color : Colors.white24,
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  transitionBuilder: (child, anim) => SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(0, 0.3),
+                      end: Offset.zero,
+                    ).animate(CurvedAnimation(parent: anim, curve: Curves.easeOut)),
+                    child: child,
+                  ),
+                  child: Text(
+                    '$points',
+                    key: ValueKey(points),
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                      color: isActive ? color : Colors.white24,
+                    ),
                   ),
                 ),
               ),
@@ -248,7 +260,8 @@ class ScoreboardWidget extends StatelessWidget {
           GestureDetector(
             onTap: onScoreTap,
             onLongPress: onScoreLongPress,
-            child: Container(
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
               width: 32,
               height: 32,
               decoration: BoxDecoration(
@@ -256,12 +269,23 @@ class ScoreboardWidget extends StatelessWidget {
                 color: isActive ? color.withValues(alpha: 0.2) : Colors.white10,
               ),
               child: Center(
-                child: Text(
-                  '$points',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
-                    color: isActive ? color : Colors.white24,
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  transitionBuilder: (child, anim) => SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(0, 0.3),
+                      end: Offset.zero,
+                    ).animate(CurvedAnimation(parent: anim, curve: Curves.easeOut)),
+                    child: child,
+                  ),
+                  child: Text(
+                    '$points',
+                    key: ValueKey(points),
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                      color: isActive ? color : Colors.white24,
+                    ),
                   ),
                 ),
               ),
@@ -328,36 +352,44 @@ class _SetScoreCell extends StatelessWidget {
     final displayScore = hasScore ? '$score' : '-';
     final wonSet = isComplete && hasScore;
     final showHighlight = isCurrentSet || wonSet;
+    final cellColor = showHighlight
+        ? (wonSet
+            ? (isLocal
+                ? AppColors.accent.withValues(alpha: 0.08)
+                : AppColors.primary.withValues(alpha: 0.08))
+            : Colors.white.withValues(alpha: 0.05))
+        : null;
+    final textColor = wonSet
+        ? (isLocal ? AppColors.accent : AppColors.primary)
+        : isCurrentSet
+            ? Colors.white
+            : Colors.white38;
+    final fontWeight = wonSet
+        ? FontWeight.w900
+        : isCurrentSet
+            ? FontWeight.bold
+            : FontWeight.normal;
 
     return Center(
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
         padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
         decoration: BoxDecoration(
-          color: showHighlight
-              ? (wonSet
-                  ? (isLocal
-                      ? AppColors.accent.withValues(alpha: 0.08)
-                      : AppColors.primary.withValues(alpha: 0.08))
-                  : Colors.white.withValues(alpha: 0.05))
-              : null,
+          color: cellColor,
           borderRadius: BorderRadius.circular(4),
         ),
-        child: Text(
-          displayScore,
+        child: AnimatedDefaultTextStyle(
+          duration: const Duration(milliseconds: 300),
           style: TextStyle(
-            color: wonSet
-                ? (isLocal ? AppColors.accent : AppColors.primary)
-                : isCurrentSet
-                    ? Colors.white
-                    : Colors.white38,
+            color: textColor,
             fontSize: 13,
-            fontWeight: wonSet
-                ? FontWeight.w900
-                : isCurrentSet
-                    ? FontWeight.bold
-                    : FontWeight.normal,
+            fontWeight: fontWeight,
           ),
-          textAlign: TextAlign.center,
+          child: Text(
+            displayScore,
+            textAlign: TextAlign.center,
+          ),
         ),
       ),
     );

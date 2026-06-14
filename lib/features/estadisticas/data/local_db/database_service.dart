@@ -60,6 +60,7 @@ class DatabaseService {
     final all = await getAllPlayers();
     final lower = query.toLowerCase();
     return all.where((p) =>
+      p.displayName.toLowerCase().contains(lower) ||
       p.nombre.toLowerCase().contains(lower) ||
       (p.numero?.toString() ?? '').contains(lower)
     ).toList();
@@ -516,6 +517,9 @@ class DatabaseService {
 
   Map<String, dynamic> _playerToMap(Player p) => {
     'nombre': p.nombre,
+    'firstNames': p.firstNames,
+    'lastNames': p.lastNames,
+    'displayName': p.displayName,
     'cedula': p.cedula,
     'fechaNacimiento': p.fechaNacimiento.millisecondsSinceEpoch,
     'numero': p.numero ?? 0,
@@ -529,6 +533,9 @@ class DatabaseService {
 
   Player _playerFromMap(Map<String, dynamic> map) => Player()
     ..nombre = map['nombre'] as String? ?? ''
+    ..firstNames = map['firstNames'] as String? ?? (map['nombre'] as String? ?? '')
+    ..lastNames = map['lastNames'] as String? ?? ''
+    ..displayName = map['displayName'] as String? ?? (map['nombre'] as String? ?? '')
     ..cedula = map['cedula'] as String? ?? ''
     ..fechaNacimiento = DateTime.fromMillisecondsSinceEpoch(map['fechaNacimiento'] as int? ?? DateTime.now().millisecondsSinceEpoch)
     ..numero = map['numero'] as int?

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+
 import '../../../../core/themes/app_colors.dart';
 import '../../../estadisticas/data/models/models.dart';
 import '../../../estadisticas/data/local_db/database_service.dart';
@@ -47,8 +47,12 @@ class _PlayerDetailScreenState extends State<PlayerDetailScreen> {
         ),
         actions: [
           IconButton(
-            icon: const FaIcon(FontAwesomeIcons.pen, color: Colors.white54, size: 16),
-            onPressed: () {},
+            icon: const Icon(Icons.edit_rounded, color: Colors.white54, size: 16),
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Edición próximamente disponible'), backgroundColor: AppColors.primary),
+              );
+            },
           ),
         ],
       ),
@@ -85,21 +89,24 @@ class _PlayerDetailScreenState extends State<PlayerDetailScreen> {
       ),
       child: Row(
         children: [
-          Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              gradient: p.esCapitan
-                  ? const LinearGradient(colors: [AppColors.accent, Color(0xFFFFA940)])
-                  : LinearGradient(
-                      colors: [AppColors.primary.withValues(alpha: 0.8), AppColors.primary],
-                    ),
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: Center(
-              child: Text(
-                '${p.numero ?? '-'}',
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 26),
+          Hero(
+            tag: 'player-${p.id}',
+            child: Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                gradient: p.esCapitan
+                    ? const LinearGradient(colors: [AppColors.accent, Color(0xFFFFA940)])
+                    : LinearGradient(
+                        colors: [AppColors.primary.withValues(alpha: 0.8), AppColors.primary],
+                      ),
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: Center(
+                child: Text(
+                  '${p.numero ?? '-'}',
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 26),
+                ),
               ),
             ),
           ),
@@ -166,15 +173,15 @@ class _PlayerDetailScreenState extends State<PlayerDetailScreen> {
         children: [
           Row(
             children: [
-              _infoItem(FontAwesomeIcons.idCard, 'Cédula', p.cedula),
-              _infoItem(FontAwesomeIcons.cakeCandles, 'Edad', '${p.edad} años'),
+              _infoItem(Icons.badge_rounded, 'Cédula', p.cedula),
+              _infoItem(Icons.cake_rounded, 'Edad', '${p.edad} años'),
             ],
           ),
           const SizedBox(height: 12),
           Row(
             children: [
-              _infoItem(FontAwesomeIcons.dumbbell, 'Condición', p.condicionFisica),
-              _infoItem(FontAwesomeIcons.personRunning, 'Posición', p.posicionLabel),
+              _infoItem(Icons.fitness_center_rounded, 'Condición', p.condicionFisica),
+              _infoItem(Icons.directions_run_rounded, 'Posición', p.posicionLabel),
             ],
           ),
         ],
@@ -182,14 +189,14 @@ class _PlayerDetailScreenState extends State<PlayerDetailScreen> {
     );
   }
 
-  Widget _infoItem(FaIconData icon, String label, String value) {
+  Widget _infoItem(IconData icon, String label, String value) {
     return Expanded(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              FaIcon(icon, size: 12, color: AppColors.textTertiary),
+              Icon(icon, size: 12, color: AppColors.textTertiary),
               const SizedBox(width: 4),
               Text(label, style: const TextStyle(color: AppColors.textTertiary, fontSize: 11)),
             ],
@@ -217,7 +224,7 @@ class _PlayerDetailScreenState extends State<PlayerDetailScreen> {
         children: [
           const Row(
             children: [
-              FaIcon(FontAwesomeIcons.chartSimple, color: AppColors.accent, size: 16),
+              Icon(Icons.bar_chart_rounded, color: AppColors.accent, size: 16),
               SizedBox(width: 8),
               Text('Estadísticas', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
             ],
@@ -281,7 +288,7 @@ class _PlayerDetailScreenState extends State<PlayerDetailScreen> {
       ),
       child: Row(
         children: [
-          const FaIcon(FontAwesomeIcons.volleyball, color: AppColors.textTertiary, size: 14),
+          const Icon(Icons.sports_volleyball_rounded, color: AppColors.textTertiary, size: 14),
           const SizedBox(width: 8),
           Text('Roles:', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
           const SizedBox(width: 8),

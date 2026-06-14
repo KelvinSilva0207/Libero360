@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../../../estadisticas/data/models/models.dart';
 
-class FullCourtWidget extends StatelessWidget {
+class FullCourtWidget extends StatefulWidget {
   final List<Player> jugadoresLocal;
   final List<Player> jugadoresVisitante;
   final int rotacionLocal;
@@ -11,8 +11,8 @@ class FullCourtWidget extends StatelessWidget {
   final VoidCallback? onRotarLocal;
   final VoidCallback? onRotarVisitante;
   final VoidCallback? onCambiarServicio;
-  final void Function(int index, int numero)? onNumeroEditLocal;
-  final void Function(int index, int numero)? onNumeroEditVisitante;
+  final void Function(int index1, int index2, bool esLocal)? onSwapPlayers;
+  final bool interactive;
 
   const FullCourtWidget({
     super.key,
@@ -24,9 +24,17 @@ class FullCourtWidget extends StatelessWidget {
     this.onRotarLocal,
     this.onRotarVisitante,
     this.onCambiarServicio,
-    this.onNumeroEditLocal,
-    this.onNumeroEditVisitante,
+    this.onSwapPlayers,
+    this.interactive = false,
   });
+
+  @override
+  State<FullCourtWidget> createState() => _FullCourtWidgetState();
+}
+
+class _FullCourtWidgetState extends State<FullCourtWidget> {
+  int? _selectedLocal;
+  int? _selectedVisitante;
 
   @override
   Widget build(BuildContext context) {
@@ -65,6 +73,31 @@ class FullCourtWidget extends StatelessWidget {
     );
   }
 
+  void _selectPlayer(int index, bool esLocal) {
+    if (!widget.interactive) return;
+    setState(() {
+      if (esLocal) {
+        if (_selectedLocal == null) {
+          _selectedLocal = index;
+        } else if (_selectedLocal == index) {
+          _selectedLocal = null;
+        } else {
+          widget.onSwapPlayers?.call(_selectedLocal!, index, true);
+          _selectedLocal = null;
+        }
+      } else {
+        if (_selectedVisitante == null) {
+          _selectedVisitante = index;
+        } else if (_selectedVisitante == index) {
+          _selectedVisitante = null;
+        } else {
+          widget.onSwapPlayers?.call(_selectedVisitante!, index, false);
+          _selectedVisitante = null;
+        }
+      }
+    });
+  }
+
   Widget _buildHeader() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -77,24 +110,24 @@ class FullCourtWidget extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
             decoration: BoxDecoration(
-              color: isLocalServing ? Colors.green.withValues(alpha: 0.2) : Colors.white10,
+              color: widget.isLocalServing ? Colors.green.withValues(alpha: 0.2) : Colors.white10,
               borderRadius: BorderRadius.circular(4),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  isLocalServing ? Icons.volunteer_activism : Icons.sports_volleyball,
+                  widget.isLocalServing ? Icons.volunteer_activism : Icons.sports_volleyball,
                   size: 12,
-                  color: isLocalServing ? Colors.green : Colors.white38,
+                  color: widget.isLocalServing ? Colors.green : Colors.white38,
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  isLocalServing ? 'SACANDO' : 'RECIBE',
+                  widget.isLocalServing ? 'SACANDO' : 'RECIBE',
                   style: TextStyle(
                     fontSize: 9,
                     fontWeight: FontWeight.bold,
-                    color: isLocalServing ? Colors.green : Colors.white38,
+                    color: widget.isLocalServing ? Colors.green : Colors.white38,
                     letterSpacing: 1,
                   ),
                 ),
@@ -123,20 +156,20 @@ class FullCourtWidget extends StatelessWidget {
         children: [
           IconButton(
             icon: const Icon(Icons.rotate_left, size: 16, color: Colors.white54),
-            onPressed: onRotarLocal,
+            onPressed: widget.onRotarLocal,
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
             tooltip: 'Rotar local',
           ),
           Text('LOCAL', style: TextStyle(color: AppColors.accent, fontSize: 8, fontWeight: FontWeight.bold, letterSpacing: 1)),
           const SizedBox(width: 16),
-          if (onCambiarServicio != null)
+          if (widget.onCambiarServicio != null)
             TextButton.icon(
-              onPressed: onCambiarServicio,
-              icon: Icon(Icons.swap_horiz, size: 12, color: isLocalServing ? Colors.green : Colors.white38),
+              onPressed: widget.onCambiarServicio,
+              icon: Icon(Icons.swap_horiz, size: 12, color: widget.isLocalServing ? Colors.green : Colors.white38),
               label: Text(
-                isLocalServing ? 'Quitar saque' : 'Dar saque',
-                style: TextStyle(fontSize: 9, color: isLocalServing ? Colors.green : Colors.white38),
+                widget.isLocalServing ? 'Quitar saque' : 'Dar saque',
+                style: TextStyle(fontSize: 9, color: widget.isLocalServing ? Colors.green : Colors.white38),
               ),
               style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2)),
             ),
@@ -144,7 +177,7 @@ class FullCourtWidget extends StatelessWidget {
           Text('VISIT', style: TextStyle(color: AppColors.primary, fontSize: 8, fontWeight: FontWeight.bold, letterSpacing: 1)),
           IconButton(
             icon: const Icon(Icons.rotate_right, size: 16, color: Colors.white54),
-            onPressed: onRotarVisitante,
+            onPressed: widget.onRotarVisitante,
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
             tooltip: 'Rotar visitante',
@@ -155,8 +188,9 @@ class FullCourtWidget extends StatelessWidget {
   }
 
   Widget _buildPlayers({required bool esLocal, required BoxConstraints constraints}) {
-    final jugadores = esLocal ? jugadoresLocal : jugadoresVisitante;
-    final rotacion = esLocal ? rotacionLocal : rotacionVisitante;
+    final jugadores = esLocal ? widget.jugadoresLocal : widget.jugadoresVisitante;
+    final rotacion = esLocal ? widget.rotacionLocal : widget.rotacionVisitante;
+    final selected = esLocal ? _selectedLocal : _selectedVisitante;
     if (jugadores.length < 6) return const SizedBox.shrink();
 
     return Stack(
@@ -165,10 +199,14 @@ class FullCourtWidget extends StatelessWidget {
           Positioned(
             left: _posX(esLocal, _servingOrderToDisplay(i, rotacion), constraints),
             top: _posY(esLocal, _servingOrderToDisplay(i, rotacion), constraints),
-            child: _MiniAvatar(
-              player: jugadores[i],
-              isServer: esLocal == true && isLocalServing && i == 0,
-              isLocal: esLocal,
+            child: GestureDetector(
+              onTap: () => _selectPlayer(i, esLocal),
+              child: _MiniAvatar(
+                player: jugadores[i],
+                isServer: esLocal == true && widget.isLocalServing && i == 0,
+                isLocal: esLocal,
+                isSelected: selected == i,
+              ),
             ),
           ),
       ],
@@ -212,45 +250,55 @@ class _MiniAvatar extends StatelessWidget {
   final Player player;
   final bool isServer;
   final bool isLocal;
+  final bool isSelected;
 
   const _MiniAvatar({
     required this.player,
     required this.isServer,
     required this.isLocal,
+    this.isSelected = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final color = isLocal ? AppColors.accent : AppColors.primary;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Stack(
-          children: [
-            CircleAvatar(
-              radius: 14,
-              backgroundColor: color,
-              child: Text(
-                '${player.numero ?? "?"}',
-                style: const TextStyle(fontWeight: FontWeight.w900, color: Colors.white, fontSize: 11),
-              ),
-            ),
-            if (isServer)
-              Positioned(
-                top: -3, right: -3,
-                child: Container(
-                  width: 12, height: 12,
-                  decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.green),
-                  child: const Icon(Icons.sports_volleyball, size: 7, color: Colors.white),
+    return AnimatedScale(
+      scale: isSelected ? 1.25 : 1.0,
+      duration: const Duration(milliseconds: 200),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Stack(
+            children: [
+              CircleAvatar(
+                radius: isSelected ? 16 : 14,
+                backgroundColor: isSelected ? Colors.white : color,
+                child: CircleAvatar(
+                  radius: isSelected ? 13 : 11,
+                  backgroundColor: color,
+                  child: Text(
+                    '${player.numero ?? "?"}',
+                    style: const TextStyle(fontWeight: FontWeight.w900, color: Colors.white, fontSize: 11),
+                  ),
                 ),
               ),
-          ],
-        ),
-        Text(
-          _posShort(player.posicion),
-          style: TextStyle(fontSize: 7, color: Colors.white38, fontWeight: FontWeight.bold),
-        ),
-      ],
+              if (isServer)
+                Positioned(
+                  top: -3, right: -3,
+                  child: Container(
+                    width: 12, height: 12,
+                    decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.green),
+                    child: const Icon(Icons.sports_volleyball, size: 7, color: Colors.white),
+                  ),
+                ),
+            ],
+          ),
+          Text(
+            player.displayName.isNotEmpty ? player.displayName.split(' ').first : _posShort(player.posicion),
+            style: TextStyle(fontSize: 7, color: isSelected ? Colors.white : Colors.white38, fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
     );
   }
 

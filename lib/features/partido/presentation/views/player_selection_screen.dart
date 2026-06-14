@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/themes/app_colors.dart';
+import '../../../../core/widgets_globales/route_transitions.dart';
 import '../../../estadisticas/data/models/models.dart';
 import '../../../estadisticas/data/local_db/database_service.dart';
 import '../../data/match_config.dart';
@@ -60,10 +61,7 @@ class _PlayerSelectionScreenState extends State<PlayerSelectionScreen> {
   void _iniciarPartido() {
     final selected = _allPlayers.where((p) => _selectedIds.contains(p.id)).toList();
     widget.config.selectedPlayers = selected.take(12).toList();
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => MatchScreen(config: widget.config)),
-    );
+    context.pushReplaceSlide(MatchScreen(config: widget.config));
   }
 
   Color _saludColor(EstadoSalud e) {
@@ -127,8 +125,15 @@ class _PlayerSelectionScreenState extends State<PlayerSelectionScreen> {
   }
 
   Widget _headerBar() {
-    final tipoStr = widget.config.tipoPartido == TipoPartido.amistoso ? 'Amistoso'
-        : widget.config.tipoPartido == TipoPartido.liga ? 'Liga' : 'Torneo';
+    String _tipoLabel(TipoPartido t) {
+      switch (t) {
+        case TipoPartido.amistoso: return 'Amistoso';
+        case TipoPartido.liga: return 'Liga';
+        case TipoPartido.torneo: return 'Torneo';
+        case TipoPartido.practica: return 'Práctica';
+      }
+    }
+    final tipoStr = _tipoLabel(widget.config.tipoPartido);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       color: AppColors.surface,

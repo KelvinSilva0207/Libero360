@@ -455,9 +455,10 @@ class _MatchScreenState extends State<MatchScreen> {
             child: const Text('Volver al partido', style: TextStyle(color: AppColors.accent)),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(ctx);
-              Navigator.of(context).pop();
+              await vm.eliminarPartido();
+              if (context.mounted) Navigator.of(context).pop();
             },
             child: const Text('Salir sin guardar', style: TextStyle(color: Colors.white54)),
           ),

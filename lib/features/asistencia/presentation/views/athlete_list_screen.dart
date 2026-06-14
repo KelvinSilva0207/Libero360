@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/themes/app_colors.dart';
+import '../../../../core/widgets_globales/route_transitions.dart';
 import '../../../estadisticas/data/models/models.dart';
 import '../../../estadisticas/data/local_db/database_service.dart';
 import 'athlete_form_screen.dart';
@@ -35,10 +36,7 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
   }
 
   Future<void> _addAthlete() async {
-    final result = await Navigator.push<bool>(
-      context,
-      MaterialPageRoute(builder: (_) => const AthleteFormScreen()),
-    );
+    final result = await context.pushSlide<bool>(const AthleteFormScreen());
     if (result == true) _load();
   }
 
@@ -78,11 +76,19 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.search, color: Colors.white54),
-            onPressed: () {},
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Búsqueda próximamente disponible'), backgroundColor: AppColors.primary),
+              );
+            },
           ),
           IconButton(
             icon: const Icon(Icons.filter_list, color: Colors.white54),
-            onPressed: () {},
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Filtros próximamente disponibles'), backgroundColor: AppColors.primary),
+              );
+            },
           ),
         ],
       ),
@@ -181,7 +187,7 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PlayerDetailScreen(player: p))),
+          onTap: () => context.pushSlide(PlayerDetailScreen(player: p)),
           borderRadius: BorderRadius.circular(12),
           child: Container(
             padding: const EdgeInsets.fromLTRB(12, 12, 14, 12),
@@ -191,28 +197,30 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
             ),
             child: Row(
               children: [
-                // Number circle with position color
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    gradient: p.esCapitan
-                        ? const LinearGradient(colors: [AppColors.accent, Color(0xFFFFA940)])
-                        : LinearGradient(
-                            colors: [
-                              AppColors.primary.withValues(alpha: 0.8),
-                              AppColors.primary,
-                            ],
-                          ),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Center(
-                    child: Text(
-                      '${p.numero ?? '-'}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 17,
+                Hero(
+                  tag: 'player-${p.id}',
+                  child: Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      gradient: p.esCapitan
+                          ? const LinearGradient(colors: [AppColors.accent, Color(0xFFFFA940)])
+                          : LinearGradient(
+                              colors: [
+                                AppColors.primary.withValues(alpha: 0.8),
+                                AppColors.primary,
+                              ],
+                            ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Center(
+                      child: Text(
+                        '${p.numero ?? '-'}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 17,
+                        ),
                       ),
                     ),
                   ),

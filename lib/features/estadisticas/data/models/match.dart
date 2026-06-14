@@ -9,6 +9,7 @@ enum TipoPartido {
   amistoso,
   liga,
   torneo,
+  practica,
 }
 
 class Match {
@@ -73,6 +74,7 @@ class Match {
       case TipoPartido.amistoso: return 'Amistoso';
       case TipoPartido.liga: return 'Liga';
       case TipoPartido.torneo: return 'Torneo';
+      case TipoPartido.practica: return 'Práctica';
     }
   }
 

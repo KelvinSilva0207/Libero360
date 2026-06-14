@@ -13,7 +13,8 @@ class AthleteFormScreen extends StatefulWidget {
 
 class _AthleteFormScreenState extends State<AthleteFormScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _nombreCtrl = TextEditingController();
+  final _firstNamesCtrl = TextEditingController();
+  final _lastNamesCtrl = TextEditingController();
   final _cedulaCtrl = TextEditingController();
   final _numeroCtrl = TextEditingController();
   final _condicionFisicaCtrl = TextEditingController(text: 'Excelente');
@@ -27,7 +28,8 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
 
   @override
   void dispose() {
-    _nombreCtrl.dispose();
+    _firstNamesCtrl.dispose();
+    _lastNamesCtrl.dispose();
     _cedulaCtrl.dispose();
     _numeroCtrl.dispose();
     _condicionFisicaCtrl.dispose();
@@ -72,7 +74,8 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
 
     try {
       final player = Player.create(
-        nombre: _nombreCtrl.text.trim(),
+        firstNames: _firstNamesCtrl.text.trim(),
+        lastNames: _lastNamesCtrl.text.trim(),
         cedula: _cedulaCtrl.text.trim(),
         fechaNacimiento: _fechaNacimiento,
         numero: _numeroCtrl.text.trim().isEmpty ? null : int.parse(_numeroCtrl.text.trim()),
@@ -119,8 +122,13 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
             children: [
               _section('Información Personal'),
               const SizedBox(height: 8),
-              _buildTextField(_nombreCtrl, 'Nombre Completo', Icons.person, validator: (v) {
-                if (v == null || v.trim().isEmpty) return 'Ingrese el nombre';
+              _buildTextField(_firstNamesCtrl, 'Nombres', Icons.person, validator: (v) {
+                if (v == null || v.trim().isEmpty) return 'Ingrese los nombres';
+                return null;
+              }),
+              const SizedBox(height: 12),
+              _buildTextField(_lastNamesCtrl, 'Apellidos', Icons.person_outline_rounded, validator: (v) {
+                if (v == null || v.trim().isEmpty) return 'Ingrese los apellidos';
                 return null;
               }),
               const SizedBox(height: 12),

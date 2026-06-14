@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+
 import '../../../../core/themes/app_colors.dart';
 import '../../../../ui/components/app_text_field.dart';
 import '../viewmodels/auth_viewmodel.dart';
@@ -35,6 +35,12 @@ class _LoginScreenState extends State<LoginScreen> {
     } else if (!success && mounted) {
       _showError(vm.error ?? 'Error al iniciar sesión');
     }
+  }
+
+  void _showComingSoon(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Próximamente disponible'), backgroundColor: AppColors.primary),
+    );
   }
 
   void _showError(String msg) {
@@ -88,7 +94,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     controller: _emailCtrl,
                                     label: 'Correo electrónico',
                                     hint: 'tu@correo.com',
-                                    prefixIcon: FontAwesomeIcons.envelope,
+                                    prefixIcon: Icons.email_rounded,
                                     keyboardType: TextInputType.emailAddress,
                                     validator: (v) {
                                       if (v == null || v.isEmpty) return 'Ingresa tu correo';
@@ -101,7 +107,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     controller: _passwordCtrl,
                                     label: 'Contraseña',
                                     hint: 'Mínimo 6 caracteres',
-                                    prefixIcon: FontAwesomeIcons.lock,
+                                    prefixIcon: Icons.lock_rounded,
                                     isPassword: true,
                                     validator: (v) {
                                       if (v == null || v.isEmpty) return 'Ingresa tu contraseña';
@@ -113,7 +119,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   Align(
                                     alignment: Alignment.centerRight,
                                     child: TextButton(
-                                      onPressed: () {},
+                                      onPressed: () => _showComingSoon(context),
                                       child: const Text(
                                         '¿Olvidaste tu contraseña?',
                                         style: TextStyle(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.w500),
@@ -136,7 +142,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                           : const Row(
                                               mainAxisAlignment: MainAxisAlignment.center,
                                               children: [
-                                                FaIcon(FontAwesomeIcons.rightToBracket, size: 18),
+                                                Icon(Icons.login_rounded, size: 18, color: AppColors.textOnAccent),
                                                 SizedBox(width: 10),
                                                 Text('Iniciar Sesión', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, letterSpacing: 0.3)),
                                               ],
@@ -148,16 +154,16 @@ class _LoginScreenState extends State<LoginScreen> {
                                   const SizedBox(height: 20),
                                   _SocialButton(
                                     label: 'Continuar con Google',
-                                    icon: FontAwesomeIcons.google,
+                                    icon: Icons.g_mobiledata_rounded,
                                     iconColor: AppColors.google,
-                                    onPressed: () {},
+                                    onPressed: () => _showComingSoon(context),
                                   ),
                                   const SizedBox(height: 12),
                                   _SocialButton(
                                     label: 'Continuar con Facebook',
-                                    icon: FontAwesomeIcons.facebook,
+                                    icon: Icons.facebook_rounded,
                                     iconColor: AppColors.facebook,
-                                    onPressed: () {},
+                                    onPressed: () => _showComingSoon(context),
                                   ),
                                   const SizedBox(height: 28),
                                   Row(
@@ -165,7 +171,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     children: [
                                       Text('¿No tienes cuenta? ', style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 13)),
                                       GestureDetector(
-                                        onTap: () => Navigator.pushReplacementNamed(context, '/register'),
+                                        onTap: () => Navigator.pushNamed(context, '/register'),
                                         child: const Text('Regístrate', style: TextStyle(color: AppColors.accent, fontSize: 13, fontWeight: FontWeight.w600)),
                                       ),
                                     ],
@@ -223,7 +229,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
 class _SocialButton extends StatelessWidget {
   final String label;
-  final FaIconData icon;
+  final IconData icon;
   final Color iconColor;
   final VoidCallback? onPressed;
 
@@ -249,7 +255,7 @@ class _SocialButton extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            FaIcon(icon, color: iconColor, size: 20),
+            Icon(icon, color: iconColor, size: 20),
             const SizedBox(width: 10),
             Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
           ],

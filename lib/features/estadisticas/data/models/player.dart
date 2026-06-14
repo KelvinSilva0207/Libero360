@@ -16,6 +16,9 @@ enum EstadoSalud {
 class Player {
   int id = 0;
   String nombre = '';
+  String firstNames = '';
+  String lastNames = '';
+  String displayName = '';
   String cedula = '';
   DateTime fechaNacimiento = DateTime.now();
   int? numero;
@@ -29,7 +32,9 @@ class Player {
   Player();
 
   factory Player.create({
-    required String nombre,
+    String? nombre,
+    String? firstNames,
+    String? lastNames,
     required String cedula,
     required DateTime fechaNacimiento,
     int? numero,
@@ -39,8 +44,13 @@ class Player {
     EstadoSalud estadoSalud = EstadoSalud.disponible,
     String condicionFisica = 'Excelente',
   }) {
+    final fn = firstNames ?? nombre ?? '';
+    final ln = lastNames ?? '';
     return Player()
-      ..nombre = nombre
+      ..firstNames = fn
+      ..lastNames = ln
+      ..displayName = '$fn $ln'.trim()
+      ..nombre = nombre ?? '$fn $ln'.trim()
       ..cedula = cedula
       ..fechaNacimiento = fechaNacimiento
       ..numero = numero

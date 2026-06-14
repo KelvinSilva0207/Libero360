@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../data/local_db/database_service.dart';
 import '../../data/models/models.dart';
 import '../../data/repositories/repositories.dart';
 
@@ -299,18 +300,27 @@ class _StatRecorderWidgetState extends State<StatRecorderWidget> {
                 ],
               ),
             ),
-          // Botones de acción
+          // Botones de acción con 3 estados (+/−/≈)
           Wrap(
             spacing: 8,
             runSpacing: 8,
             alignment: WrapAlignment.center,
             children: [
+              // ATAQUE +/−/≈
               _buildBotonAccion(
                 icon: Icons.sports_volleyball,
-                label: 'ATAQUE',
+                label: 'ATAQUE +',
                 color: Colors.green,
                 onTap: _jugadorSeleccionado != null
-                    ? () => _registrarAccion(TipoAccion.ataque, true)
+                    ? () => _registrarAccion(TipoAccion.ataque, ResultadoAccion.positivo)
+                    : null,
+              ),
+              _buildBotonAccion(
+                icon: Icons.sports_volleyball,
+                label: 'ATAQUE ≈',
+                color: Colors.grey,
+                onTap: _jugadorSeleccionado != null
+                    ? () => _registrarAccion(TipoAccion.ataque, ResultadoAccion.neutral)
                     : null,
               ),
               _buildBotonAccion(
@@ -318,15 +328,24 @@ class _StatRecorderWidgetState extends State<StatRecorderWidget> {
                 label: 'ATAQUE -',
                 color: Colors.red.shade400,
                 onTap: _jugadorSeleccionado != null
-                    ? () => _registrarAccion(TipoAccion.ataque, false)
+                    ? () => _registrarAccion(TipoAccion.ataque, ResultadoAccion.negativo)
+                    : null,
+              ),
+              // SAQUE +/−/≈
+              _buildBotonAccion(
+                icon: Icons.wifi_tethering,
+                label: 'SAQUE +',
+                color: Colors.green,
+                onTap: _jugadorSeleccionado != null
+                    ? () => _registrarAccion(TipoAccion.saque, ResultadoAccion.positivo)
                     : null,
               ),
               _buildBotonAccion(
                 icon: Icons.wifi_tethering,
-                label: 'SAQUE',
-                color: Colors.green,
+                label: 'SAQUE ≈',
+                color: Colors.grey,
                 onTap: _jugadorSeleccionado != null
-                    ? () => _registrarAccion(TipoAccion.saque, true)
+                    ? () => _registrarAccion(TipoAccion.saque, ResultadoAccion.neutral)
                     : null,
               ),
               _buildBotonAccion(
@@ -334,15 +353,24 @@ class _StatRecorderWidgetState extends State<StatRecorderWidget> {
                 label: 'SAQUE -',
                 color: Colors.red.shade400,
                 onTap: _jugadorSeleccionado != null
-                    ? () => _registrarAccion(TipoAccion.saque, false)
+                    ? () => _registrarAccion(TipoAccion.saque, ResultadoAccion.negativo)
+                    : null,
+              ),
+              // BLOQUEO +/−/≈
+              _buildBotonAccion(
+                icon: Icons.block,
+                label: 'BLOQUEO +',
+                color: _accentOrange,
+                onTap: _jugadorSeleccionado != null
+                    ? () => _registrarAccion(TipoAccion.bloqueo, ResultadoAccion.positivo)
                     : null,
               ),
               _buildBotonAccion(
                 icon: Icons.block,
-                label: 'BLOQUEO',
-                color: _accentOrange,
+                label: 'BLOQUEO ≈',
+                color: Colors.grey,
                 onTap: _jugadorSeleccionado != null
-                    ? () => _registrarAccion(TipoAccion.bloqueo, true)
+                    ? () => _registrarAccion(TipoAccion.bloqueo, ResultadoAccion.neutral)
                     : null,
               ),
               _buildBotonAccion(
@@ -350,7 +378,7 @@ class _StatRecorderWidgetState extends State<StatRecorderWidget> {
                 label: 'DEFENSA',
                 color: _primaryLight,
                 onTap: _jugadorSeleccionado != null
-                    ? () => _registrarAccion(TipoAccion.defensa, true)
+                    ? () => _registrarAccion(TipoAccion.defensa, ResultadoAccion.neutral)
                     : null,
               ),
               _buildBotonAccion(
@@ -440,53 +468,34 @@ class _StatRecorderWidgetState extends State<StatRecorderWidget> {
     });
   }
 
-  Future<void> _registrarAccion(TipoAccion tipo, bool esPositivo) async {
+  Future<void> _registrarAccion(TipoAccion tipo, ResultadoAccion resultado) async {
     if (_jugadorSeleccionado == null) return;
 
     setState(() => _isLoading = true);
 
     try {
-      StatEvent evento;
-      
-      switch (tipo) {
-        case TipoAccion.ataque:
-          evento = await _repository.registrarAtaque(
-            playerId: _jugadorSeleccionado!.id,
-            matchId: widget.matchId,
-            esPositivo: esPositivo,
-            esEquipoLocal: widget.esEquipoLocal,
-          );
-          break;
-        case TipoAccion.saque:
-          evento = await _repository.registrarSaque(
-            playerId: _jugadorSeleccionado!.id,
-            matchId: widget.matchId,
-            esPositivo: esPositivo,
-            esEquipoLocal: widget.esEquipoLocal,
-          );
-          break;
-        case TipoAccion.bloqueo:
-          evento = await _repository.registrarBloqueo(
-            playerId: _jugadorSeleccionado!.id,
-            matchId: widget.matchId,
-            esPositivo: esPositivo,
-            esEquipoLocal: widget.esEquipoLocal,
-          );
-          break;
-        case TipoAccion.defensa:
-          evento = await _repository.registrarDefensa(
-            playerId: _jugadorSeleccionado!.id,
-            matchId: widget.matchId,
-            esEquipoLocal: widget.esEquipoLocal,
-          );
-          break;
-        default:
-          return;
-      }
+      final match = await DatabaseService.instance.getMatchById(widget.matchId);
+      if (match == null) throw Exception('Partido no encontrado');
 
-      // Mostrar feedback visual
-      _mostrarFeedback(esPositivo);
-      
+      final evento = StatEvent.create(
+        tipoAccion: tipo,
+        resultado: resultado,
+        setNumero: match.setActual,
+        puntoLocal: match.puntosLocal,
+        puntoVisitante: match.puntosVisitante,
+        esEquipoLocal: widget.esEquipoLocal,
+        zona: tipo == TipoAccion.ataque ? ZonaCancha.ataque
+            : tipo == TipoAccion.saque ? ZonaCancha.saque
+            : tipo == TipoAccion.bloqueo ? ZonaCancha.central
+            : ZonaCancha.defensa,
+        playerId: _jugadorSeleccionado!.id,
+        matchId: widget.matchId,
+      );
+
+      await DatabaseService.instance.saveStatEvent(evento);
+
+      _mostrarFeedback(resultado != ResultadoAccion.negativo);
+
       widget.onEventRegistered?.call(evento);
     } catch (e) {
       widget.onError?.call('Error al registrar: $e');

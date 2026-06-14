@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+
 import 'package:provider/provider.dart';
 import '../core/themes/app_colors.dart';
 import '../features/auth/presentation/viewmodels/auth_viewmodel.dart';
@@ -49,6 +49,12 @@ class _AppShellState extends State<AppShell> {
               ? null
               : AppBar(
                   backgroundColor: AppColors.surface,
+                  leading: _selectedIndex != 0
+                      ? IconButton(
+                          icon: const Icon(Icons.arrow_back_rounded),
+                          onPressed: () => setState(() => _selectedIndex = 0),
+                        )
+                      : null,
                   title: Row(
                     children: [
                       Image.asset('assets/images/logo_libero.png', width: 24, height: 24),
@@ -141,7 +147,7 @@ class _AppShellState extends State<AppShell> {
                       ],
                     ),
                   ),
-                  const FaIcon(FontAwesomeIcons.ellipsisVertical, color: AppColors.textSecondary, size: 14),
+                  const Icon(Icons.more_vert_rounded, color: AppColors.textSecondary, size: 14),
                 ],
               ),
             ),
@@ -155,17 +161,17 @@ class _AppShellState extends State<AppShell> {
     return ListView(
       padding: const EdgeInsets.symmetric(vertical: 8),
       children: [
-        _navItem(NavItem.dashboard, FontAwesomeIcons.squarePollVertical, 'Dashboard', 0),
-        _navItem(NavItem.athletes, FontAwesomeIcons.peopleGroup, 'Atletas', 1),
-        _navItem(NavItem.matches, FontAwesomeIcons.volleyball, 'Partidos', 2),
-        _navItem(NavItem.stats, FontAwesomeIcons.chartSimple, 'Estadísticas', 3),
-        _navItem(NavItem.attendance, FontAwesomeIcons.clipboardCheck, 'Asistencia', 4),
-        _navItem(NavItem.settings, FontAwesomeIcons.gear, 'Configuración', 5),
+        _navItem(NavItem.dashboard, Icons.dashboard_rounded, 'Dashboard', 0),
+        _navItem(NavItem.athletes, Icons.people_rounded, 'Atletas', 1),
+        _navItem(NavItem.matches, Icons.sports_volleyball_rounded, 'Partidos', 2),
+        _navItem(NavItem.stats, Icons.bar_chart_rounded, 'Estadísticas', 3),
+        _navItem(NavItem.attendance, Icons.checklist_rounded, 'Asistencia', 4),
+        _navItem(NavItem.settings, Icons.settings_rounded, 'Configuración', 5),
       ],
     );
   }
 
-  Widget _navItem(NavItem item, FaIconData icon, String label, int index) {
+  Widget _navItem(NavItem item, IconData icon, String label, int index) {
     final isSelected = _selectedIndex == index;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -179,7 +185,7 @@ class _AppShellState extends State<AppShell> {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
             child: Row(
               children: [
-                FaIcon(icon, size: 18, color: isSelected ? AppColors.accent : AppColors.textSecondary),
+                Icon(icon, size: 18, color: isSelected ? AppColors.accent : AppColors.textSecondary),
                 const SizedBox(width: 12),
                 Text(
                   label,
@@ -250,7 +256,7 @@ class _AppShellState extends State<AppShell> {
           value: 'settings',
           child: Row(
             children: [
-              FaIcon(FontAwesomeIcons.gear, color: Colors.white70, size: 16),
+              Icon(Icons.settings_rounded, color: Colors.white70, size: 16),
               SizedBox(width: 10),
               Text('Configuración'),
             ],
@@ -261,7 +267,7 @@ class _AppShellState extends State<AppShell> {
           value: 'logout',
           child: Row(
             children: [
-              FaIcon(FontAwesomeIcons.rightFromBracket, color: Color(0xFFEF4444), size: 16),
+              Icon(Icons.logout_rounded, color: Color(0xFFEF4444), size: 16),
               SizedBox(width: 10),
               Text('Cerrar sesión'),
             ],
@@ -287,7 +293,7 @@ class _AppShellState extends State<AppShell> {
           value: 'settings',
           child: Row(
             children: [
-              FaIcon(FontAwesomeIcons.gear, color: Colors.white70, size: 16),
+              Icon(Icons.settings_rounded, color: Colors.white70, size: 16),
               SizedBox(width: 10),
               Text('Configuración'),
             ],
@@ -298,7 +304,7 @@ class _AppShellState extends State<AppShell> {
           value: 'logout',
           child: Row(
             children: [
-              FaIcon(FontAwesomeIcons.rightFromBracket, color: Color(0xFFEF4444), size: 16),
+              Icon(Icons.logout_rounded, color: Color(0xFFEF4444), size: 16),
               SizedBox(width: 10),
               Text('Cerrar sesión'),
             ],
@@ -322,7 +328,7 @@ class _MatchLauncherPlaceholder extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const FaIcon(FontAwesomeIcons.volleyball, size: 48, color: AppColors.textTertiary),
+            const Icon(Icons.sports_volleyball_rounded, size: 48, color: AppColors.textTertiary),
             const SizedBox(height: 16),
             const Text('Partidos', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
@@ -333,7 +339,7 @@ class _MatchLauncherPlaceholder extends StatelessWidget {
                 context: context,
                 builder: (_) => const MatchStartDialog(),
               ),
-              icon: const FaIcon(FontAwesomeIcons.play, size: 16),
+              icon: const Icon(Icons.play_arrow_rounded, size: 16),
               label: const Text('Nuevo Partido'),
               style: FilledButton.styleFrom(
                 backgroundColor: AppColors.accent,

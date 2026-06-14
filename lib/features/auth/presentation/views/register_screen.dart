@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+
 import '../../../../core/themes/app_colors.dart';
 import '../../../../ui/components/app_logo.dart';
 import '../../../../ui/components/app_text_field.dart';
@@ -74,7 +74,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             alignment: Alignment.centerLeft,
                             child: TextButton.icon(
                               onPressed: () => Navigator.pop(context),
-                              icon: const FaIcon(FontAwesomeIcons.arrowLeft, size: 16),
+                              icon: const Icon(Icons.arrow_back_rounded, size: 16),
                               label: const Text('Volver', style: TextStyle(fontSize: 14)),
                             ),
                           ),
@@ -95,7 +95,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             controller: _nombreCtrl,
                             label: 'Nombre del equipo / entrenador',
                             hint: 'Tu nombre o el de tu equipo',
-                            prefixIcon: FontAwesomeIcons.user,
+                            prefixIcon: Icons.person_rounded,
                             textCapitalization: TextCapitalization.words,
                             validator: (v) {
                               if (v == null || v.trim().isEmpty) return 'Ingresa tu nombre';
@@ -108,7 +108,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             controller: _emailCtrl,
                             label: 'Correo electrónico',
                             hint: 'ejemplo@correo.com',
-                            prefixIcon: FontAwesomeIcons.envelope,
+                            prefixIcon: Icons.email_rounded,
                             keyboardType: TextInputType.emailAddress,
                             validator: (v) {
                               if (v == null || v.trim().isEmpty) return 'Ingresa tu correo';
@@ -122,7 +122,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             controller: _passwordCtrl,
                             label: 'Contraseña',
                             hint: 'Mínimo 6 caracteres',
-                            prefixIcon: FontAwesomeIcons.lock,
+                            prefixIcon: Icons.lock_rounded,
                             isPassword: true,
                             validator: (v) {
                               if (v == null || v.isEmpty) return 'Ingresa una contraseña';
@@ -137,7 +137,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             controller: _confirmCtrl,
                             label: 'Confirmar contraseña',
                             hint: 'Repite la contraseña',
-                            prefixIcon: FontAwesomeIcons.lock,
+                            prefixIcon: Icons.lock_rounded,
                             isPassword: true,
                             validator: (v) {
                               if (v != _passwordCtrl.text) return 'Las contraseñas no coinciden';
@@ -160,7 +160,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   : const Row(
                                       mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
-                                        FaIcon(FontAwesomeIcons.userPlus, size: 18),
+                                        Icon(Icons.person_add_rounded, size: 18),
                                         SizedBox(width: 10),
                                         Text('Crear Cuenta', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, letterSpacing: 0.3)),
                                       ],
@@ -179,7 +179,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             children: [
                               Text('¿Ya tienes cuenta? ', style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 13)),
                               GestureDetector(
-                                onTap: () => Navigator.pushReplacementNamed(context, '/login'),
+                                onTap: () => Navigator.pushNamed(context, '/login'),
                                 child: const Text('Inicia sesión', style: TextStyle(color: AppColors.accent, fontSize: 13, fontWeight: FontWeight.w600)),
                               ),
                             ],

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+
 import '../../../../core/themes/app_colors.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -13,7 +13,7 @@ class SettingsScreen extends StatelessWidget {
         backgroundColor: AppColors.surface,
         title: const Text('Configuración', style: TextStyle(color: Colors.white)),
         leading: IconButton(
-          icon: const FaIcon(FontAwesomeIcons.arrowLeft, color: Colors.white, size: 18),
+          icon: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 18),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -41,7 +41,11 @@ class SettingsScreen extends StatelessWidget {
             subtitle: 'Activar rotación automática',
             trailing: Switch(
               value: true,
-              onChanged: (v) {},
+              onChanged: (v) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Próximamente disponible'), backgroundColor: AppColors.primary),
+                );
+              },
               activeColor: AppColors.accent,
             ),
           ),
@@ -124,7 +128,13 @@ class _SettingsTile extends StatelessWidget {
         title: Text(title, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w500)),
         subtitle: Text(subtitle, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
         trailing: trailing ?? const Icon(Icons.chevron_right, color: Colors.white24, size: 20),
-        onTap: trailing != null ? null : () {},
+        onTap: trailing != null
+            ? null
+            : () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Próximamente disponible'), backgroundColor: AppColors.primary),
+                );
+              },
       ),
     );
   }

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+
 import '../../../../core/themes/app_colors.dart';
 import '../../../../ui/components/app_logo.dart';
 
@@ -36,12 +36,12 @@ class WelcomeScreen extends StatelessWidget {
                     const SizedBox(height: 48),
                     const AppLogo(size: 100),
                     const SizedBox(height: 48),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 52,
-                      child: FilledButton.icon(
-                        onPressed: () => Navigator.pushReplacementNamed(context, '/login'),
-                        icon: const FaIcon(FontAwesomeIcons.rightToBracket, size: 18),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 52,
+                        child: FilledButton.icon(
+                          onPressed: () => Navigator.pushNamed(context, '/login'),
+                        icon: const Icon(Icons.login_rounded, size: 18),
                         label: const Text(
                           'Iniciar Sesión',
                           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, letterSpacing: 0.3),
@@ -58,8 +58,8 @@ class WelcomeScreen extends StatelessWidget {
                       width: double.infinity,
                       height: 52,
                       child: OutlinedButton.icon(
-                        onPressed: () => Navigator.pushReplacementNamed(context, '/register'),
-                        icon: const FaIcon(FontAwesomeIcons.userPlus, size: 16),
+                        onPressed: () => Navigator.pushNamed(context, '/register'),
+                        icon: const Icon(Icons.person_add_rounded, size: 16),
                         label: const Text(
                           'Registrar Nuevo Equipo',
                           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, letterSpacing: 0.3),

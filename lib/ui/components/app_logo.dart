@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+
 import '../../core/themes/app_colors.dart';
 
 class AppLogo extends StatelessWidget {
@@ -38,8 +38,8 @@ class AppLogo extends StatelessWidget {
               width: size,
               height: size,
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => FaIcon(
-                FontAwesomeIcons.volleyball,
+              errorBuilder: (_, __, ___) => Icon(
+                Icons.sports_volleyball_rounded,
                 size: size * 0.5,
                 color: AppColors.textOnPrimary,
               ),

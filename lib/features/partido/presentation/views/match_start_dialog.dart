@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/themes/app_colors.dart';
+import '../../../../core/widgets_globales/route_transitions.dart';
 import '../../../estadisticas/data/models/models.dart';
 import '../../../estadisticas/data/local_db/database_service.dart';
 import '../../data/match_config.dart';
@@ -77,7 +78,7 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
 
     Navigator.of(context).pop();
     Navigator.of(context, rootNavigator: true).push(
-      MaterialPageRoute(builder: (_) => MatchScreen(config: config)),
+      slideRightRoute(MatchScreen(config: config)),
     );
   }
 
@@ -265,6 +266,7 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
         DropdownMenuItem(value: TipoPartido.amistoso, child: Text('Amistoso')),
         DropdownMenuItem(value: TipoPartido.liga, child: Text('Liga')),
         DropdownMenuItem(value: TipoPartido.torneo, child: Text('Torneo')),
+        DropdownMenuItem(value: TipoPartido.practica, child: Text('Práctica')),
       ],
       onChanged: (v) {
         if (v != null) setState(() => _tipoPartido = v);

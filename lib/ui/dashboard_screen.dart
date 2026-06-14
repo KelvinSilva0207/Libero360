@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+
 import 'package:provider/provider.dart';
 import '../core/themes/app_colors.dart';
+import '../core/widgets_globales/route_transitions.dart';
+import '../features/estadisticas/data/models/models.dart';
 import '../features/auth/presentation/viewmodels/auth_viewmodel.dart';
 import '../features/partido/presentation/views/match_start_dialog.dart';
 import '../features/asistencia/presentation/views/athlete_list_screen.dart';
@@ -9,6 +11,7 @@ import '../features/asistencia/presentation/views/athlete_form_screen.dart';
 import '../features/asistencia/presentation/views/attendance_screen.dart';
 import '../features/estadisticas/presentation/views/play_by_play_screen.dart';
 import '../features/estadisticas/data/local_db/database_service.dart';
+import '../features/settings/presentation/widgets/settings_drawer.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -18,6 +21,7 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
   int _athleteCount = 0;
   int _matchCount = 0;
   bool _loaded = false;
@@ -33,7 +37,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final db = DatabaseService.instance;
       await db.initialize();
       final players = await db.getAllPlayers();
-      final matches = await db.getAllMatches();
+      final matches = await db.getMatchesByState(EstadoPartido.finalizado);
       if (mounted) setState(() {
         _athleteCount = players.length;
         _matchCount = matches.length;
@@ -50,7 +54,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final today = DateTime.now();
 
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: AppColors.background,
+      endDrawer: const SettingsDrawer(),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
@@ -101,6 +107,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ],
           ),
         ),
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.surfaceLight,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: IconButton(
+            icon: const Icon(Icons.settings_rounded, color: AppColors.textSecondary),
+            onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
+          ),
+        ),
       ],
     );
   }
@@ -108,45 +124,56 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _statsRow() {
     return Row(
       children: [
-        Expanded(child: _statCard(FontAwesomeIcons.peopleGroup, 'Atletas', '$_athleteCount', AppColors.primary)),
+        Expanded(child: _statCard(Icons.people_rounded, 'Atletas', '$_athleteCount', AppColors.primary,
+          onTap: () => context.pushSlide(const AthleteListScreen()),
+        )),
         const SizedBox(width: 10),
-        Expanded(child: _statCard(FontAwesomeIcons.volleyball, 'Partidos', '$_matchCount', AppColors.accent)),
+        Expanded(child: _statCard(Icons.sports_volleyball_rounded, 'Partidos', '$_matchCount', AppColors.accent,
+          onTap: () => context.pushSlide(const PlayByPlayScreen()),
+        )),
         const SizedBox(width: 10),
-        Expanded(child: _statCard(FontAwesomeIcons.chartLine, 'Sets', '--', AppColors.success)),
+        Expanded(child: _statCard(Icons.show_chart_rounded, 'Sets', '--', AppColors.success)),
       ],
     );
   }
 
-  Widget _statCard(FaIconData icon, String label, String value, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
+  Widget _statCard(IconData icon, String label, String value, Color color, {VoidCallback? onTap}) {
+    return Material(
+      color: AppColors.surface,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: FaIcon(icon, size: 18, color: color),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.border),
           ),
-          const SizedBox(height: 14),
-          Text(
-            value,
-            style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, size: 18, color: color),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                value,
+                style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                label,
+                style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+              ),
+            ],
           ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -168,7 +195,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Icons.person_add_rounded,
             'Nuevo Atleta',
             AppColors.primary,
-            () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AthleteFormScreen())),
+            () => context.pushSlide(const AthleteFormScreen()),
           ),
         ),
       ],
@@ -228,21 +255,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Icons.people_rounded,
           'Gestiona tus atletas',
           'Ver roster completo, agregar o editar jugadores',
-          () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AthleteListScreen())),
+          () => context.pushSlide(const AthleteListScreen()),
         ),
         const SizedBox(height: 8),
         _resumenItem(
           Icons.bar_chart_rounded,
           'Estadísticas en vivo',
           'Sigue el rendimiento durante el partido',
-          () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PlayByPlayScreen())),
+          () => context.pushSlide(const PlayByPlayScreen()),
         ),
         const SizedBox(height: 8),
         _resumenItem(
           Icons.calendar_month_rounded,
           'Control de asistencia',
           'Registra la asistencia a entrenamientos',
-          () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AttendanceScreen())),
+          () => context.pushSlide(const AttendanceScreen()),
         ),
       ],
     );

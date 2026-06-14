@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'core/themes/app_theme.dart';
+import 'core/widgets_globales/route_transitions.dart';
 import 'features/auth/auth.dart';
 import 'ui/app_shell.dart';
 
@@ -32,11 +33,11 @@ class Libero360App extends StatelessWidget {
   Route<dynamic>? _onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
       case '/welcome':
-        return MaterialPageRoute(builder: (_) => const WelcomeScreen());
+        return slideRightRoute(const WelcomeScreen());
       case '/login':
-        return MaterialPageRoute(builder: (_) => const LoginScreen());
+        return slideRightRoute(const LoginScreen());
       case '/register':
-        return MaterialPageRoute(builder: (_) => const RegisterScreen());
+        return slideRightRoute(const RegisterScreen());
       default:
         return null;
     }

@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import '../../data/repositories/auth_repository.dart';
+import '../../../../core/services/service_locator.dart';
+import '../../../../core/services/abstract_auth_service.dart';
 import '../../data/models/user_model.dart';
 
 enum AuthStatus { uninitialized, authenticated, unauthenticated }
 
 class AuthViewModel extends ChangeNotifier {
-  final AuthRepository _repository = AuthRepository();
+  AbstractAuthService get _repository => ServiceLocator.instance.authService;
 
   AuthStatus _status = AuthStatus.uninitialized;
   AppUser? _user;

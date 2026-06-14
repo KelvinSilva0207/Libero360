@@ -37,9 +37,55 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  void _showComingSoon(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Próximamente disponible'), backgroundColor: AppColors.primary),
+  void _showForgotPassword(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: const Row(
+          children: [
+            Icon(Icons.lock_reset_rounded, color: AppColors.accent, size: 22),
+            SizedBox(width: 8),
+            Text('Restablecer contraseña', style: TextStyle(color: Colors.white, fontSize: 16)),
+          ],
+        ),
+        content: const Text(
+          'Contacta al administrador para restablecer tu contraseña.',
+          style: TextStyle(color: Colors.white70, fontSize: 13),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Entendido', style: TextStyle(color: AppColors.accent)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSocialInfo(BuildContext context, String provider) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: const Row(
+          children: [
+            Icon(Icons.info_outline_rounded, color: AppColors.accent, size: 22),
+            SizedBox(width: 8),
+            Text('Inicio de sesión', style: TextStyle(color: Colors.white, fontSize: 16)),
+          ],
+        ),
+        content: Text(
+          'La opción "$provider" estará disponible en la próxima actualización.',
+          style: const TextStyle(color: Colors.white70, fontSize: 13),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Entendido', style: TextStyle(color: AppColors.accent)),
+          ),
+        ],
+      ),
     );
   }
 
@@ -119,7 +165,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   Align(
                                     alignment: Alignment.centerRight,
                                     child: TextButton(
-                                      onPressed: () => _showComingSoon(context),
+                                      onPressed: () => _showForgotPassword(context),
                                       child: const Text(
                                         '¿Olvidaste tu contraseña?',
                                         style: TextStyle(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.w500),
@@ -156,14 +202,14 @@ class _LoginScreenState extends State<LoginScreen> {
                                     label: 'Continuar con Google',
                                     icon: Icons.g_mobiledata_rounded,
                                     iconColor: AppColors.google,
-                                    onPressed: () => _showComingSoon(context),
+                                    onPressed: () => _showSocialInfo(context, 'Google'),
                                   ),
                                   const SizedBox(height: 12),
                                   _SocialButton(
                                     label: 'Continuar con Facebook',
                                     icon: Icons.facebook_rounded,
                                     iconColor: AppColors.facebook,
-                                    onPressed: () => _showComingSoon(context),
+                                    onPressed: () => _showSocialInfo(context, 'Facebook'),
                                   ),
                                   const SizedBox(height: 28),
                                   Row(

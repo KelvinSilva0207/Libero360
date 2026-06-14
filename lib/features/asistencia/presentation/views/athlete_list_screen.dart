@@ -15,8 +15,13 @@ class AthleteListScreen extends StatefulWidget {
 
 class _AthleteListScreenState extends State<AthleteListScreen> {
   List<Player> _players = [];
+  List<Player> _filteredPlayers = [];
   bool _loading = true;
   String? _error;
+  bool _showSearch = false;
+  final _searchCtrl = TextEditingController();
+  Posicion? _filterPosicion;
+  EstadoSalud? _filterSalud;
 
   @override
   void initState() {
@@ -24,11 +29,18 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
     _load();
   }
 
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
   Future<void> _load() async {
     setState(() { _loading = true; _error = null; });
     try {
       await DatabaseService.instance.initialize();
       _players = await DatabaseService.instance.getAllPlayers();
+      _applyFilters();
     } catch (e) {
       _error = 'Error al cargar: $e';
     }
@@ -75,20 +87,15 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.search, color: Colors.white54),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Búsqueda próximamente disponible'), backgroundColor: AppColors.primary),
-              );
-            },
+            icon: Icon(_showSearch ? Icons.close : Icons.search, color: Colors.white54),
+            onPressed: () => setState(() {
+              _showSearch = !_showSearch;
+              if (!_showSearch) { _searchCtrl.clear(); _applyFilters(); }
+            }),
           ),
           IconButton(
             icon: const Icon(Icons.filter_list, color: Colors.white54),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Filtros próximamente disponibles'), backgroundColor: AppColors.primary),
-              );
-            },
+            onPressed: _showFilterDialog,
           ),
         ],
       ),
@@ -163,17 +170,192 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
       return (a.numero ?? 999).compareTo(b.numero ?? 999);
     });
 
-    return RefreshIndicator(
-      color: AppColors.accent,
-      onRefresh: _load,
-      child: ListView.builder(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
-        itemCount: _players.length,
-        itemBuilder: (context, index) {
-          return _athleteCard(_players[index]);
-        },
+    return Column(
+      children: [
+        if (_showSearch) _buildSearchBar(),
+        Expanded(
+          child: RefreshIndicator(
+            color: AppColors.accent,
+            onRefresh: _load,
+            child: _filteredPlayers.isEmpty
+                ? ListView(
+                    children: [
+                      SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.2,
+                        child: Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.search_off_rounded, color: Colors.white24, size: 40),
+                              const SizedBox(height: 8),
+                              const Text('Sin resultados', style: TextStyle(color: Colors.white38, fontSize: 14)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
+                    itemCount: _filteredPlayers.length,
+                    itemBuilder: (context, index) {
+                      return _athleteCard(_filteredPlayers[index]);
+                    },
+                  ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _applyFilters() {
+    final query = _searchCtrl.text.toLowerCase().trim();
+    setState(() {
+      _filteredPlayers = _players.where((p) {
+        if (query.isNotEmpty) {
+          final name = p.nombre.toLowerCase();
+          final num = p.numero?.toString() ?? '';
+          final cedula = p.cedula.toLowerCase();
+          if (!name.contains(query) && !num.contains(query) && !cedula.contains(query)) return false;
+        }
+        if (_filterPosicion != null && p.posicion != _filterPosicion) return false;
+        if (_filterSalud != null && p.estadoSalud != _filterSalud) return false;
+        return true;
+      }).toList();
+    });
+  }
+
+  Widget _buildSearchBar() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: TextField(
+          controller: _searchCtrl,
+          onChanged: (_) => _applyFilters(),
+          style: const TextStyle(color: Colors.white, fontSize: 14),
+          decoration: InputDecoration(
+            hintText: 'Buscar por nombre, número o cédula...',
+            hintStyle: const TextStyle(color: AppColors.textTertiary, fontSize: 13),
+            prefixIcon: const Icon(Icons.search_rounded, color: AppColors.textSecondary, size: 20),
+            suffixIcon: _searchCtrl.text.isNotEmpty
+                ? IconButton(
+                    icon: const Icon(Icons.clear, size: 18, color: AppColors.textSecondary),
+                    onPressed: () { _searchCtrl.clear(); _applyFilters(); },
+                  )
+                : null,
+            border: InputBorder.none,
+            contentPadding: const EdgeInsets.symmetric(vertical: 12),
+          ),
+        ),
       ),
     );
+  }
+
+  void _showFilterDialog() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) => Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Filtrar por posición', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                children: [
+                  ...Posicion.values.map((p) => ChoiceChip(
+                    label: Text(_posicionLabel(p), style: const TextStyle(fontSize: 12)),
+                    selected: _filterPosicion == p,
+                    selectedColor: AppColors.accent.withValues(alpha: 0.3),
+                    backgroundColor: AppColors.surfaceLight,
+                    labelStyle: TextStyle(color: _filterPosicion == p ? Colors.white : Colors.white54, fontSize: 12),
+                    onSelected: (v) {
+                      setSheetState(() => _filterPosicion = v ? p : null);
+                    },
+                  )),
+                ],
+              ),
+              const SizedBox(height: 16),
+              const Text('Filtrar por estado', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                children: [
+                  ...EstadoSalud.values.map((s) => ChoiceChip(
+                    label: Text(_saludLabel(s), style: const TextStyle(fontSize: 12)),
+                    selected: _filterSalud == s,
+                    selectedColor: _saludColor(s).withValues(alpha: 0.3),
+                    backgroundColor: AppColors.surfaceLight,
+                    labelStyle: TextStyle(color: _filterSalud == s ? Colors.white : Colors.white54, fontSize: 12),
+                    onSelected: (v) {
+                      setSheetState(() => _filterSalud = v ? s : null);
+                    },
+                  )),
+                ],
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    _applyFilters();
+                  },
+                  style: FilledButton.styleFrom(backgroundColor: AppColors.accent),
+                  child: const Text('Aplicar filtros'),
+                ),
+              ),
+              if (_filterPosicion != null || _filterSalud != null) ...[
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: TextButton(
+                    onPressed: () {
+                      setSheetState(() {
+                        _filterPosicion = null;
+                        _filterSalud = null;
+                      });
+                    },
+                    child: const Text('Limpiar filtros', style: TextStyle(color: Colors.white54)),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _posicionLabel(Posicion p) {
+    switch (p) {
+      case Posicion.colocador: return 'Armador';
+      case Posicion.opuesto: return 'Opuesto';
+      case Posicion.central: return 'Central';
+      case Posicion.receptor: return 'Punta';
+      case Posicion.libre: return 'Líbero';
+      case Posicion.sinDefinir: return 'Todos';
+    }
+  }
+
+  String _saludLabel(EstadoSalud s) {
+    switch (s) {
+      case EstadoSalud.disponible: return 'Disponible';
+      case EstadoSalud.lesionado: return 'Lesionado';
+      case EstadoSalud.enDuda: return 'En duda';
+    }
   }
 
   Widget _athleteCard(Player p) {

@@ -17,6 +17,7 @@ class SettingsDrawer extends StatefulWidget {
 class _SettingsDrawerState extends State<SettingsDrawer>
     with SingleTickerProviderStateMixin {
   final Set<String> _expandedSections = {'general'};
+  bool _rotacionAutomatica = true;
 
   @override
   Widget build(BuildContext context) {
@@ -38,8 +39,8 @@ class _SettingsDrawerState extends State<SettingsDrawer>
                     Icons.tune_rounded,
                     'General',
                     [
-                      _buildTile(Icons.language_rounded, 'Idioma', 'Español'),
-                      _buildTile(Icons.palette_rounded, 'Tema', 'Oscuro'),
+                      _buildTile(Icons.language_rounded, 'Idioma', 'Español', onTap: () => _showInfoDialog('Idioma', 'El idioma se detecta automáticamente según la configuración del dispositivo.')),
+                      _buildTile(Icons.palette_rounded, 'Tema', 'Oscuro', onTap: () => _showInfoDialog('Tema', 'Solo modo oscuro disponible en esta versión.')),
                     ],
                   ),
                   _buildSection(
@@ -50,9 +51,10 @@ class _SettingsDrawerState extends State<SettingsDrawer>
                       _buildSwitchTile(
                         Icons.sync_alt_rounded,
                         'Rotación automática',
-                        true,
+                        _rotacionAutomatica,
+                        (v) => setState(() => _rotacionAutomatica = v),
                       ),
-                      _buildTile(Icons.timer_rounded, 'Duración de sets', '25 pts, ventaja 2'),
+                      _buildTile(Icons.timer_rounded, 'Duración de sets', '25 pts, ventaja 2', onTap: _showSetDurationDialog),
                     ],
                   ),
                   _buildSection(
@@ -60,7 +62,7 @@ class _SettingsDrawerState extends State<SettingsDrawer>
                     Icons.cloud_sync_rounded,
                     'Sincronización',
                     [
-                      _buildTile(Icons.cloud_upload_rounded, 'Sincronizar dispositivos', 'No vinculado'),
+                      _buildTile(Icons.cloud_upload_rounded, 'Sincronizar dispositivos', 'No vinculado', onTap: () => _showInfoDialog('Sincronizar', 'La sincronización entre dispositivos estará disponible en una próxima actualización.\n\nPor ahora, puedes usar Exportar/Importar datos para transferir información.')),
                       _buildActionTile(Icons.file_download_rounded, 'Exportar datos', 'Respaldo JSON', _exportarDatos),
                       _buildActionTile(Icons.file_upload_rounded, 'Importar datos', 'Restaurar desde JSON', _importarDatos),
                     ],
@@ -172,6 +174,80 @@ class _SettingsDrawerState extends State<SettingsDrawer>
     }
   }
 
+  void _showInfoDialog(String title, String message) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: Row(
+          children: [
+            const Icon(Icons.info_outline_rounded, color: AppColors.accent, size: 22),
+            const SizedBox(width: 8),
+            Text(title, style: const TextStyle(color: Colors.white, fontSize: 16)),
+          ],
+        ),
+        content: Text(message, style: const TextStyle(color: Colors.white70, fontSize: 13)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cerrar', style: TextStyle(color: AppColors.accent)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSetDurationDialog() {
+    final ctrl = TextEditingController(text: '25');
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: const Row(
+          children: [
+            Icon(Icons.timer_rounded, color: AppColors.accent, size: 22),
+            const SizedBox(width: 8),
+            Text('Duración de sets', style: TextStyle(color: Colors.white, fontSize: 16)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Puntos para ganar un set:', style: TextStyle(color: Colors.white70, fontSize: 13)),
+            const SizedBox(height: 8),
+            TextField(
+              controller: ctrl,
+              keyboardType: TextInputType.number,
+              style: const TextStyle(color: Colors.white, fontSize: 16),
+              decoration: InputDecoration(
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+                filled: true,
+                fillColor: AppColors.surfaceLight,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text('Ventaja mínima: 2 puntos', style: TextStyle(color: AppColors.textTertiary, fontSize: 11)),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar', style: TextStyle(color: Colors.white54)),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Puntos por set: ${ctrl.text}'), backgroundColor: Colors.green),
+              );
+            },
+            child: const Text('Guardar', style: TextStyle(color: AppColors.accent)),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildHeader() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
@@ -270,7 +346,7 @@ class _SettingsDrawerState extends State<SettingsDrawer>
         trailing: const Icon(Icons.chevron_right_rounded, color: Colors.white24, size: 18),
         onTap: onTap ?? () {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Próximamente disponible'), backgroundColor: AppColors.primary),
+            const SnackBar(content: Text('Función no disponible en esta versión'), backgroundColor: AppColors.primary),
           );
         },
       ),
@@ -295,7 +371,7 @@ class _SettingsDrawerState extends State<SettingsDrawer>
     );
   }
 
-  Widget _buildSwitchTile(IconData icon, String title, bool initialValue) {
+  Widget _buildSwitchTile(IconData icon, String title, bool value, ValueChanged<bool> onChanged) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
       decoration: BoxDecoration(
@@ -307,13 +383,9 @@ class _SettingsDrawerState extends State<SettingsDrawer>
         leading: Icon(icon, size: 18, color: AppColors.textSecondary),
         title: Text(title, style: const TextStyle(color: Colors.white, fontSize: 14)),
         trailing: Switch(
-          value: initialValue,
+          value: value,
           activeColor: AppColors.accent,
-          onChanged: (v) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Próximamente disponible'), backgroundColor: AppColors.primary),
-            );
-          },
+          onChanged: onChanged,
         ),
       ),
     );

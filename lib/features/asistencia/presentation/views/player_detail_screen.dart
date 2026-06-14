@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/themes/app_colors.dart';
+import '../../../../core/widgets_globales/route_transitions.dart';
 import '../../../estadisticas/data/models/models.dart';
 import '../../../estadisticas/data/local_db/database_service.dart';
 import '../../../estadisticas/domain/services/stats_calculator.dart';
+import 'athlete_edit_screen.dart';
 
 class PlayerDetailScreen extends StatefulWidget {
   final Player player;
@@ -48,10 +50,12 @@ class _PlayerDetailScreenState extends State<PlayerDetailScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.edit_rounded, color: Colors.white54, size: 16),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Edición próximamente disponible'), backgroundColor: AppColors.primary),
-              );
+            onPressed: () async {
+              final result = await context.pushSlide<bool>(AthleteEditScreen(player: p));
+              if (result == true) {
+                setState(() {}); // Refresh stats after edit
+                _loadStats();
+              }
             },
           ),
         ],

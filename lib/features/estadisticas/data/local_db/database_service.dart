@@ -1,11 +1,12 @@
 import 'dart:convert';
 import 'package:sembast/sembast.dart';
 import '../../../../core/database/database_provider.dart';
+import '../../../../core/services/abstract_data_service.dart';
 import '../models/models.dart';
 import '../../../auth/data/models/user_model.dart';
 import 'package:intl/intl.dart';
 
-class DatabaseService {
+class DatabaseService extends AbstractDataService {
   static final DatabaseService _instance = DatabaseService._internal();
   static DatabaseService get instance => _instance;
   DatabaseService._internal();

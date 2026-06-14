@@ -1,9 +1,11 @@
+import '../../../../core/services/abstract_auth_service.dart';
 import '../../../estadisticas/data/local_db/database_service.dart';
 import '../models/user_model.dart';
 
-class AuthRepository {
+class AuthRepository extends AbstractAuthService {
   AppUser? _currentUser;
 
+  @override
   Future<AppUser?> login(String email, String password) async {
     await DatabaseService.instance.initialize();
     final user = await DatabaseService.instance.getUserByEmail(email);
@@ -13,6 +15,7 @@ class AuthRepository {
     return _currentUser;
   }
 
+  @override
   Future<String?> register(String nombre, String email, String password) async {
     await DatabaseService.instance.initialize();
     final existing = await DatabaseService.instance.getUserByEmail(email);
@@ -31,11 +34,13 @@ class AuthRepository {
     return null;
   }
 
+  @override
   Future<void> logout() async {
     _currentUser = null;
     await DatabaseService.instance.clearSession();
   }
 
+  @override
   Future<void> loadSession() async {
     await DatabaseService.instance.initialize();
     final userId = await DatabaseService.instance.getSessionUserId();
@@ -44,6 +49,9 @@ class AuthRepository {
     }
   }
 
+  @override
   AppUser? get currentUser => _currentUser;
+
+  @override
   bool get isLoggedIn => _currentUser != null;
 }

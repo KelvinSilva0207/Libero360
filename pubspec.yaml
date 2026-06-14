@@ -33,6 +33,11 @@ dependencies:
   share_plus: ^9.0.0
   file_picker: ^8.0.0
 
+  # Firebase (descomentar para activar sincronización en la nube)
+  # firebase_core: ^3.12.1
+  # firebase_auth: ^5.5.1
+  # cloud_firestore: ^5.6.5
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -2,17 +2,28 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'core/themes/app_theme.dart';
 import 'core/widgets_globales/route_transitions.dart';
+import 'core/services/service_locator.dart';
+import 'core/config.dart';
 import 'features/auth/auth.dart';
+import 'features/auth/data/repositories/auth_repository.dart';
 import 'ui/app_shell.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  _initServices();
   runApp(
     ChangeNotifierProvider(
       create: (_) => AuthViewModel(),
       child: const Libero360App(),
     ),
   );
+}
+
+void _initServices() {
+  final locator = ServiceLocator.instance;
+  if (!AppConfig.useFirebase) {
+    locator.registerAuth(AuthRepository());
+  }
 }
 
 class Libero360App extends StatelessWidget {
@@ -103,5 +114,3 @@ class _SplashScreen extends StatelessWidget {
     );
   }
 }
-
-

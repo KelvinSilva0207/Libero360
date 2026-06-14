@@ -1,6 +1,11 @@
+import 'dart:io';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:file_picker/file_picker.dart';
 import '../../../../core/themes/app_colors.dart';
+import '../../../estadisticas/data/local_db/database_service.dart';
 
 class SettingsDrawer extends StatefulWidget {
   const SettingsDrawer({super.key});
@@ -56,7 +61,8 @@ class _SettingsDrawerState extends State<SettingsDrawer>
                     'Sincronización',
                     [
                       _buildTile(Icons.cloud_upload_rounded, 'Sincronizar dispositivos', 'No vinculado'),
-                      _buildTile(Icons.file_download_rounded, 'Exportar datos', 'JSON / CSV'),
+                      _buildActionTile(Icons.file_download_rounded, 'Exportar datos', 'Respaldo JSON', _exportarDatos),
+                      _buildActionTile(Icons.file_upload_rounded, 'Importar datos', 'Restaurar desde JSON', _importarDatos),
                     ],
                   ),
                   _buildSection(
@@ -74,6 +80,96 @@ class _SettingsDrawerState extends State<SettingsDrawer>
         ),
       ),
     );
+  }
+
+  Future<void> _exportarDatos() async {
+    try {
+      final db = DatabaseService.instance;
+      await db.initialize();
+      final json = await db.exportToJson();
+      final dir = await getTemporaryDirectory();
+      final date = DateTime.now().toIso8601String().split('T').first;
+      final file = File('${dir.path}/libero360_backup_$date.json');
+      await file.writeAsString(json);
+
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        text: 'Respaldo Libero360 - $date',
+      );
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Exportación completada'), backgroundColor: Colors.green),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al exportar: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  Future<void> _importarDatos() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['json'],
+      );
+      if (result == null || result.files.single.path == null) return;
+
+      if (!context.mounted) return;
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: AppColors.surface,
+          title: const Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 22),
+              SizedBox(width: 8),
+              Text('Importar datos', style: TextStyle(color: Colors.white, fontSize: 16)),
+            ],
+          ),
+          content: const Text(
+            'Se reemplazarán TODOS los datos actuales.\n\n¿Estás seguro?',
+            style: TextStyle(color: Colors.white70, fontSize: 13),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancelar', style: TextStyle(color: Colors.white54)),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Importar', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        ),
+      );
+      if (confirm != true) return;
+
+      final file = File(result.files.single.path!);
+      final json = await file.readAsString();
+      final db = DatabaseService.instance;
+      await db.initialize();
+      final ok = await db.importFromJson(json);
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(ok ? 'Datos importados correctamente' : 'Error al importar'),
+            backgroundColor: ok ? Colors.green : Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al importar: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
   }
 
   Widget _buildHeader() {
@@ -159,7 +255,7 @@ class _SettingsDrawerState extends State<SettingsDrawer>
     );
   }
 
-  Widget _buildTile(IconData icon, String title, String subtitle) {
+  Widget _buildTile(IconData icon, String title, String subtitle, {VoidCallback? onTap}) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
       decoration: BoxDecoration(
@@ -172,11 +268,29 @@ class _SettingsDrawerState extends State<SettingsDrawer>
         title: Text(title, style: const TextStyle(color: Colors.white, fontSize: 14)),
         subtitle: Text(subtitle, style: const TextStyle(color: AppColors.textTertiary, fontSize: 11)),
         trailing: const Icon(Icons.chevron_right_rounded, color: Colors.white24, size: 18),
-        onTap: () {
+        onTap: onTap ?? () {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Próximamente disponible'), backgroundColor: AppColors.primary),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildActionTile(IconData icon, String title, String subtitle, VoidCallback onTap) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceLight,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: ListTile(
+        dense: true,
+        leading: Icon(icon, size: 18, color: AppColors.textSecondary),
+        title: Text(title, style: const TextStyle(color: Colors.white, fontSize: 14)),
+        subtitle: Text(subtitle, style: const TextStyle(color: AppColors.textTertiary, fontSize: 11)),
+        trailing: const Icon(Icons.chevron_right_rounded, color: Colors.white24, size: 18),
+        onTap: onTap,
       ),
     );
   }

@@ -42,12 +42,15 @@ class _AppShellState extends State<AppShell> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final isWide = constraints.maxWidth >= 768;
+        final isStatsTab = _selectedIndex == 3;
+        // Forzar layout mobile en la pestaña de Estadísticas para que
+        // Windows se vea EXACTAMENTE igual que Android
+        final useMobileLayout = !isWide || isStatsTab;
         return Scaffold(
           backgroundColor: AppColors.background,
-          extendBodyBehindAppBar: !isWide,
-          appBar: isWide
-              ? null
-              : AppBar(
+          extendBodyBehindAppBar: useMobileLayout,
+          appBar: useMobileLayout
+              ? AppBar(
                   backgroundColor: AppColors.surface,
                   leading: _selectedIndex != 0
                       ? IconButton(
@@ -63,22 +66,23 @@ class _AppShellState extends State<AppShell> {
                     ],
                   ),
                   actions: [_userMenu(context, user)],
-                ),
+                )
+              : null,
           body: SafeArea(
             left: false,
             right: false,
             child: Row(
               children: [
-                if (isWide) _buildSidebar(context, user),
+                if (!useMobileLayout) _buildSidebar(context, user),
                 Expanded(
                   child: _screens[_selectedIndex],
                 ),
               ],
             ),
           ),
-          bottomNavigationBar: isWide
-              ? null
-              : _buildBottomNav(),
+          bottomNavigationBar: useMobileLayout
+              ? _buildBottomNav()
+              : null,
         );
       },
     );

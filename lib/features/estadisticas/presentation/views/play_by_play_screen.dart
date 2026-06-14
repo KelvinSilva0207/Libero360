@@ -21,93 +21,67 @@ class _PlayByPlayContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('Play-by-Play'),
-        backgroundColor: AppColors.surface,
-        foregroundColor: Colors.white,
-        actions: [
-          Consumer<PlayByPlayViewModel>(
-            builder: (context, vm, _) {
-              if (!vm.hayPartidoActivo) return const SizedBox();
-              return IconButton(
-                icon: Icon(
-                  vm.estadoPartido == EstadoPartido.pausado
-                      ? Icons.play_arrow
-                      : Icons.pause,
-                ),
-                onPressed: () {
-                  if (vm.estadoPartido == EstadoPartido.pausado) {
-                    vm.reanudarPartido();
-                  } else {
-                    vm.pausarPartido();
-                  }
-                },
-              );
-            },
+    return Consumer<PlayByPlayViewModel>(
+      builder: (context, vm, _) {
+        if (vm.partidoActual == null) {
+          return _buildNuevoPartido(context, vm);
+        }
+        return Column(
+          children: [
+            _buildHeader(context, vm),
+            _buildMarcador(context, vm),
+            _buildSelectorEquipo(context, vm),
+            Expanded(child: _buildJugadores(context, vm)),
+            _buildAcciones(context, vm),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildHeader(BuildContext context, PlayByPlayViewModel vm) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        border: Border(bottom: BorderSide(color: AppColors.border)),
+      ),
+      child: Row(
+        children: [
+          const SizedBox(width: 8),
+          const Icon(Icons.bar_chart_rounded, color: AppColors.accent, size: 20),
+          const SizedBox(width: 10),
+          const Expanded(
+            child: Text(
+              'Play-by-Play',
+              style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+            ),
           ),
-          Consumer<PlayByPlayViewModel>(
-            builder: (context, vm, _) {
-              if (vm.partidoActual == null) return const SizedBox();
-              return IconButton(
-                icon: const Icon(Icons.stop),
-                onPressed: () => _mostrarDialogoFinalizar(context, vm),
-              );
-            },
-          ),
+          if (vm.hayPartidoActivo) ...[
+            IconButton(
+              icon: Icon(
+                vm.estadoPartido == EstadoPartido.pausado
+                    ? Icons.play_arrow
+                    : Icons.pause,
+                color: Colors.white,
+              ),
+              tooltip: vm.estadoPartido == EstadoPartido.pausado ? 'Reanudar' : 'Pausar',
+              onPressed: () {
+                if (vm.estadoPartido == EstadoPartido.pausado) {
+                  vm.reanudarPartido();
+                } else {
+                  vm.pausarPartido();
+                }
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.stop, color: Colors.redAccent),
+              tooltip: 'Finalizar partido',
+              onPressed: () => _mostrarDialogoFinalizar(context, vm),
+            ),
+          ],
         ],
       ),
-      body: Consumer<PlayByPlayViewModel>(
-        builder: (context, vm, _) {
-          if (vm.partidoActual == null) {
-            return _buildNuevoPartido(context, vm);
-          }
-          return LayoutBuilder(
-            builder: (context, constraints) {
-              final isWide = constraints.maxWidth >= 768;
-              return isWide
-                  ? _buildDesktopLayout(context, vm, constraints)
-                  : _buildMobileLayout(context, vm);
-            },
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildMobileLayout(BuildContext context, PlayByPlayViewModel vm) {
-    return Column(
-      children: [
-        _buildMarcador(context, vm),
-        _buildSelectorEquipo(context, vm),
-        Expanded(child: _buildJugadores(context, vm)),
-        _buildAcciones(context, vm),
-      ],
-    );
-  }
-
-  Widget _buildDesktopLayout(BuildContext context, PlayByPlayViewModel vm, BoxConstraints constraints) {
-    return Row(
-      children: [
-        SizedBox(
-          width: 380,
-          child: Column(
-            children: [
-              _buildMarcador(context, vm),
-              _buildSelectorEquipo(context, vm),
-              Expanded(child: _buildAcciones(context, vm)),
-            ],
-          ),
-        ),
-        const VerticalDivider(width: 1, color: Colors.white12),
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: _buildJugadores(context, vm),
-          ),
-        ),
-      ],
     );
   }
 

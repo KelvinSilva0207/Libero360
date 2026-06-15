@@ -48,6 +48,12 @@ class _PlayByPlayContent extends StatelessWidget {
       ),
       child: Row(
         children: [
+          IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
+            onPressed: () => Navigator.pop(context),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+          ),
           const SizedBox(width: 8),
           const Icon(Icons.bar_chart_rounded, color: AppColors.accent, size: 20),
           const SizedBox(width: 10),

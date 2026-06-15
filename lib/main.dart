@@ -9,6 +9,7 @@ import 'core/config.dart';
 import 'features/auth/auth.dart';
 import 'features/auth/data/repositories/firebase_auth_repository.dart';
 import 'features/teams/teams.dart';
+import 'features/notifications/notifications.dart';
 import 'ui/app_shell.dart';
 
 void main() async {
@@ -26,6 +27,7 @@ void main() async {
           vm.init();
           return vm;
         }),
+        ChangeNotifierProvider(create: (_) => NotificationViewModel()),
       ],
       child: const Libero360App(),
     ),

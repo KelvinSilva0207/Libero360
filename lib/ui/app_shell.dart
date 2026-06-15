@@ -8,6 +8,7 @@ import '../features/partido/presentation/views/match_start_dialog.dart';
 import '../features/statistics/presentation/views/statistics_screen.dart';
 import '../features/admin/presentation/views/admin_screen.dart';
 import '../features/teams/teams.dart';
+import '../features/notifications/notifications.dart';
 import 'dashboard_screen.dart';
 
 enum NavItem { dashboard, athletes, matches, stats, attendance, settings }
@@ -40,6 +41,11 @@ class _AppShellState extends State<AppShell> {
   @override
   Widget build(BuildContext context) {
     final user = context.watch<AuthViewModel>().user;
+    final clubVm = context.watch<ClubViewModel>();
+    final notifVm = context.watch<NotificationViewModel>();
+    if (clubVm.currentClub != null) {
+      notifVm.init(clubVm.currentClub!.id);
+    }
     return LayoutBuilder(
       builder: (context, constraints) {
         final isWide = constraints.maxWidth >= 768;
@@ -67,6 +73,7 @@ class _AppShellState extends State<AppShell> {
                     ],
                   ),
                   actions: [
+                    const NotificationBell(),
                     const ClubSwitcher(),
                     _userMenu(context, user),
                   ],

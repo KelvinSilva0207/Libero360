@@ -17,6 +17,7 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
   final _pageCtrl = PageController();
   final _localCtrl = TextEditingController();
   final _visitorCtrl = TextEditingController();
+  final _competenciaCtrl = TextEditingController();
 
   TipoPartido _tipoPartido = TipoPartido.amistoso;
   int _setsTotales = 5;
@@ -29,6 +30,9 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
 
   int _currentPage = 0;
 
+  bool get _isCompetitivo =>
+      _tipoPartido == TipoPartido.liga || _tipoPartido == TipoPartido.torneo;
+
   @override
   void initState() {
     super.initState();
@@ -40,6 +44,7 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
     _pageCtrl.dispose();
     _localCtrl.dispose();
     _visitorCtrl.dispose();
+    _competenciaCtrl.dispose();
     super.dispose();
   }
 
@@ -73,6 +78,7 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
       setsTotales: _setsTotales,
       tipoPartido: _tipoPartido,
       lugar: null,
+      competitionName: _isCompetitivo ? _competenciaCtrl.text.trim() : null,
       selectedPlayers: selected.take(12).toList(),
     );
 
@@ -203,6 +209,12 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
           _buildField(_visitorCtrl, 'Equipo Visitante', Icons.shield_outlined),
           const SizedBox(height: 20),
           _buildTipoDropdown(),
+          if (_isCompetitivo) ...[
+            const SizedBox(height: 12),
+            _buildField(_competenciaCtrl,
+                _tipoPartido == TipoPartido.liga ? 'Nombre de la Liga' : 'Nombre del Torneo',
+                Icons.emoji_events),
+          ],
           const SizedBox(height: 12),
           _buildSetsSelector(),
           const Spacer(),

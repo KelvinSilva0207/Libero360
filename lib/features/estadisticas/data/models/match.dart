@@ -33,6 +33,7 @@ class Match {
   int puntosDiferenciaSet = 2;
   String? resultadoFinal;
   String? lugar;
+  String? competitionName;
   int? seasonId;
   int duracionSegundos = 0;
   bool ultimoPuntoFueLocal = true;

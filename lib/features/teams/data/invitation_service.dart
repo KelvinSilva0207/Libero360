@@ -112,7 +112,7 @@ class InvitationService {
 
   /// Reject an invitation.
   Future<void> rejectInvitation(ClubInvitation invitation) async {
-    await _firestore.collection('invitations').doc(invitation.id)..delete();
+    await _firestore.collection('invitations').doc(invitation.id).delete();
   }
 
   /// Cancel an invitation (owner only).

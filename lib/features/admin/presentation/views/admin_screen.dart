@@ -1,4 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../../../../core/theme_provider/theme_notifier.dart';
@@ -6,6 +9,8 @@ import '../../../../core/widgets_globales/route_transitions.dart';
 import '../../../../features/auth/presentation/viewmodels/auth_viewmodel.dart';
 import '../../../../features/asistencia/presentation/views/athlete_list_screen.dart';
 import '../../../../features/teams/teams.dart';
+import '../../../../features/notifications/notifications.dart';
+import '../../../../features/estadisticas/data/local_db/database_service.dart';
 
 class AdminScreen extends StatefulWidget {
   const AdminScreen({super.key});
@@ -16,6 +21,9 @@ class AdminScreen extends StatefulWidget {
 
 class _AdminScreenState extends State<AdminScreen> {
   String _selectedSection = 'cuenta';
+  bool _notificacionesOn = true;
+  bool _autoSaveOn = true;
+  bool _animationsOn = true;
 
   final List<_Section> _sections = [
     _Section('cuenta', Icons.person_rounded, 'Cuenta'),
@@ -38,10 +46,6 @@ class _AdminScreenState extends State<AdminScreen> {
           appBar: AppBar(
             backgroundColor: AppColors.surface,
             title: const Text('Administrar', style: TextStyle(color: Colors.white)),
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
-              onPressed: () => Navigator.pop(context),
-            ),
           ),
           body: SafeArea(
             child: Row(
@@ -205,11 +209,13 @@ class _AdminScreenState extends State<AdminScreen> {
           children: [
             _buildSwitchRow(Icons.language_rounded, 'Idioma', 'Español', null),
             const Divider(color: AppColors.border),
-            _buildSwitchRow(Icons.notifications_rounded, 'Notificaciones', 'Activado', true),
+            _buildSwitchRow(Icons.notifications_rounded, 'Notificaciones', _notificacionesOn ? 'Activado' : 'Desactivado', true),
             const Divider(color: AppColors.border),
-            _buildSwitchRow(Icons.save_rounded, 'Guardado automático', 'Cada 30s', true),
+            _buildSwitchRow(Icons.save_rounded, 'Guardado automático', _autoSaveOn ? 'Cada 30s' : 'Desactivado', true),
             const Divider(color: AppColors.border),
             _buildSwitchRow(Icons.backup_rounded, 'Respaldo automático', 'Desactivado', null),
+            const Divider(color: AppColors.border),
+            _buildActionRow(Icons.tune_rounded, 'Preferencias de notificaciones', 'Personalizar alertas'),
           ],
         ),
       ),
@@ -304,6 +310,25 @@ class _AdminScreenState extends State<AdminScreen> {
   }
 
   Widget _buildSwitchRow(IconData icon, String label, String subtitle, bool? value) {
+    bool getSwitchValue() {
+      switch (label) {
+        case 'Notificaciones': return _notificacionesOn;
+        case 'Guardado automático': return _autoSaveOn;
+        case 'Animaciones': return _animationsOn;
+        default: return value ?? false;
+      }
+    }
+
+    void onSwitchChanged(bool v) {
+      setState(() {
+        switch (label) {
+          case 'Notificaciones': _notificacionesOn = v;
+          case 'Guardado automático': _autoSaveOn = v;
+          case 'Animaciones': _animationsOn = v;
+        }
+      });
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -321,8 +346,8 @@ class _AdminScreenState extends State<AdminScreen> {
           ),
           if (value != null)
             Switch(
-              value: value,
-              onChanged: (_) {},
+              value: getSwitchValue(),
+              onChanged: onSwitchChanged,
               activeColor: AppColors.accent,
             ),
         ],
@@ -339,6 +364,9 @@ class _AdminScreenState extends State<AdminScreen> {
           case 'Editar atletas':
             context.pushSlide(const AthleteListScreen());
             break;
+          case 'Eliminar atletas':
+            _showDeleteAthletesDialog(context);
+            break;
           case 'Gestionar equipo técnico':
             context.pushSlide(const TeamManagementScreen());
             break;
@@ -347,6 +375,18 @@ class _AdminScreenState extends State<AdminScreen> {
             break;
           case 'Cambiar de club':
             _showClubSwitcher(context);
+            break;
+          case 'Exportar datos':
+            _exportData(context);
+            break;
+          case 'Importar datos':
+            _importData(context);
+            break;
+          case 'Restaurar base de datos':
+            _importData(context);
+            break;
+          case 'Preferencias de notificaciones':
+            context.pushSlide(const NotificationPreferencesScreen());
             break;
         }
       },
@@ -370,6 +410,86 @@ class _AdminScreenState extends State<AdminScreen> {
         ),
       ),
     );
+  }
+
+  void _showDeleteAthletesDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1A1F3D),
+        title: const Text('Eliminar atletas',
+            style: TextStyle(color: Colors.white)),
+        content: Text(
+          'Ve a la lista de atletas, busca el que deseas eliminar y usa la opción de eliminar en su perfil.',
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              context.pushSlide(const AthleteListScreen());
+            },
+            child: const Text('Ir a atletas',
+                style: TextStyle(color: Color(0xFFFF8C00))),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _exportData(BuildContext context) async {
+    try {
+      final db = DatabaseService.instance;
+      final json = await db.exportToJson();
+      final file = await _saveTempFile('libero360_backup.json', json);
+      if (file != null) {
+        await Share.shareXFiles([XFile(file.path)], text: 'Respaldo Libero360');
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al exportar: $e'),
+              backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  Future<File?> _saveTempFile(String name, String content) async {
+    final dir = await Directory.systemTemp.createTemp('libero360_');
+    final file = File('${dir.path}/$name');
+    await file.writeAsString(content);
+    return file;
+  }
+
+  Future<void> _importData(BuildContext context) async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['json'],
+      );
+      if (result == null || result.files.single.path == null) return;
+
+      final file = File(result.files.single.path!);
+      final json = await file.readAsString();
+      final db = DatabaseService.instance;
+      await db.importFromJson(json);
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Datos restaurados correctamente'),
+              backgroundColor: Color(0xFF4CAF50)),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al importar: $e'),
+              backgroundColor: Colors.red),
+        );
+      }
+    }
   }
 
   void _showClubSwitcher(BuildContext context) {

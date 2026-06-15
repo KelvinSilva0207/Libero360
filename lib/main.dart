@@ -8,6 +8,7 @@ import 'core/theme_provider/theme_notifier.dart';
 import 'core/config.dart';
 import 'features/auth/auth.dart';
 import 'features/auth/data/repositories/firebase_auth_repository.dart';
+import 'features/teams/teams.dart';
 import 'ui/app_shell.dart';
 
 void main() async {
@@ -20,6 +21,11 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthViewModel()),
         ChangeNotifierProvider(create: (_) => ThemeNotifier()),
+        ChangeNotifierProvider(create: (_) {
+          final vm = ClubViewModel();
+          vm.init();
+          return vm;
+        }),
       ],
       child: const Libero360App(),
     ),

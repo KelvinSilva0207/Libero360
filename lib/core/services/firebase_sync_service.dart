@@ -87,7 +87,7 @@ class FirebaseSyncService {
       'posicion': p.posicion.name,
       'esCapitan': p.esCapitan,
       'fotoUrl': p.fotoUrl ?? '',
-      'atletaStatus': p.atletaStatus?.name,
+      'atletaStatus': p.atletaStatus.name,
       'statusReason': p.statusReason ?? '',
       'statusStartDate': p.statusStartDate?.toIso8601String(),
       'statusEndDate': p.statusEndDate?.toIso8601String(),

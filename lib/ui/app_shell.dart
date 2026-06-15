@@ -7,6 +7,7 @@ import '../features/asistencia/asistencia.dart';
 import '../features/partido/presentation/views/match_start_dialog.dart';
 import '../features/statistics/presentation/views/statistics_screen.dart';
 import '../features/admin/presentation/views/admin_screen.dart';
+import '../features/teams/teams.dart';
 import 'dashboard_screen.dart';
 
 enum NavItem { dashboard, athletes, matches, stats, attendance, settings }
@@ -65,17 +66,27 @@ class _AppShellState extends State<AppShell> {
                       const Text('Libero360', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                     ],
                   ),
-                  actions: [_userMenu(context, user)],
+                  actions: [
+                    const ClubSwitcher(),
+                    _userMenu(context, user),
+                  ],
                 )
               : null,
           body: SafeArea(
             left: false,
             right: false,
-            child: Row(
+            child: Column(
               children: [
-                if (!useMobileLayout) _buildSidebar(context, user),
+                const InvitationBanner(),
                 Expanded(
-                  child: _screens[_selectedIndex],
+                  child: Row(
+                    children: [
+                      if (!useMobileLayout) _buildSidebar(context, user),
+                      Expanded(
+                        child: _screens[_selectedIndex],
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -113,6 +124,10 @@ class _AppShellState extends State<AppShell> {
                 ),
               ],
             ),
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: ClubSwitcher(),
           ),
           Expanded(child: _navItems()),
           Container(

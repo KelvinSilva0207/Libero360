@@ -5,7 +5,7 @@ import '../../../../core/theme_provider/theme_notifier.dart';
 import '../../../../core/widgets_globales/route_transitions.dart';
 import '../../../../features/auth/presentation/viewmodels/auth_viewmodel.dart';
 import '../../../../features/asistencia/presentation/views/athlete_list_screen.dart';
-import '../../../../features/settings/presentation/widgets/settings_drawer.dart';
+import '../../../../features/teams/teams.dart';
 
 class AdminScreen extends StatefulWidget {
   const AdminScreen({super.key});
@@ -19,6 +19,7 @@ class _AdminScreenState extends State<AdminScreen> {
 
   final List<_Section> _sections = [
     _Section('cuenta', Icons.person_rounded, 'Cuenta'),
+    _Section('equipo', Icons.groups_2_rounded, 'Equipo Técnico'),
     _Section('general', Icons.tune_rounded, 'General'),
     _Section('personalizacion', Icons.palette_rounded, 'Personalización'),
     _Section('sincronizacion', Icons.cloud_sync_rounded, 'Sincronización'),
@@ -118,6 +119,7 @@ class _AdminScreenState extends State<AdminScreen> {
   List<Widget> _buildSectionContent(dynamic user, ThemeNotifier theme) {
     switch (_selectedSection) {
       case 'cuenta': return _cuentaSection(user);
+      case 'equipo': return _equipoSection();
       case 'general': return _generalSection();
       case 'personalizacion': return _personalizacionSection(theme);
       case 'sincronizacion': return _sincronizacionSection();
@@ -176,6 +178,23 @@ class _AdminScreenState extends State<AdminScreen> {
         ],
       ),
     );
+  }
+
+  // ========== EQUIPO TÉCNICO ==========
+  List<Widget> _equipoSection() {
+    return [
+      _sectionCard(
+        Column(
+          children: [
+            _buildActionRow(Icons.groups_2_rounded, 'Gestionar equipo técnico', 'Invitar, roles, permisos'),
+            const Divider(color: AppColors.border),
+            _buildActionRow(Icons.person_add_alt_1_rounded, 'Invitar entrenador', 'Enviar invitación por correo'),
+            const Divider(color: AppColors.border),
+            _buildActionRow(Icons.swap_horiz_rounded, 'Cambiar de club', 'Seleccionar club activo'),
+          ],
+        ),
+      ),
+    ];
   }
 
   // ========== GENERAL ==========
@@ -313,9 +332,24 @@ class _AdminScreenState extends State<AdminScreen> {
 
   Widget _buildActionRow(IconData icon, String label, String subtitle) {
     return InkWell(
-      onTap: label == 'Administrar atletas' || label == 'Buscar atletas' || label == 'Editar atletas'
-          ? () => context.pushSlide(const AthleteListScreen())
-          : null,
+      onTap: () {
+        switch (label) {
+          case 'Administrar atletas':
+          case 'Buscar atletas':
+          case 'Editar atletas':
+            context.pushSlide(const AthleteListScreen());
+            break;
+          case 'Gestionar equipo técnico':
+            context.pushSlide(const TeamManagementScreen());
+            break;
+          case 'Invitar entrenador':
+            context.pushSlide(const InviteMemberScreen());
+            break;
+          case 'Cambiar de club':
+            _showClubSwitcher(context);
+            break;
+        }
+      },
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 10),
         child: Row(
@@ -334,6 +368,49 @@ class _AdminScreenState extends State<AdminScreen> {
             const Icon(Icons.chevron_right, color: AppColors.textTertiary, size: 18),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showClubSwitcher(BuildContext context) {
+    final vm = context.read<ClubViewModel>();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1A1F3D),
+        title: const Text('Seleccionar club',
+            style: TextStyle(color: Colors.white)),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView(
+            shrinkWrap: true,
+            children: vm.myClubs.map((club) =>
+                RadioListTile<String>(
+                  title: Text(club.name,
+                      style: TextStyle(
+                        color: club.id == vm.currentClub?.id
+                            ? const Color(0xFFFF8C00)
+                            : Colors.white,
+                      )),
+                  value: club.id,
+                  groupValue: vm.currentClub?.id,
+                  activeColor: const Color(0xFFFF8C00),
+                  onChanged: (v) {
+                    if (v != null) vm.setCurrentClub(v);
+                    Navigator.pop(ctx);
+                  },
+                ),
+            ).toList(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.push(ctx,
+                MaterialPageRoute(builder: (_) => const CreateClubScreen())),
+            child: const Text('Crear club',
+                style: TextStyle(color: Color(0xFFFF8C00))),
+          ),
+        ],
       ),
     );
   }

@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import '../../../../core/services/service_locator.dart';
 import '../../../../core/services/abstract_auth_service.dart';
 import '../../../../core/services/google_auth_service.dart';
+import '../../../../core/config.dart';
 import '../../data/models/user_model.dart';
+import '../../data/repositories/firebase_auth_repository.dart';
 
 enum AuthStatus { uninitialized, authenticated, unauthenticated }
 
@@ -43,7 +45,13 @@ class AuthViewModel extends ChangeNotifier {
     _error = null;
     notifyListeners();
 
-    final user = await GoogleAuthService.instance.signIn();
+    AppUser? user;
+    if (AppConfig.useFirebase && _repository is FirebaseAuthRepository) {
+      user = await (_repository as FirebaseAuthRepository).signInWithGoogle();
+    } else {
+      user = await GoogleAuthService.instance.signIn();
+    }
+
     if (user != null) {
       _user = user;
       _status = AuthStatus.authenticated;
@@ -78,7 +86,9 @@ class AuthViewModel extends ChangeNotifier {
 
   void logout() {
     _repository.logout();
-    GoogleAuthService.instance.signOut();
+    if (!AppConfig.useFirebase) {
+      GoogleAuthService.instance.signOut();
+    }
     _user = null;
     _status = AuthStatus.unauthenticated;
     notifyListeners();

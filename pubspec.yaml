@@ -42,6 +42,7 @@ dependencies:
 
   # PDF Generation
   pdf: ^3.11.3
+  cloud_firestore: ^5.4.0
 
 dev_dependencies:
   flutter_test:

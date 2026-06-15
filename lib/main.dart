@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'core/themes/app_theme.dart';
 import 'core/widgets_globales/route_transitions.dart';
 import 'core/services/service_locator.dart';
 import 'core/theme_provider/theme_notifier.dart';
 import 'core/config.dart';
 import 'features/auth/auth.dart';
-import 'features/auth/data/repositories/auth_repository.dart';
+import 'features/auth/data/repositories/firebase_auth_repository.dart';
 import 'ui/app_shell.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  AppConfig.enableFirebase();
   _initServices();
   runApp(
     MultiProvider(
@@ -25,7 +28,9 @@ void main() {
 
 void _initServices() {
   final locator = ServiceLocator.instance;
-  if (!AppConfig.useFirebase) {
+  if (AppConfig.useFirebase) {
+    locator.registerAuth(FirebaseAuthRepository());
+  } else {
     locator.registerAuth(AuthRepository());
   }
 }

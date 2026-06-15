@@ -10,6 +10,7 @@ class GoogleAuthService {
 
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: ['email', 'profile'],
+    serverClientId: '977265581819-lsf2k2370img9f2204v5n173oikvjhdv.apps.googleusercontent.com',
   );
 
   bool _isAvailable = false;

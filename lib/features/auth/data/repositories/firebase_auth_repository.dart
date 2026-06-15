@@ -7,6 +7,9 @@ import '../models/user_model.dart';
 class FirebaseAuthRepository extends AbstractAuthService {
   AppUser? _currentUser;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    serverClientId: '977265581819-lsf2k2370img9f2204v5n173oikvjhdv.apps.googleusercontent.com',
+  );
 
   @override
   Future<AppUser?> login(String email, String password) async {
@@ -48,7 +51,7 @@ class FirebaseAuthRepository extends AbstractAuthService {
 
   @override
   Future<void> logout() async {
-    await GoogleSignIn().signOut();
+    await _googleSignIn.signOut();
     await fb.FirebaseAuth.instance.signOut();
     _currentUser = null;
   }
@@ -69,10 +72,19 @@ class FirebaseAuthRepository extends AbstractAuthService {
 
   Future<AppUser?> signInWithGoogle() async {
     try {
-      final googleUser = await GoogleSignIn().signIn();
-      if (googleUser == null) return null;
+      final googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) {
+        print("🔴 GOOGLE SIGN-IN: Usuario canceló la selección");
+        return null;
+      }
 
       final googleAuth = await googleUser.authentication;
+      print("🔵 GOOGLE SIGN-IN: accessToken=${googleAuth.accessToken?.substring(0, 10)}... idToken=${googleAuth.idToken?.substring(0, 10)}...");
+
+      if (googleAuth.idToken == null) {
+        print("🔴 GOOGLE SIGN-IN: idToken es NULL — Firebase requiere idToken. ¿Falta serverClientId?");
+      }
+
       final credential = fb.GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
@@ -93,7 +105,14 @@ class FirebaseAuthRepository extends AbstractAuthService {
 
       _currentUser = _fromFirebaseUser(fbUser);
       return _currentUser;
-    } catch (_) {
+    } catch (e) {
+      print("🔴 ERROR CRUCIAL DE GOOGLE SIGN-IN:");
+      print("   Tipo de excepción: ${e.runtimeType}");
+      print("   Detalle completo: $e");
+      if (e is fb.FirebaseAuthException) {
+        print("   Código Firebase: ${e.code}");
+        print("   Mensaje Firebase: ${e.message}");
+      }
       return null;
     }
   }

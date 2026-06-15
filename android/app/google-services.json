@@ -14,6 +14,22 @@
       },
       "oauth_client": [
         {
+          "client_id": "977265581819-4spluhm8f5qta10i5okrcqt9qqokcrm7.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.libero360.app",
+            "certificate_hash": "42e30d617825891b2fbacc6c277c716f4665ae5a"
+          }
+        },
+        {
+          "client_id": "977265581819-8kc43l51s67o8l6d9kbi6m9dkruns7k5.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.libero360.app",
+            "certificate_hash": "040fc924dbadee9d6f4186b249c5330d7b3ea200"
+          }
+        },
+        {
           "client_id": "977265581819-lsf2k2370img9f2204v5n173oikvjhdv.apps.googleusercontent.com",
           "client_type": 3
         }

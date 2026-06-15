@@ -54,13 +54,18 @@ android {
 }
 
 dependencies {
-    // Play Core — needed by Flutter engine for deferred components
-    implementation("com.google.android.play:core:1.10.3")
-
     // Firebase BoM (manages all Firebase SDK versions)
     implementation(platform("com.google.firebase:firebase-bom:33.12.0"))
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-auth")
+}
+
+configurations.all {
+    resolutionStrategy {
+        // Force consistent play-core versions to avoid duplicate class conflict
+        force("com.google.android.play:core:1.10.3")
+        force("com.google.android.play:core-common:2.0.3")
+    }
 }
 
 flutter {

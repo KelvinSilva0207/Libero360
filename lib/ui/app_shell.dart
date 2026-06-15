@@ -5,7 +5,7 @@ import '../core/themes/app_colors.dart';
 import '../features/auth/presentation/viewmodels/auth_viewmodel.dart';
 import '../features/asistencia/asistencia.dart';
 import '../features/partido/presentation/views/match_start_dialog.dart';
-import '../features/estadisticas/presentation/views/play_by_play_screen.dart';
+import '../features/statistics/presentation/views/statistics_screen.dart';
 import '../features/admin/presentation/views/admin_screen.dart';
 import 'dashboard_screen.dart';
 
@@ -30,7 +30,7 @@ class _AppShellState extends State<AppShell> {
       const DashboardScreen(),
       const AthleteListScreen(),
       const _MatchLauncherPlaceholder(),
-      const PlayByPlayScreen(),
+      const StatisticsScreen(),
       const AttendanceScreen(),
       const AdminScreen(),
     ]);

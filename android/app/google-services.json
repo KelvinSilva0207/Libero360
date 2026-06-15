@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "977265581819",
+    "project_id": "libero360-f8cc5",
+    "storage_bucket": "libero360-f8cc5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:977265581819:android:133c620eb79d7c71a21a5e",
+        "android_client_info": {
+          "package_name": "com.libero360.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "977265581819-lsf2k2370img9f2204v5n173oikvjhdv.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDGArnLHII-V23IXhc1JHGuiySJuHNsN1g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "977265581819-lsf2k2370img9f2204v5n173oikvjhdv.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

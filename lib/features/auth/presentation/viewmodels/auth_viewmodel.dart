@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/services/service_locator.dart';
 import '../../../../core/services/abstract_auth_service.dart';
+import '../../../../core/services/google_auth_service.dart';
 import '../../data/models/user_model.dart';
 
 enum AuthStatus { uninitialized, authenticated, unauthenticated }
@@ -37,6 +38,25 @@ class AuthViewModel extends ChangeNotifier {
     return false;
   }
 
+  Future<AppUser?> loginWithGoogle() async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    final user = await GoogleAuthService.instance.signIn();
+    if (user != null) {
+      _user = user;
+      _status = AuthStatus.authenticated;
+      _isLoading = false;
+      notifyListeners();
+      return user;
+    }
+    _error = 'Error al iniciar con Google';
+    _isLoading = false;
+    notifyListeners();
+    return null;
+  }
+
   Future<String?> register(String nombre, String email, String password) async {
     _isLoading = true;
     _error = null;
@@ -58,6 +78,7 @@ class AuthViewModel extends ChangeNotifier {
 
   void logout() {
     _repository.logout();
+    GoogleAuthService.instance.signOut();
     _user = null;
     _status = AuthStatus.unauthenticated;
     notifyListeners();

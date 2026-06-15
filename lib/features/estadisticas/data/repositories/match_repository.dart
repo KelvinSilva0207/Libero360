@@ -60,6 +60,8 @@ class MatchRepository {
     DateTime? fecha,
     TipoPartido tipoPartido = TipoPartido.amistoso,
     int setsTotales = 5,
+    int puntosParaGanarSet = 25,
+    int puntosDiferenciaSet = 2,
     String? lugar,
   }) async {
     final match = Match.create(
@@ -68,6 +70,8 @@ class MatchRepository {
       fecha: fecha,
       tipoPartido: tipoPartido,
       setsTotales: setsTotales,
+      puntosParaGanarSet: puntosParaGanarSet,
+      puntosDiferenciaSet: puntosDiferenciaSet,
       lugar: lugar,
     );
     
@@ -164,11 +168,9 @@ class MatchRepository {
   Future<Match?> quitarUltimoPunto(int matchId) async {
     final match = await _db.getMatchById(matchId);
     if (match != null && match.isActivo) {
-      // Lógica simple: reducir el último punto marcado
-      // En una implementación real, se guardaría el historial
-      if (match.puntosLocal > 0) {
+      if (match.ultimoPuntoFueLocal && match.puntosLocal > 0) {
         match.puntosLocal--;
-      } else if (match.puntosVisitante > 0) {
+      } else if (!match.ultimoPuntoFueLocal && match.puntosVisitante > 0) {
         match.puntosVisitante--;
       }
       await _db.saveMatch(match);

@@ -29,10 +29,13 @@ class Match {
 
   TipoPartido tipoPartido = TipoPartido.amistoso;
   int setsTotales = 5;
+  int puntosParaGanarSet = 25;
+  int puntosDiferenciaSet = 2;
   String? resultadoFinal;
   String? lugar;
   int? seasonId;
   int duracionSegundos = 0;
+  bool ultimoPuntoFueLocal = true;
 
   Match();
 
@@ -42,6 +45,8 @@ class Match {
     DateTime? fecha,
     TipoPartido tipoPartido = TipoPartido.amistoso,
     int setsTotales = 5,
+    int puntosParaGanarSet = 25,
+    int puntosDiferenciaSet = 2,
     String? lugar,
   }) {
     return Match()
@@ -50,6 +55,8 @@ class Match {
       ..equipoVisitante = equipoVisitante
       ..tipoPartido = tipoPartido
       ..setsTotales = setsTotales
+      ..puntosParaGanarSet = puntosParaGanarSet
+      ..puntosDiferenciaSet = puntosDiferenciaSet
       ..lugar = lugar
       ..puntosLocal = 0
       ..puntosVisitante = 0
@@ -80,20 +87,19 @@ class Match {
 
   void agregarPuntoLocal() {
     puntosLocal++;
+    ultimoPuntoFueLocal = true;
     _verificarCambioSet();
   }
 
   void agregarPuntoVisitante() {
     puntosVisitante++;
+    ultimoPuntoFueLocal = false;
     _verificarCambioSet();
   }
 
   void _verificarCambioSet() {
-    const puntosParaGanar = 25;
-    const puntosDiferencia = 2;
-
-    if (puntosLocal >= puntosParaGanar || puntosVisitante >= puntosParaGanar) {
-      if ((puntosLocal - puntosVisitante).abs() >= puntosDiferencia) {
+    if (puntosLocal >= puntosParaGanarSet || puntosVisitante >= puntosParaGanarSet) {
+      if ((puntosLocal - puntosVisitante).abs() >= puntosDiferenciaSet) {
         if (puntosLocal > puntosVisitante) {
           setsLocal++;
         } else {

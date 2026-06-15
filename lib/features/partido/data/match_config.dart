@@ -6,6 +6,7 @@ class MatchConfig {
   int setsTotales;
   TipoPartido tipoPartido;
   String? lugar;
+  String? competitionName;
   List<Player> selectedPlayers;
 
   MatchConfig({
@@ -14,6 +15,7 @@ class MatchConfig {
     this.setsTotales = 5,
     this.tipoPartido = TipoPartido.amistoso,
     this.lugar,
+    this.competitionName,
     this.selectedPlayers = const [],
   });
 }

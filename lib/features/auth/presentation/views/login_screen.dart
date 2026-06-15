@@ -89,6 +89,15 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  Future<void> _signInWithGoogle(AuthViewModel vm) async {
+    final user = await vm.loginWithGoogle();
+    if (user != null && mounted) {
+      Navigator.pop(context);
+    } else if (mounted) {
+      _showError(vm.error ?? 'No se pudo iniciar sesión con Google');
+    }
+  }
+
   void _showError(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(msg), backgroundColor: AppColors.error),
@@ -202,7 +211,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     label: 'Continuar con Google',
                                     icon: Icons.g_mobiledata_rounded,
                                     iconColor: AppColors.google,
-                                    onPressed: () => _showSocialInfo(context, 'Google'),
+                                    onPressed: () => _signInWithGoogle(context.read<AuthViewModel>()),
                                   ),
                                   const SizedBox(height: 12),
                                   _SocialButton(

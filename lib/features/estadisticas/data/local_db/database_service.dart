@@ -4,6 +4,7 @@ import '../../../../core/database/database_provider.dart';
 import '../../../../core/services/abstract_data_service.dart';
 import '../models/models.dart';
 import '../../../auth/data/models/user_model.dart';
+import '../../../partido/data/match_event.dart';
 import 'package:intl/intl.dart';
 
 class DatabaseService extends AbstractDataService {
@@ -22,6 +23,7 @@ class DatabaseService extends AbstractDataService {
   final _userStore = intMapStoreFactory.store('users');
   final _sessionStore = intMapStoreFactory.store('_session');
   final _seasonStore = intMapStoreFactory.store('seasons');
+  final _matchEventStore = intMapStoreFactory.store('match_events');
 
   Future<void> initialize() async {
     if (_isInitialized) return;
@@ -55,6 +57,10 @@ class DatabaseService extends AbstractDataService {
     final record = await _playerStore.record(id).get(_database);
     if (record == null) return null;
     return _playerFromMap(record)..id = id;
+  }
+
+  Future<Player?> getPlayer(int id) async {
+    return getPlayerById(id);
   }
 
   Future<List<Player>> searchPlayers(String query) async {
@@ -92,6 +98,10 @@ class DatabaseService extends AbstractDataService {
 
   Future<int> getPlayerCount() async {
     return await _playerStore.count(_database);
+  }
+
+  Future<List<Player>> getPlayers() async {
+    return getAllPlayers();
   }
 
   // ==================== SEASONS ====================
@@ -370,6 +380,40 @@ class DatabaseService extends AbstractDataService {
     }
   }
 
+  // ==================== MATCH EVENTS ====================
+
+  Future<List<MatchEvent>> getMatchEvents(int matchId) async {
+    final snapshots = await _matchEventStore.find(
+      _database,
+      finder: Finder(
+        filter: Filter.equals('matchId', matchId),
+        sortOrders: [SortOrder('fecha')],
+      ),
+    );
+    return snapshots.map((e) => _matchEventFromMap(e.value)..id = e.key).toList();
+  }
+
+  Future<List<MatchEvent>> getAllMatchEvents() async {
+    final snapshots = await _matchEventStore.find(_database);
+    return snapshots.map((e) => _matchEventFromMap(e.value)..id = e.key).toList();
+  }
+
+  Future<int> saveMatchEvent(MatchEvent event) async {
+    final map = _matchEventToMap(event);
+    if (event.id == 0) {
+      return await _matchEventStore.add(_database, map);
+    } else {
+      await _matchEventStore.record(event.id).put(_database, map);
+      return event.id;
+    }
+  }
+
+  // ==================== ATTENDANCE ALIAS ====================
+
+  Future<List<AttendanceRecord>> getAttendanceRecords() async {
+    return getAllAttendanceRecords();
+  }
+
   // ==================== USERS ====================
 
   Future<List<AppUser>> getAllUsers() async {
@@ -434,6 +478,7 @@ class DatabaseService extends AbstractDataService {
       'matches': (await getAllMatches()).map(_matchToMap).toList(),
       'events': (await getAllEvents()).map(_eventToMap).toList(),
       'attendance': (await getAllAttendanceRecords()).map(_attendanceToMap).toList(),
+      'matchEvents': (await getAllMatchEvents()).map(_matchEventToMap).toList(),
       'users': (await getAllUsers()).map(_userToMap).toList(),
       'seasons': (await getAllSeasons()).map(_seasonToMap).toList(),
     };
@@ -462,6 +507,9 @@ class DatabaseService extends AbstractDataService {
       }
       for (final s in (data['seasons'] as List? ?? [])) {
         await _seasonStore.add(_database, s as Map<String, dynamic>);
+      }
+      for (final me in (data['matchEvents'] as List? ?? [])) {
+        await _matchEventStore.add(_database, me as Map<String, dynamic>);
       }
       return true;
     } catch (_) {
@@ -512,6 +560,7 @@ class DatabaseService extends AbstractDataService {
     await _userStore.delete(_database);
     await _sessionStore.delete(_database);
     await _seasonStore.delete(_database);
+    await _matchEventStore.delete(_database);
   }
 
   // ==================== SERIALIZATION ====================
@@ -562,6 +611,9 @@ class DatabaseService extends AbstractDataService {
     'createdAt': m.createdAt.millisecondsSinceEpoch,
     'tipoPartido': m.tipoPartido.index,
     'setsTotales': m.setsTotales,
+    'puntosParaGanarSet': m.puntosParaGanarSet,
+    'puntosDiferenciaSet': m.puntosDiferenciaSet,
+    'ultimoPuntoFueLocal': m.ultimoPuntoFueLocal ? 1 : 0,
     'resultadoFinal': m.resultadoFinal ?? '',
     'lugar': m.lugar ?? '',
     'seasonId': m.seasonId ?? 0,
@@ -583,6 +635,9 @@ class DatabaseService extends AbstractDataService {
     ..createdAt = DateTime.fromMillisecondsSinceEpoch(map['createdAt'] as int? ?? DateTime.now().millisecondsSinceEpoch)
     ..tipoPartido = TipoPartido.values[map['tipoPartido'] as int? ?? 0]
     ..setsTotales = map['setsTotales'] as int? ?? 5
+    ..puntosParaGanarSet = map['puntosParaGanarSet'] as int? ?? 25
+    ..puntosDiferenciaSet = map['puntosDiferenciaSet'] as int? ?? 2
+    ..ultimoPuntoFueLocal = (map['ultimoPuntoFueLocal'] as int? ?? 1) == 1
     ..resultadoFinal = (map['resultadoFinal'] as String?)?.isNotEmpty == true ? map['resultadoFinal'] as String? : null
     ..lugar = (map['lugar'] as String?)?.isNotEmpty == true ? map['lugar'] as String? : null
     ..seasonId = map['seasonId'] as int? ?? 0
@@ -652,6 +707,27 @@ class DatabaseService extends AbstractDataService {
     'endDate': s.endDate?.millisecondsSinceEpoch,
     'createdAt': s.createdAt.millisecondsSinceEpoch,
   };
+
+  Map<String, dynamic> _matchEventToMap(MatchEvent e) => {
+    'athleteId': e.athleteId,
+    'matchId': e.matchId,
+    'fecha': e.fecha.millisecondsSinceEpoch,
+    'setNumero': e.setNumero,
+    'eventType': e.eventType.index,
+    'tipoPartido': e.tipoPartido,
+    'competenciaNombre': e.competenciaNombre ?? '',
+    'rotacion': e.rotacion,
+  };
+
+  MatchEvent _matchEventFromMap(Map<String, dynamic> map) => MatchEvent()
+    ..athleteId = map['athleteId'] as int? ?? 0
+    ..matchId = map['matchId'] as int? ?? 0
+    ..fecha = DateTime.fromMillisecondsSinceEpoch(map['fecha'] as int? ?? DateTime.now().millisecondsSinceEpoch)
+    ..setNumero = map['setNumero'] as int? ?? 1
+    ..eventType = EventType.values[map['eventType'] as int? ?? 1]
+    ..tipoPartido = map['tipoPartido'] as String? ?? ''
+    ..competenciaNombre = (map['competenciaNombre'] as String?)?.isNotEmpty == true ? map['competenciaNombre'] as String? : null
+    ..rotacion = map['rotacion'] as int? ?? 0;
 
   Season _seasonFromMap(Map<String, dynamic> map) => Season(
     name: map['name'] as String? ?? '',

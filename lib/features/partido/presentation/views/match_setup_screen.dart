@@ -16,6 +16,8 @@ class _MatchSetupScreenState extends State<MatchSetupScreen> {
   final _localCtrl = TextEditingController();
   final _visitorCtrl = TextEditingController();
   final _lugarCtrl = TextEditingController();
+  final _torneoCtrl = TextEditingController();
+  final _ligaCtrl = TextEditingController();
   TipoPartido _tipoPartido = TipoPartido.amistoso;
   int _setsTotales = 5;
 
@@ -24,6 +26,8 @@ class _MatchSetupScreenState extends State<MatchSetupScreen> {
     _localCtrl.dispose();
     _visitorCtrl.dispose();
     _lugarCtrl.dispose();
+    _torneoCtrl.dispose();
+    _ligaCtrl.dispose();
     super.dispose();
   }
 
@@ -36,6 +40,11 @@ class _MatchSetupScreenState extends State<MatchSetupScreen> {
       setsTotales: _setsTotales,
       tipoPartido: _tipoPartido,
       lugar: _lugarCtrl.text.trim().isEmpty ? null : _lugarCtrl.text.trim(),
+      competitionName: _tipoPartido == TipoPartido.liga
+          ? _ligaCtrl.text.trim()
+          : _tipoPartido == TipoPartido.torneo
+              ? _torneoCtrl.text.trim()
+              : null,
     );
     context.pushSlide(PlayerSelectionScreen(config: config));
   }
@@ -77,6 +86,11 @@ class _MatchSetupScreenState extends State<MatchSetupScreen> {
                 _section('Detalles'),
                 const SizedBox(height: 12),
                 _buildTipoDropdown(),
+                const SizedBox(height: 12),
+                if (_tipoPartido == TipoPartido.liga)
+                  _buildTextField(_ligaCtrl, 'Nombre de la liga', Icons.emoji_events_rounded),
+                if (_tipoPartido == TipoPartido.torneo)
+                  _buildTextField(_torneoCtrl, 'Nombre del torneo', Icons.emoji_events_rounded),
                 const SizedBox(height: 12),
                 _buildSetsSelector(),
                 const SizedBox(height: 12),

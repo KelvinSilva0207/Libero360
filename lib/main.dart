@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'core/themes/app_theme.dart';
 import 'core/widgets_globales/route_transitions.dart';
 import 'core/services/service_locator.dart';
+import 'core/theme_provider/theme_notifier.dart';
 import 'core/config.dart';
 import 'features/auth/auth.dart';
 import 'features/auth/data/repositories/auth_repository.dart';
@@ -12,8 +13,11 @@ void main() {
   WidgetsFlutterBinding.ensureInitialized();
   _initServices();
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => AuthViewModel(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthViewModel()),
+        ChangeNotifierProvider(create: (_) => ThemeNotifier()),
+      ],
       child: const Libero360App(),
     ),
   );
@@ -31,10 +35,13 @@ class Libero360App extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = context.watch<ThemeNotifier>();
     return MaterialApp(
       title: 'Libero360',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.dark,
+      darkTheme: AppTheme.dark,
+      themeMode: theme.mode,
       initialRoute: '/',
       onGenerateRoute: _onGenerateRoute,
       home: const AuthGate(),
@@ -88,27 +95,80 @@ class _AuthGateState extends State<AuthGate> {
   }
 }
 
-class _SplashScreen extends StatelessWidget {
+class _SplashScreen extends StatefulWidget {
   const _SplashScreen();
+
+  @override
+  State<_SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<_SplashScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animCtrl;
+  late Animation<double> _fadeAnim;
+  late Animation<double> _scaleAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _animCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    );
+    _fadeAnim = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: _animCtrl, curve: Curves.easeOutCubic),
+    );
+    _scaleAnim = Tween<double>(begin: 0.8, end: 1).animate(
+      CurvedAnimation(parent: _animCtrl, curve: Curves.easeOutCubic),
+    );
+    _animCtrl.forward();
+  }
+
+  @override
+  void dispose() {
+    _animCtrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF0A0E21),
       body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Image.asset('assets/images/logo_libero.png', width: 80, height: 80),
-            const SizedBox(height: 20),
-            const SizedBox(
-              width: 28, height: 28,
-              child: CircularProgressIndicator(
-                strokeWidth: 2.5,
-                color: Color(0xFFFF8C00),
-              ),
+        child: FadeTransition(
+          opacity: _fadeAnim,
+          child: ScaleTransition(
+            scale: _scaleAnim,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Image.asset('assets/images/logo_libero.png', width: 100, height: 100),
+                const SizedBox(height: 24),
+                const Text(
+                  'LIBERO360',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 6,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Voleibol Intelligence',
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12, letterSpacing: 2),
+                ),
+                const SizedBox(height: 32),
+                const SizedBox(
+                  width: 24, height: 24,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Color(0xFFFF8C00),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

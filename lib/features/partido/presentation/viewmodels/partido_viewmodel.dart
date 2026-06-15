@@ -88,6 +88,7 @@ class PartidoViewModel extends ChangeNotifier {
         equipoVisitante: config?.visitorName ?? 'Visitante',
         setsTotales: _setsPorPartido,
         tipoPartido: config?.tipoPartido ?? TipoPartido.amistoso,
+        puntosParaGanarSet: _puntosPorSet,
       );
 
       _match!.iniciar();

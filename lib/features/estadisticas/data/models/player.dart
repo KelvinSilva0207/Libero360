@@ -1,3 +1,5 @@
+import '../../../../core/models/athlete_status.dart';
+
 enum Posicion {
   colocador,
   opuesto,
@@ -28,6 +30,13 @@ class Player {
   EstadoSalud estadoSalud = EstadoSalud.disponible;
   String condicionFisica = 'Excelente';
   DateTime createdAt = DateTime.now();
+
+  // AthleteStatus fields
+  AthleteStatus atletaStatus = AthleteStatus.active;
+  String? statusReason;
+  DateTime? statusStartDate;
+  DateTime? statusEndDate;
+  RestriccionDeportiva restriccion = const RestriccionDeportiva();
 
   Player();
 

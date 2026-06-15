@@ -6,7 +6,7 @@ import '../features/auth/presentation/viewmodels/auth_viewmodel.dart';
 import '../features/asistencia/asistencia.dart';
 import '../features/partido/presentation/views/match_start_dialog.dart';
 import '../features/estadisticas/presentation/views/play_by_play_screen.dart';
-import '../features/settings/presentation/views/settings_screen.dart';
+import '../features/admin/presentation/views/admin_screen.dart';
 import 'dashboard_screen.dart';
 
 enum NavItem { dashboard, athletes, matches, stats, attendance, settings }
@@ -32,7 +32,7 @@ class _AppShellState extends State<AppShell> {
       const _MatchLauncherPlaceholder(),
       const PlayByPlayScreen(),
       const AttendanceScreen(),
-      const SettingsScreen(),
+      const AdminScreen(),
     ]);
   }
 
@@ -244,6 +244,8 @@ class _AppShellState extends State<AppShell> {
       onSelected: (value) {
         if (value == 'logout') context.read<AuthViewModel>().logout();
         if (value == 'settings') setState(() => _selectedIndex = 5);
+        if (value == 'admin') setState(() => _selectedIndex = 5);
+        if (value == 'team') setState(() => _selectedIndex = 1);
       },
       itemBuilder: (context) => [
         PopupMenuItem(
@@ -257,12 +259,22 @@ class _AppShellState extends State<AppShell> {
         ),
         const PopupMenuDivider(),
         const PopupMenuItem(
-          value: 'settings',
+          value: 'team',
           child: Row(
             children: [
-              Icon(Icons.settings_rounded, color: Colors.white70, size: 16),
+              Icon(Icons.shield_rounded, color: Colors.white70, size: 16),
               SizedBox(width: 10),
-              Text('Configuración'),
+              Text('Mi equipo'),
+            ],
+          ),
+        ),
+        const PopupMenuItem(
+          value: 'admin',
+          child: Row(
+            children: [
+              Icon(Icons.admin_panel_settings_rounded, color: Colors.white70, size: 16),
+              SizedBox(width: 10),
+              Text('Administrar'),
             ],
           ),
         ),
@@ -294,12 +306,22 @@ class _AppShellState extends State<AppShell> {
         ),
         const PopupMenuDivider(),
         const PopupMenuItem<String>(
-          value: 'settings',
+          value: 'team',
           child: Row(
             children: [
-              Icon(Icons.settings_rounded, color: Colors.white70, size: 16),
+              Icon(Icons.shield_rounded, color: Colors.white70, size: 16),
               SizedBox(width: 10),
-              Text('Configuración'),
+              Text('Mi equipo'),
+            ],
+          ),
+        ),
+        const PopupMenuItem<String>(
+          value: 'admin',
+          child: Row(
+            children: [
+              Icon(Icons.admin_panel_settings_rounded, color: Colors.white70, size: 16),
+              SizedBox(width: 10),
+              Text('Administrar'),
             ],
           ),
         ),
@@ -317,6 +339,8 @@ class _AppShellState extends State<AppShell> {
       ],
     ).then((v) {
       if (v == 'logout') loginVm.logout();
+      if (v == 'team') setState(() => _selectedIndex = 1);
+      if (v == 'admin') setState(() => _selectedIndex = 5);
     });
   }
 }

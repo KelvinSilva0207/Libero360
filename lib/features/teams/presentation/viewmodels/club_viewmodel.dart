@@ -1,6 +1,13 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../../../core/services/club_data_service.dart';
+import '../../../estadisticas/data/models/player.dart';
+import '../../../estadisticas/data/models/match.dart';
+import '../../../estadisticas/data/models/season.dart';
+import '../../../estadisticas/data/models/stat_event.dart';
+import '../../../estadisticas/data/models/attendance_record.dart';
+import '../../../partido/data/match_event.dart';
 import '../../data/team_models.dart';
 import '../../data/club_service.dart';
 import '../../data/invitation_service.dart';
@@ -10,22 +17,41 @@ class ClubViewModel extends ChangeNotifier {
   final ClubService _clubService = ClubService.instance;
   final InvitationService _invitationService = InvitationService.instance;
   final PermissionService _permissionService = PermissionService.instance;
+  final ClubDataService _dataService = ClubDataService.instance;
 
   Club? _currentClub;
   List<Club> _myClubs = [];
   List<ClubMember> _members = [];
   List<ClubInvitation> _invitations = [];
+  List<Player> _athletes = [];
+  List<Match> _clubMatches = [];
+  List<StatEvent> _statEvents = [];
+  List<MatchEvent> _matchEvents = [];
+  List<AttendanceRecord> _attendanceRecords = [];
+  List<Season> _seasons = [];
   bool _loading = true;
   String? _error;
   StreamSubscription? _clubSub;
   StreamSubscription? _membersSub;
   StreamSubscription? _myClubsSub;
   StreamSubscription? _invitationsSub;
+  StreamSubscription? _athletesSub;
+  StreamSubscription? _matchesSub;
+  StreamSubscription? _statEventsSub;
+  StreamSubscription? _matchEventsSub;
+  StreamSubscription? _attendanceSub;
+  StreamSubscription? _seasonsSub;
 
   Club? get currentClub => _currentClub;
   List<Club> get myClubs => _myClubs;
   List<ClubMember> get members => _members;
   List<ClubInvitation> get invitations => _invitations;
+  List<Player> get athletes => _athletes;
+  List<Match> get clubMatches => _clubMatches;
+  List<StatEvent> get statEvents => _statEvents;
+  List<MatchEvent> get matchEvents => _matchEvents;
+  List<AttendanceRecord> get attendanceRecords => _attendanceRecords;
+  List<Season> get seasons => _seasons;
   bool get loading => _loading;
   String? get error => _error;
 
@@ -71,12 +97,14 @@ class ClubViewModel extends ChangeNotifier {
     _clubSub?.cancel();
     _membersSub?.cancel();
     _invitationsSub?.cancel();
+    _cancelDataStreams();
 
     _clubSub = _clubService.clubStream(clubId).listen((club) {
       if (club != null) {
         _currentClub = club;
         _loading = false;
         notifyListeners();
+        _initDataStreams();
       }
     });
 
@@ -89,6 +117,42 @@ class ClubViewModel extends ChangeNotifier {
       _invitations = inv;
       notifyListeners();
     });
+  }
+
+  void _initDataStreams() {
+    _athletesSub = _dataService.streamPlayers().listen((list) {
+      _athletes = list;
+      notifyListeners();
+    });
+    _matchesSub = _dataService.streamMatches().listen((list) {
+      _clubMatches = list;
+      notifyListeners();
+    });
+    _statEventsSub = _dataService.streamStatEvents().listen((list) {
+      _statEvents = list;
+      notifyListeners();
+    });
+    _matchEventsSub = _dataService.streamMatchEvents().listen((list) {
+      _matchEvents = list;
+      notifyListeners();
+    });
+    _attendanceSub = _dataService.streamAttendance().listen((list) {
+      _attendanceRecords = list;
+      notifyListeners();
+    });
+    _seasonsSub = _dataService.streamSeasons().listen((list) {
+      _seasons = list;
+      notifyListeners();
+    });
+  }
+
+  void _cancelDataStreams() {
+    _athletesSub?.cancel();
+    _matchesSub?.cancel();
+    _statEventsSub?.cancel();
+    _matchEventsSub?.cancel();
+    _attendanceSub?.cancel();
+    _seasonsSub?.cancel();
   }
 
   Future<String?> createClub(String name) async {
@@ -196,6 +260,7 @@ class ClubViewModel extends ChangeNotifier {
     _membersSub?.cancel();
     _myClubsSub?.cancel();
     _invitationsSub?.cancel();
+    _cancelDataStreams();
     super.dispose();
   }
 }

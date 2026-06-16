@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../../core/themes/app_colors.dart';
 import '../../../estadisticas/data/models/models.dart';
 import '../../../estadisticas/data/local_db/database_service.dart';
+import 'attendance_history_screen.dart';
 
 class AttendanceScreen extends StatefulWidget {
   const AttendanceScreen({super.key});
@@ -45,6 +45,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   }
 
   Future<void> _pickDate() async {
+    final cs = Theme.of(context).colorScheme;
     final picked = await showDatePicker(
       context: context,
       initialDate: _selectedDate,
@@ -52,9 +53,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       lastDate: DateTime.now().add(const Duration(days: 1)),
       builder: (context, child) => Theme(
         data: ThemeData.dark().copyWith(
-          colorScheme: const ColorScheme.dark(
-            primary: AppColors.accent,
-            onPrimary: Colors.white,
+          colorScheme: ColorScheme.dark(
+            primary: cs.primary,
+            onPrimary: cs.onPrimary,
           ),
         ),
         child: child!,
@@ -70,18 +71,11 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     setState(() => _saving = true);
     try {
       for (final record in _records.values) {
-        if (record.id == 0) {
-          await DatabaseService.instance.saveAttendanceRecord(record);
-        } else {
-          await DatabaseService.instance.saveAttendanceRecord(record);
-        }
+        await DatabaseService.instance.saveAttendanceRecord(record);
       }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Asistencia guardada'),
-            backgroundColor: AppColors.primary,
-          ),
+          const SnackBar(content: Text('Asistencia guardada')),
         );
       }
     } catch (e) {
@@ -112,31 +106,31 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final dateStr = '${_selectedDate.day.toString().padLeft(2, '0')}/'
         '${_selectedDate.month.toString().padLeft(2, '0')}/'
         '${_selectedDate.year}';
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: cs.surface,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
-        title: const Text('Asistencia', style: TextStyle(color: Colors.white)),
+        title: const Text('Asistencia'),
         actions: [
           if (!_loading)
             IconButton(
-              icon: const Icon(Icons.save, color: AppColors.accent),
+              icon: Icon(Icons.save, color: cs.primary),
               onPressed: _saving ? null : _save,
               tooltip: 'Guardar',
             ),
         ],
       ),
-      body: _buildBody(dateStr),
+      body: _buildBody(dateStr, cs),
     );
   }
 
-  Widget _buildBody(String dateStr) {
+  Widget _buildBody(String dateStr, ColorScheme cs) {
     if (_loading) {
-      return const Center(child: CircularProgressIndicator(color: AppColors.accent));
+      return Center(child: CircularProgressIndicator(color: cs.primary));
     }
     if (_error != null) {
       return Center(
@@ -151,7 +145,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               onPressed: _load,
               icon: const Icon(Icons.refresh),
               label: const Text('Reintentar'),
-              style: FilledButton.styleFrom(backgroundColor: AppColors.accent),
+              style: FilledButton.styleFrom(backgroundColor: cs.primary),
             ),
           ],
         ),
@@ -159,43 +153,46 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     }
     return Column(
       children: [
-        _dateHeader(dateStr),
+        _dateHeader(dateStr, cs),
         Expanded(
           child: _players.isEmpty
-              ? _emptyState()
+              ? _emptyState(cs)
               : ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                   itemCount: _players.length,
-                  itemBuilder: (context, index) => _athleteTile(_players[index]),
+                  itemBuilder: (context, index) => _athleteTile(_players[index], cs),
                 ),
         ),
-        if (_players.isNotEmpty) _saveBar(),
+        if (_players.isNotEmpty) _saveBar(cs),
       ],
     );
   }
 
-  Widget _dateHeader(String dateStr) {
+  Widget _dateHeader(String dateStr, ColorScheme cs) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      color: AppColors.surface,
+      color: cs.surfaceContainerHighest,
       child: Row(
         children: [
-          const Icon(Icons.calendar_today, color: AppColors.accent, size: 18),
+          Icon(Icons.calendar_today, color: cs.primary, size: 18),
           const SizedBox(width: 12),
-          const Text('Fecha:', style: TextStyle(color: Colors.white54, fontSize: 13)),
+          Text('Fecha:',
+              style: TextStyle(
+                  color: cs.onSurface.withValues(alpha: 0.6), fontSize: 13)),
           const SizedBox(width: 8),
           GestureDetector(
             onTap: _pickDate,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                border: Border.all(color: AppColors.accent.withOpacity(0.5)),
+                border: Border.all(
+                    color: cs.primary.withValues(alpha: 0.5)),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
                 dateStr,
-                style: const TextStyle(
-                  color: AppColors.accent,
+                style: TextStyle(
+                  color: cs.primary,
                   fontWeight: FontWeight.w600,
                   fontSize: 14,
                 ),
@@ -203,48 +200,59 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             ),
           ),
           const Spacer(),
-          Text(
-            '${_players.length} atletas',
-            style: const TextStyle(color: Colors.white38, fontSize: 12),
+          Text('${_players.length} atletas',
+              style: TextStyle(
+                  color: cs.onSurface.withValues(alpha: 0.4), fontSize: 12)),
+          const SizedBox(width: 8),
+          IconButton(
+            icon: Icon(Icons.history, color: cs.primary, size: 20),
+            tooltip: 'Ver historial',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const AttendanceHistoryScreen()),
+              );
+            },
           ),
         ],
       ),
     );
   }
 
-  Widget _emptyState() {
+  Widget _emptyState(ColorScheme cs) {
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.people_outline, color: Colors.white24, size: 64),
+          Icon(Icons.people_outline,
+              color: cs.onSurface.withValues(alpha: 0.2), size: 64),
           const SizedBox(height: 16),
-          const Text('No hay atletas registrados', style: TextStyle(color: Colors.white54, fontSize: 16)),
+          Text('No hay atletas registrados',
+              style: TextStyle(
+                  color: cs.onSurface.withValues(alpha: 0.5), fontSize: 16)),
           const SizedBox(height: 8),
-          const Text('Agrega atletas desde la sección Atletas', style: TextStyle(color: Colors.white38, fontSize: 13)),
-          const SizedBox(height: 16),
-          FilledButton.icon(
-            onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back),
-            label: const Text('Volver'),
-            style: FilledButton.styleFrom(backgroundColor: AppColors.surface),
-          ),
+          Text('Agrega atletas desde la sección Atletas',
+              style: TextStyle(
+                  color: cs.onSurface.withValues(alpha: 0.3), fontSize: 13)),
         ],
       ),
     );
   }
 
-  Widget _athleteTile(Player p) {
+  Widget _athleteTile(Player p, ColorScheme cs) {
     final record = _records[p.id];
     final asistio = record?.asistio ?? true;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: cs.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: asistio ? Colors.green.withOpacity(0.3) : Colors.red.withOpacity(0.3),
+          color: asistio
+              ? Colors.green.withValues(alpha: 0.3)
+              : Colors.red.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
@@ -252,24 +260,33 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
         leading: CircleAvatar(
           radius: 18,
-          backgroundColor: p.esCapitan ? AppColors.accent : AppColors.primary,
+          backgroundColor: p.esCapitan ? cs.primary : cs.surfaceContainerHigh,
           child: Text(
             '${p.numero}',
-            style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13),
+            style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: cs.onSurface,
+                fontSize: 13),
           ),
         ),
         title: Row(
           children: [
-            Text(p.nombre, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500)),
+            Text(p.nombre,
+                style: TextStyle(
+                    color: cs.onSurface,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500)),
             if (p.esCapitan) ...[
               const SizedBox(width: 4),
-              const Icon(Icons.star, color: AppColors.accent, size: 14),
+              Icon(Icons.star, color: cs.primary, size: 14),
             ],
           ],
         ),
         subtitle: Row(
           children: [
-            Text(p.posicionLabel, style: const TextStyle(color: Colors.white54, fontSize: 11)),
+            Text(p.posicionLabel,
+                style: TextStyle(
+                    color: cs.onSurface.withValues(alpha: 0.6), fontSize: 11)),
             const SizedBox(width: 8),
             Container(
               width: 6, height: 6,
@@ -279,7 +296,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               ),
             ),
             const SizedBox(width: 4),
-            Text(p.estadoSaludLabel, style: TextStyle(color: _saludColor(p.estadoSalud), fontSize: 10)),
+            Text(p.estadoSaludLabel,
+                style: TextStyle(
+                    color: _saludColor(p.estadoSalud), fontSize: 10)),
           ],
         ),
         trailing: GestureDetector(
@@ -287,7 +306,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: asistio ? Colors.green.withOpacity(0.15) : Colors.red.withOpacity(0.15),
+              color: asistio
+                  ? Colors.green.withValues(alpha: 0.15)
+                  : Colors.red.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
@@ -315,32 +336,38 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     );
   }
 
-  Widget _saveBar() {
+  Widget _saveBar(ColorScheme cs) {
     final presentes = _records.values.where((r) => r.asistio).length;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        border: Border(top: BorderSide(color: Colors.white12)),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest,
+        border: Border(top: BorderSide(color: cs.outlineVariant)),
       ),
       child: Row(
         children: [
           Text(
             '$presentes/${_players.length} presentes',
-            style: const TextStyle(color: Colors.white54, fontSize: 13),
+            style: TextStyle(
+                color: cs.onSurface.withValues(alpha: 0.6), fontSize: 13),
           ),
           const Spacer(),
           FilledButton.icon(
             onPressed: _saving ? null : _save,
             icon: _saving
-                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                ? SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: cs.onPrimary))
                 : const Icon(Icons.save, size: 18),
             label: Text(_saving ? 'Guardando...' : 'Guardar'),
             style: FilledButton.styleFrom(
-              backgroundColor: AppColors.accent,
-              foregroundColor: Colors.white,
+              backgroundColor: cs.primary,
+              foregroundColor: cs.onPrimary,
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
             ),
           ),
         ],

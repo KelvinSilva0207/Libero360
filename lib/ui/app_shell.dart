@@ -9,6 +9,7 @@ import '../features/statistics/presentation/views/statistics_screen.dart';
 import '../features/admin/presentation/views/admin_screen.dart';
 import '../features/teams/teams.dart';
 import '../features/notifications/notifications.dart';
+import '../features/cancha/presentation/views/court_screen.dart';
 import 'dashboard_screen.dart';
 
 enum NavItem { dashboard, athletes, matches, stats, attendance, settings }
@@ -54,11 +55,11 @@ class _AppShellState extends State<AppShell> {
         // Windows se vea EXACTAMENTE igual que Android
         final useMobileLayout = !isWide || isStatsTab;
         return Scaffold(
-          backgroundColor: AppColors.background,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           extendBodyBehindAppBar: useMobileLayout,
           appBar: useMobileLayout
               ? AppBar(
-                  backgroundColor: AppColors.surface,
+                  backgroundColor: Theme.of(context).colorScheme.surface,
                   leading: _selectedIndex != 0
                       ? IconButton(
                           icon: const Icon(Icons.arrow_back_rounded),
@@ -107,15 +108,16 @@ class _AppShellState extends State<AppShell> {
   }
 
   Widget _buildSidebar(BuildContext context, dynamic user) {
+    final colors = Theme.of(context).colorScheme;
     return Container(
       width: 220,
-      color: AppColors.surface,
+      color: colors.surface,
       child: Column(
         children: [
           Container(
             padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
-            decoration: const BoxDecoration(
-              border: Border(bottom: BorderSide(color: AppColors.border)),
+            decoration: BoxDecoration(
+              border: Border(bottom: BorderSide(color: colors.outlineVariant)),
             ),
             child: Row(
               children: [
@@ -124,9 +126,9 @@ class _AppShellState extends State<AppShell> {
                   child: Image.asset('assets/images/logo_libero.png', width: 32, height: 32),
                 ),
                 const SizedBox(width: 10),
-                const Text('Libero360',
+                Text('Libero360',
                   style: TextStyle(
-                    color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: -0.3,
+                    color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: -0.3,
                   ),
                 ),
               ],
@@ -139,8 +141,8 @@ class _AppShellState extends State<AppShell> {
           Expanded(child: _navItems()),
           Container(
             padding: const EdgeInsets.all(12),
-            decoration: const BoxDecoration(
-              border: Border(top: BorderSide(color: AppColors.border)),
+            decoration: BoxDecoration(
+              border: Border(top: BorderSide(color: colors.outlineVariant)),
             ),
             child: GestureDetector(
               onTap: () => _showUserMenu(context, user),
@@ -161,19 +163,19 @@ class _AppShellState extends State<AppShell> {
                       children: [
                         Text(
                           user?.nombre ?? 'Usuario',
-                          style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500),
+                          style: TextStyle(color: colors.onSurface, fontSize: 12, fontWeight: FontWeight.w500),
                           overflow: TextOverflow.ellipsis,
                         ),
                         if (user?.email != null)
                           Text(
                             user!.email,
-                            style: const TextStyle(color: AppColors.textSecondary, fontSize: 10),
+                            style: TextStyle(color: colors.onSurfaceVariant, fontSize: 10),
                             overflow: TextOverflow.ellipsis,
                           ),
                       ],
                     ),
                   ),
-                  const Icon(Icons.more_vert_rounded, color: AppColors.textSecondary, size: 14),
+                  const Icon(Icons.more_vert_rounded, size: 14),
                 ],
               ),
             ),
@@ -198,6 +200,7 @@ class _AppShellState extends State<AppShell> {
   }
 
   Widget _navItem(NavItem item, IconData icon, String label, int index) {
+    final colors = Theme.of(context).colorScheme;
     final isSelected = _selectedIndex == index;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -211,12 +214,12 @@ class _AppShellState extends State<AppShell> {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
             child: Row(
               children: [
-                Icon(icon, size: 18, color: isSelected ? AppColors.accent : AppColors.textSecondary),
+                Icon(icon, size: 18, color: isSelected ? AppColors.accent : colors.onSurfaceVariant),
                 const SizedBox(width: 12),
                 Text(
                   label,
                   style: TextStyle(
-                    color: isSelected ? Colors.white : AppColors.textSecondary,
+                    color: isSelected ? colors.onSurface : colors.onSurfaceVariant,
                     fontSize: 14,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                   ),
@@ -230,15 +233,16 @@ class _AppShellState extends State<AppShell> {
   }
 
   Widget _buildBottomNav() {
+    final colors = Theme.of(context).colorScheme;
     return Container(
-      decoration: const BoxDecoration(
-        border: Border(top: BorderSide(color: AppColors.border)),
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: colors.outlineVariant)),
       ),
       child: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
-        backgroundColor: AppColors.surface,
+        backgroundColor: colors.surface,
         selectedItemColor: AppColors.accent,
-        unselectedItemColor: AppColors.textTertiary,
+        unselectedItemColor: colors.onSurfaceVariant,
         selectedFontSize: 11,
         unselectedFontSize: 11,
         currentIndex: _selectedIndex,
@@ -254,6 +258,7 @@ class _AppShellState extends State<AppShell> {
   }
 
   Widget _userMenu(BuildContext context, dynamic user) {
+    final colors = Theme.of(context).colorScheme;
     return PopupMenuButton<String>(
       icon: CircleAvatar(
         backgroundColor: AppColors.accent,
@@ -275,39 +280,39 @@ class _AppShellState extends State<AppShell> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(user?.nombre ?? 'Usuario', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+              Text(user?.nombre ?? 'Usuario', style: TextStyle(fontWeight: FontWeight.bold, color: colors.onSurface)),
             ],
           ),
         ),
         const PopupMenuDivider(),
-        const PopupMenuItem(
+        PopupMenuItem(
           value: 'team',
           child: Row(
             children: [
-              Icon(Icons.shield_rounded, color: Colors.white70, size: 16),
-              SizedBox(width: 10),
-              Text('Mi equipo'),
+              Icon(Icons.shield_rounded, color: colors.onSurfaceVariant, size: 16),
+              const SizedBox(width: 10),
+              const Text('Mi equipo'),
             ],
           ),
         ),
-        const PopupMenuItem(
+        PopupMenuItem(
           value: 'admin',
           child: Row(
             children: [
-              Icon(Icons.admin_panel_settings_rounded, color: Colors.white70, size: 16),
-              SizedBox(width: 10),
-              Text('Administrar'),
+              Icon(Icons.admin_panel_settings_rounded, color: colors.onSurfaceVariant, size: 16),
+              const SizedBox(width: 10),
+              const Text('Administrar'),
             ],
           ),
         ),
         const PopupMenuDivider(),
-        const PopupMenuItem(
+        PopupMenuItem(
           value: 'logout',
           child: Row(
             children: [
-              Icon(Icons.logout_rounded, color: Color(0xFFEF4444), size: 16),
-              SizedBox(width: 10),
-              Text('Cerrar sesión'),
+              const Icon(Icons.logout_rounded, color: Color(0xFFEF4444), size: 16),
+              const SizedBox(width: 10),
+              const Text('Cerrar sesión'),
             ],
           ),
         ),
@@ -317,44 +322,45 @@ class _AppShellState extends State<AppShell> {
 
   void _showUserMenu(BuildContext context, dynamic user) {
     final loginVm = context.read<AuthViewModel>();
+    final colors = Theme.of(context).colorScheme;
     showMenu<String>(
       context: context,
       position: RelativeRect.fromLTRB(0, 1000, 220, 0),
-      color: AppColors.surfaceLight,
+      color: colors.surface,
       items: [
         PopupMenuItem<String>(
           enabled: false,
-          child: Text(user?.nombre ?? 'Usuario', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+          child: Text(user?.nombre ?? 'Usuario', style: TextStyle(fontWeight: FontWeight.bold, color: colors.onSurface)),
         ),
         const PopupMenuDivider(),
-        const PopupMenuItem<String>(
+        PopupMenuItem<String>(
           value: 'team',
           child: Row(
             children: [
-              Icon(Icons.shield_rounded, color: Colors.white70, size: 16),
-              SizedBox(width: 10),
-              Text('Mi equipo'),
+              Icon(Icons.shield_rounded, color: colors.onSurfaceVariant, size: 16),
+              const SizedBox(width: 10),
+              const Text('Mi equipo'),
             ],
           ),
         ),
-        const PopupMenuItem<String>(
+        PopupMenuItem<String>(
           value: 'admin',
           child: Row(
             children: [
-              Icon(Icons.admin_panel_settings_rounded, color: Colors.white70, size: 16),
-              SizedBox(width: 10),
-              Text('Administrar'),
+              Icon(Icons.admin_panel_settings_rounded, color: colors.onSurfaceVariant, size: 16),
+              const SizedBox(width: 10),
+              const Text('Administrar'),
             ],
           ),
         ),
         const PopupMenuDivider(),
-        const PopupMenuItem<String>(
+        PopupMenuItem<String>(
           value: 'logout',
           child: Row(
             children: [
-              Icon(Icons.logout_rounded, color: Color(0xFFEF4444), size: 16),
-              SizedBox(width: 10),
-              Text('Cerrar sesión'),
+              const Icon(Icons.logout_rounded, color: Color(0xFFEF4444), size: 16),
+              const SizedBox(width: 10),
+              const Text('Cerrar sesión'),
             ],
           ),
         ),
@@ -372,17 +378,18 @@ class _MatchLauncherPlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.sports_volleyball_rounded, size: 48, color: AppColors.textTertiary),
+            Icon(Icons.sports_volleyball_rounded, size: 48, color: colors.onSurfaceVariant),
             const SizedBox(height: 16),
-            const Text('Partidos', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+            Text('Partidos', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
-            const Text('Inicia o gestiona tus partidos', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+            Text('Inicia o gestiona tus partidos', style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13)),
             const SizedBox(height: 24),
             FilledButton.icon(
               onPressed: () => showDialog(
@@ -393,6 +400,20 @@ class _MatchLauncherPlaceholder extends StatelessWidget {
               label: const Text('Nuevo Partido'),
               style: FilledButton.styleFrom(
                 backgroundColor: AppColors.accent,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+              ),
+            ),
+            const SizedBox(height: 16),
+            OutlinedButton.icon(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CourtScreen()),
+              ),
+              icon: const Icon(Icons.grid_view_rounded, size: 16),
+              label: const Text('Cancha de práctica'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: colors.onSurface,
+                side: BorderSide(color: colors.outlineVariant),
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
               ),
             ),

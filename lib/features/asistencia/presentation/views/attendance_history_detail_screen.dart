@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../../core/themes/app_colors.dart';
-import '../../../estadisticas/data/models/attendance_record.dart';
 import '../../../estadisticas/data/local_db/database_service.dart';
 import '../../../estadisticas/data/models/models.dart';
 import '../widgets/attendance_pdf_export.dart';
@@ -16,10 +14,12 @@ class AttendanceHistoryDetailScreen extends StatefulWidget {
   });
 
   @override
-  State<AttendanceHistoryDetailScreen> createState() => _AttendanceHistoryDetailScreenState();
+  State<AttendanceHistoryDetailScreen> createState() =>
+      _AttendanceHistoryDetailScreenState();
 }
 
-class _AttendanceHistoryDetailScreenState extends State<AttendanceHistoryDetailScreen> {
+class _AttendanceHistoryDetailScreenState
+    extends State<AttendanceHistoryDetailScreen> {
   List<Player> _players = [];
   bool _loading = true;
 
@@ -41,22 +41,18 @@ class _AttendanceHistoryDetailScreenState extends State<AttendanceHistoryDetailS
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final present = widget.records.where((r) => r.asistio).length;
     final absent = widget.records.where((r) => !r.asistio).length;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: cs.surface,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
         title: Text('${widget.date.day}/${widget.date.month}/${widget.date.year}',
-          style: const TextStyle(color: Colors.white, fontSize: 15)),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
+            style: const TextStyle(fontSize: 15)),
         actions: [
           IconButton(
-            icon: const Icon(Icons.picture_as_pdf, color: AppColors.accent),
+            icon: Icon(Icons.picture_as_pdf, color: cs.primary),
             tooltip: 'Exportar PDF',
             onPressed: () => AttendancePdfExport.exportMonthly(
               context,
@@ -66,60 +62,80 @@ class _AttendanceHistoryDetailScreenState extends State<AttendanceHistoryDetailS
         ],
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.accent))
+          ? Center(child: CircularProgressIndicator(color: cs.primary))
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
+                    color: cs.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: Colors.white10),
+                    border: Border.all(color: cs.outlineVariant),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      _statColumn('Presentes', '$present', Colors.green),
-                      Container(width: 1, height: 40, color: Colors.white10),
-                      _statColumn('Ausentes', '$absent', Colors.redAccent),
-                      Container(width: 1, height: 40, color: Colors.white10),
-                      _statColumn('Total', '${widget.records.length}', Colors.white70),
+                      _statColumn(cs, 'Presentes', '$present', Colors.green),
+                      Container(
+                          width: 1, height: 40, color: cs.outlineVariant),
+                      _statColumn(cs, 'Ausentes', '$absent', Colors.redAccent),
+                      Container(
+                          width: 1, height: 40, color: cs.outlineVariant),
+                      _statColumn(cs, 'Total', '${widget.records.length}',
+                          cs.onSurface.withValues(alpha: 0.7)),
                     ],
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Text('PRESENTES',
-                  style: TextStyle(color: Colors.green, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1)),
+                Text('PRESENTES',
+                    style: TextStyle(
+                        color: Colors.green,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1)),
                 const SizedBox(height: 8),
-                ...widget.records.where((r) => r.asistio).map(_buildPlayerRow),
+                ...widget.records
+                    .where((r) => r.asistio)
+                    .map((r) => _buildPlayerRow(r, cs)),
                 const SizedBox(height: 16),
-                const Text('AUSENTES',
-                  style: TextStyle(color: Colors.redAccent, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1)),
+                Text('AUSENTES',
+                    style: TextStyle(
+                        color: Colors.redAccent,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1)),
                 const SizedBox(height: 8),
-                ...widget.records.where((r) => !r.asistio).map(_buildPlayerRow),
+                ...widget.records
+                    .where((r) => !r.asistio)
+                    .map((r) => _buildPlayerRow(r, cs)),
               ],
             ),
     );
   }
 
-  Widget _statColumn(String label, String value, Color color) {
+  Widget _statColumn(
+      ColorScheme cs, String label, String value, Color color) {
     return Column(
       children: [
-        Text(value, style: TextStyle(color: color, fontSize: 22, fontWeight: FontWeight.bold)),
-        Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 11)),
+        Text(value,
+            style: TextStyle(
+                color: color, fontSize: 22, fontWeight: FontWeight.bold)),
+        Text(label,
+            style: TextStyle(
+                color: cs.onSurface.withValues(alpha: 0.6), fontSize: 11)),
       ],
     );
   }
 
-  Widget _buildPlayerRow(AttendanceRecord r) {
+  Widget _buildPlayerRow(AttendanceRecord r, ColorScheme cs) {
     final p = _players.where((pl) => pl.id == r.playerId).firstOrNull;
     final name = p?.nombre ?? 'Atleta #${r.playerId}';
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       margin: const EdgeInsets.only(bottom: 4),
       decoration: BoxDecoration(
-        color: AppColors.surfaceLight,
+        color: cs.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -130,10 +146,12 @@ class _AttendanceHistoryDetailScreenState extends State<AttendanceHistoryDetailS
             size: 18,
           ),
           const SizedBox(width: 12),
-          Text(name, style: const TextStyle(color: Colors.white, fontSize: 13)),
+          Text(name,
+              style: TextStyle(color: cs.onSurface, fontSize: 13)),
           const Spacer(),
           Text(r.observaciones.isNotEmpty ? r.observaciones : '',
-            style: const TextStyle(color: AppColors.textSecondary, fontSize: 10)),
+              style: TextStyle(
+                  color: cs.onSurface.withValues(alpha: 0.6), fontSize: 10)),
         ],
       ),
     );

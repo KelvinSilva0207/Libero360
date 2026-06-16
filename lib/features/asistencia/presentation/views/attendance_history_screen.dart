@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../core/themes/app_colors.dart';
 import '../../../estadisticas/data/local_db/database_service.dart';
-import '../../../estadisticas/data/models/attendance_record.dart';
 import '../../../estadisticas/data/models/models.dart';
 import 'attendance_history_detail_screen.dart';
 
@@ -9,11 +7,13 @@ class AttendanceHistoryScreen extends StatefulWidget {
   const AttendanceHistoryScreen({super.key});
 
   @override
-  State<AttendanceHistoryScreen> createState() => _AttendanceHistoryScreenState();
+  State<AttendanceHistoryScreen> createState() =>
+      _AttendanceHistoryScreenState();
 }
 
 class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
-  DateTime _selectedMonth = DateTime(DateTime.now().year, DateTime.now().month);
+  DateTime _selectedMonth =
+      DateTime(DateTime.now().year, DateTime.now().month);
   List<Map<String, dynamic>> _trainings = [];
   bool _loading = true;
 
@@ -37,16 +37,19 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
         } catch (_) {}
       }
 
-      final monthStart = DateTime(_selectedMonth.year, _selectedMonth.month, 1);
-      final monthEnd = DateTime(_selectedMonth.year, _selectedMonth.month + 1, 0);
+      final monthStart =
+          DateTime(_selectedMonth.year, _selectedMonth.month, 1);
+      final monthEnd =
+          DateTime(_selectedMonth.year, _selectedMonth.month + 1, 0);
 
       final monthRecords = records.where((r) =>
-        r.fecha.isAfter(monthStart.subtract(const Duration(days: 1))) &&
-        r.fecha.isBefore(monthEnd.add(const Duration(days: 1))));
+          r.fecha.isAfter(monthStart.subtract(const Duration(days: 1))) &&
+          r.fecha.isBefore(monthEnd.add(const Duration(days: 1))));
 
       final grouped = <String, List<AttendanceRecord>>{};
       for (final r in monthRecords) {
-        final key = '${r.fecha.year}-${r.fecha.month.toString().padLeft(2, '0')}-${r.fecha.day.toString().padLeft(2, '0')}';
+        final key =
+            '${r.fecha.year}-${r.fecha.month.toString().padLeft(2, '0')}-${r.fecha.day.toString().padLeft(2, '0')}';
         grouped.putIfAbsent(key, () => []);
         grouped[key]!.add(r);
       }
@@ -62,36 +65,32 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
           'records': records,
         };
       }).toList();
-
-      _trainings.sort((a, b) => (b['date'] as String).compareTo(a['date'] as String));
     } catch (_) {}
     setState(() => _loading = false);
   }
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: cs.surface,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
-        title: const Text('Registro de Asistencia', style: TextStyle(color: Colors.white, fontSize: 15)),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
+        title: const Text('Historial de Asistencia'),
       ),
       body: Column(
         children: [
-          _buildMonthSelector(),
+          _buildMonthSelector(cs),
           Expanded(
             child: _loading
-                ? const Center(child: CircularProgressIndicator(color: AppColors.accent))
+                ? Center(child: CircularProgressIndicator(color: cs.primary))
                 : _trainings.isEmpty
-                    ? _buildEmptyState()
+                    ? _buildEmptyState(cs)
                     : ListView.builder(
                         padding: const EdgeInsets.all(12),
                         itemCount: _trainings.length,
-                        itemBuilder: (_, i) => _buildTrainingCard(_trainings[i]),
+                        itemBuilder: (_, i) =>
+                            _buildTrainingCard(_trainings[i], cs),
                       ),
           ),
         ],
@@ -99,33 +98,38 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     );
   }
 
-  Widget _buildMonthSelector() {
+  Widget _buildMonthSelector(ColorScheme cs) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      color: AppColors.surface,
+      color: cs.surfaceContainerHighest,
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.chevron_left, color: Colors.white),
+            icon: Icon(Icons.chevron_left, color: cs.onSurface),
             onPressed: () {
               setState(() {
-                _selectedMonth = DateTime(_selectedMonth.year, _selectedMonth.month - 1);
+                _selectedMonth =
+                    DateTime(_selectedMonth.year, _selectedMonth.month - 1);
               });
               _loadTrainings();
             },
           ),
           Expanded(
             child: Text(
-              _monthName(_selectedMonth.month) + ' ${_selectedMonth.year}',
+              '${_monthName(_selectedMonth.month)} ${_selectedMonth.year}',
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                  color: cs.onSurface,
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold),
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.chevron_right, color: Colors.white),
+            icon: Icon(Icons.chevron_right, color: cs.onSurface),
             onPressed: () {
               setState(() {
-                _selectedMonth = DateTime(_selectedMonth.year, _selectedMonth.month + 1);
+                _selectedMonth =
+                    DateTime(_selectedMonth.year, _selectedMonth.month + 1);
               });
               _loadTrainings();
             },
@@ -135,24 +139,27 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(ColorScheme cs) {
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.calendar_today_rounded, size: 48, color: Colors.white.withValues(alpha: 0.1)),
+          Icon(Icons.calendar_today_rounded,
+              size: 48, color: cs.onSurface.withValues(alpha: 0.1)),
           const SizedBox(height: 16),
-          const Text('Sin entrenamientos registrados',
-            style: TextStyle(color: Colors.white38, fontSize: 14)),
+          Text('Sin entrenamientos registrados',
+              style: TextStyle(
+                  color: cs.onSurface.withValues(alpha: 0.4), fontSize: 14)),
           const SizedBox(height: 8),
-          const Text('Selecciona otro mes o registra asistencia',
-            style: TextStyle(color: Colors.white24, fontSize: 12)),
+          Text('Selecciona otro mes o registra asistencia',
+              style: TextStyle(
+                  color: cs.onSurface.withValues(alpha: 0.2), fontSize: 12)),
         ],
       ),
     );
   }
 
-  Widget _buildTrainingCard(Map<String, dynamic> training) {
+  Widget _buildTrainingCard(Map<String, dynamic> training, ColorScheme cs) {
     final date = training['date'] as String;
     final total = training['total'] as int;
     final present = training['present'] as int;
@@ -165,7 +172,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     final dayName = _dayName(dateObj.weekday);
 
     return Card(
-      color: AppColors.surface,
+      color: cs.surfaceContainerHighest,
       margin: const EdgeInsets.only(bottom: 8),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ListTile(
@@ -174,27 +181,36 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
           width: 44,
           height: 44,
           decoration: BoxDecoration(
-            color: AppColors.surfaceLight,
+            color: cs.surfaceContainerHigh,
             borderRadius: BorderRadius.circular(10),
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text('$day', style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-              Text(dayName.toUpperCase(), style: const TextStyle(color: AppColors.textSecondary, fontSize: 8)),
+              Text('$day',
+                  style: TextStyle(
+                      color: cs.onSurface,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold)),
+              Text(dayName.toUpperCase(),
+                  style: TextStyle(
+                      color: cs.onSurface.withValues(alpha: 0.6), fontSize: 8)),
             ],
           ),
         ),
         title: Text('Asistieron: $present de $total',
-          style: const TextStyle(color: Colors.white, fontSize: 14)),
+            style: TextStyle(color: cs.onSurface, fontSize: 14)),
         subtitle: Text('Entrenamiento - $present/$total',
-          style: const TextStyle(color: AppColors.textSecondary, fontSize: 11)),
-        trailing: const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+            style: TextStyle(
+                color: cs.onSurface.withValues(alpha: 0.6), fontSize: 11)),
+        trailing: Icon(Icons.chevron_right,
+            color: cs.onSurface.withValues(alpha: 0.4)),
         onTap: () {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => AttendanceHistoryDetailScreen(records: records, date: dateObj),
+              builder: (_) => AttendanceHistoryDetailScreen(
+                  records: records, date: dateObj),
             ),
           );
         },
@@ -203,7 +219,10 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
   }
 
   String _monthName(int m) {
-    const names = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    const names = [
+      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+    ];
     return names[m - 1];
   }
 

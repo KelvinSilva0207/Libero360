@@ -22,11 +22,11 @@ class _CreateClubScreenState extends State<CreateClubScreen> {
   @override
   Widget build(BuildContext context) {
     final vm = context.read<ClubViewModel>();
+    final cs = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0E21),
+      backgroundColor: cs.surface,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0A0E21),
         title: const Text('Crear club'),
       ),
       body: Padding(
@@ -35,22 +35,23 @@ class _CreateClubScreenState extends State<CreateClubScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SizedBox(height: 32),
-            Icon(Icons.groups_2, size: 80, color: const Color(0xFFFF8C00)),
+            Icon(Icons.groups_2, size: 80, color: cs.primary),
             const SizedBox(height: 24),
             Text(
               'Nombre del club',
               style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.7), fontSize: 14),
+                  color: cs.onSurface.withValues(alpha: 0.7), fontSize: 14),
             ),
             const SizedBox(height: 8),
             TextField(
               controller: _nameCtrl,
-              style: const TextStyle(color: Colors.white),
+              style: TextStyle(color: cs.onSurface),
               decoration: InputDecoration(
                 hintText: 'Ej: Academia Elite',
-                hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
+                hintStyle:
+                    TextStyle(color: cs.onSurface.withValues(alpha: 0.3)),
                 filled: true,
-                fillColor: const Color(0xFF1A1F3D),
+                fillColor: cs.surfaceContainerHighest,
                 border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none),
@@ -63,19 +64,19 @@ class _CreateClubScreenState extends State<CreateClubScreen> {
               child: ElevatedButton(
                 onPressed: _creating ? null : () => _create(context, vm),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFF8C00),
+                  backgroundColor: cs.primary,
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
                 ),
                 child: _creating
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 24,
                         height: 24,
                         child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white),
+                            strokeWidth: 2, color: cs.onPrimary),
                       )
-                    : const Text('Crear club',
-                        style: TextStyle(fontSize: 16, color: Colors.white)),
+                    : Text('Crear club',
+                        style: TextStyle(fontSize: 16, color: cs.onPrimary)),
               ),
             ),
           ],

@@ -11,145 +11,144 @@ class TeamManagementScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<ClubViewModel>();
+    final cs = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0E21),
+      backgroundColor: cs.surface,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0A0E21),
         title: Text(vm.currentClub?.name ?? 'Equipo Técnico'),
         actions: [
           if (vm.canInvite())
             IconButton(
-              icon: const Icon(Icons.person_add_alt_1, color: Color(0xFFFF8C00)),
+              icon: Icon(Icons.person_add_alt_1, color: cs.primary),
               onPressed: () =>
                   Navigator.push(context, MaterialPageRoute(builder: (_) => const InviteMemberScreen())),
             ),
         ],
       ),
       body: vm.loading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFFFF8C00)))
+          ? Center(child: CircularProgressIndicator(color: cs.primary))
           : vm.currentClub == null
-              ? _noClubView(context)
-              : _clubView(context, vm),
+              ? _noClubView(context, cs)
+              : _clubView(context, vm, cs),
     );
   }
 
-  Widget _noClubView(BuildContext context) => Center(
+  Widget _noClubView(BuildContext context, ColorScheme cs) => Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.groups_2, size: 80, color: Colors.white.withValues(alpha: 0.2)),
+            Icon(Icons.groups_2, size: 80, color: cs.onSurface.withValues(alpha: 0.2)),
             const SizedBox(height: 16),
-            Text('Sin club', style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 18)),
+            Text('Sin club',
+                style: TextStyle(
+                    color: cs.onSurface.withValues(alpha: 0.5), fontSize: 18)),
             const SizedBox(height: 24),
             ElevatedButton.icon(
-              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateClubScreen())),
+              onPressed: () => Navigator.push(
+                  context, MaterialPageRoute(builder: (_) => const CreateClubScreen())),
               icon: const Icon(Icons.add),
               label: const Text('Crear club'),
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF8C00)),
+              style: ElevatedButton.styleFrom(backgroundColor: cs.primary),
             ),
           ],
         ),
       );
 
-  Widget _clubView(BuildContext context, ClubViewModel vm) {
+  Widget _clubView(BuildContext context, ClubViewModel vm, ColorScheme cs) {
     final members = vm.members;
     final owner = members.where((m) => m.isOwner).toList();
-    final entrenadores = members
-        .where((m) => m.role == ClubRole.entrenador && m.isActive)
-        .toList();
-    final asistentes = members
-        .where((m) => m.role == ClubRole.asistente && m.isActive)
-        .toList();
+    final entrenadores =
+        members.where((m) => m.role == ClubRole.entrenador && m.isActive).toList();
+    final asistentes =
+        members.where((m) => m.role == ClubRole.asistente && m.isActive).toList();
     final pending = members.where((m) => !m.isActive).toList();
 
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        _sectionHeader('Propietario', Icons.workspace_premium),
+        _sectionHeader(cs, 'Propietario', Icons.workspace_premium),
         const SizedBox(height: 8),
-        ...owner.map((m) => _memberTile(context, vm, m)),
+        ...owner.map((m) => _memberTile(context, vm, m, cs)),
         const SizedBox(height: 24),
-        _sectionHeader('Entrenadores', Icons.sports_volleyball),
+        _sectionHeader(cs, 'Entrenadores', Icons.sports_volleyball),
         const SizedBox(height: 8),
-        ...entrenadores.map((m) => _memberTile(context, vm, m)),
-        if (entrenadores.isEmpty)
-          _emptyText('Sin entrenadores'),
+        ...entrenadores.map((m) => _memberTile(context, vm, m, cs)),
+        if (entrenadores.isEmpty) _emptyText(cs, 'Sin entrenadores'),
         const SizedBox(height: 24),
-        _sectionHeader('Asistentes', Icons.assignment),
+        _sectionHeader(cs, 'Asistentes', Icons.assignment),
         const SizedBox(height: 8),
-        ...asistentes.map((m) => _memberTile(context, vm, m)),
-        if (asistentes.isEmpty)
-          _emptyText('Sin asistentes'),
+        ...asistentes.map((m) => _memberTile(context, vm, m, cs)),
+        if (asistentes.isEmpty) _emptyText(cs, 'Sin asistentes'),
         const SizedBox(height: 24),
         if (pending.isNotEmpty) ...[
-          _sectionHeader('Pendientes', Icons.hourglass_empty),
+          _sectionHeader(cs, 'Pendientes', Icons.hourglass_empty),
           const SizedBox(height: 8),
-          ...pending.map((m) => _memberTile(context, vm, m)),
+          ...pending.map((m) => _memberTile(context, vm, m, cs)),
           const SizedBox(height: 24),
         ],
         if (vm.isOwner) ...[
-          _sectionHeader('Peligro', Icons.warning),
+          _sectionHeader(cs, 'Peligro', Icons.warning),
           const SizedBox(height: 8),
-          _dangerZone(context, vm),
+          _dangerZone(context, vm, cs),
         ],
         const SizedBox(height: 32),
       ],
     );
   }
 
-  Widget _sectionHeader(String title, IconData icon) => Row(
+  Widget _sectionHeader(ColorScheme cs, String title, IconData icon) => Row(
         children: [
-          Icon(icon, color: const Color(0xFFFF8C00), size: 20),
+          Icon(icon, color: cs.primary, size: 20),
           const SizedBox(width: 8),
           Text(title,
-              style: const TextStyle(
-                  color: Colors.white,
+              style: TextStyle(
+                  color: cs.onSurface,
                   fontSize: 16,
                   fontWeight: FontWeight.bold)),
         ],
       );
 
-  Widget _emptyText(String text) => Padding(
+  Widget _emptyText(ColorScheme cs, String text) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 28),
         child: Text(text,
-            style: TextStyle(color: Colors.white.withValues(alpha: 0.4))),
+            style: TextStyle(color: cs.onSurface.withValues(alpha: 0.4))),
       );
 
-  Widget _memberTile(BuildContext context, ClubViewModel vm, ClubMember member) {
+  Widget _memberTile(
+      BuildContext context, ClubViewModel vm, ClubMember member, ColorScheme cs) {
     final isSelf = member.userId == vm.uid;
     final indicatorColor = member.isActive
         ? const Color(0xFF4CAF50)
         : const Color(0xFFFFC107);
 
     return Card(
-      color: const Color(0xFF1A1F3D),
+      color: cs.surfaceContainerHighest,
       margin: const EdgeInsets.symmetric(vertical: 4),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: member.isOwner
-              ? const Color(0xFFFF8C00)
-              : const Color(0xFF2A2F55),
+          backgroundColor: member.isOwner ? cs.primary : cs.surfaceContainerHigh,
           child: Text(
             member.displayName.isNotEmpty
                 ? member.displayName[0].toUpperCase()
                 : '?',
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            style:
+                TextStyle(color: cs.onSurface, fontWeight: FontWeight.bold),
           ),
         ),
         title: Row(
           children: [
-            Text(member.displayName,
-                style: const TextStyle(color: Colors.white)),
+            Text(member.displayName, style: TextStyle(color: cs.onSurface)),
             if (isSelf)
               Text(' (tú)',
                   style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.5), fontSize: 13)),
+                      color: cs.onSurface.withValues(alpha: 0.5), fontSize: 13)),
           ],
         ),
         subtitle: Text(
           _roleLabel(member.role),
-          style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 13),
+          style:
+              TextStyle(color: cs.onSurface.withValues(alpha: 0.6), fontSize: 13),
         ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
@@ -157,22 +156,34 @@ class TeamManagementScreen extends StatelessWidget {
             Container(
               width: 10,
               height: 10,
-              decoration: BoxDecoration(shape: BoxShape.circle, color: indicatorColor),
+              decoration:
+                  BoxDecoration(shape: BoxShape.circle, color: indicatorColor),
             ),
             if (vm.isOwner && !member.isOwner)
               PopupMenuButton<String>(
-                color: const Color(0xFF1A1F3D),
-                onSelected: (v) => _handleMemberAction(context, vm, member, v),
+                color: cs.surfaceContainerHighest,
+                onSelected: (v) =>
+                    _handleMemberAction(context, vm, member, v, cs),
                 itemBuilder: (_) => [
                   if (member.role != ClubRole.entrenador)
-                    const PopupMenuItem(value: 'make_entrenador', child: Text('Hacer entrenador')),
+                    const PopupMenuItem(
+                        value: 'make_entrenador',
+                        child: Text('Hacer entrenador')),
                   if (member.role != ClubRole.asistente)
-                    const PopupMenuItem(value: 'make_asistente', child: Text('Hacer asistente')),
-                  const PopupMenuItem(value: 'remove', child: Text('Eliminar', style: TextStyle(color: Colors.red))),
+                    const PopupMenuItem(
+                        value: 'make_asistente',
+                        child: Text('Hacer asistente')),
+                  const PopupMenuItem(
+                      value: 'remove',
+                      child:
+                          Text('Eliminar', style: TextStyle(color: Colors.red))),
                   if (!member.isActive)
-                    const PopupMenuItem(value: 'resend', child: Text('Reenviar invitación')),
+                    const PopupMenuItem(
+                        value: 'resend',
+                        child: Text('Reenviar invitación')),
                 ],
-                icon: Icon(Icons.more_vert, color: Colors.white.withValues(alpha: 0.5)),
+                icon: Icon(Icons.more_vert,
+                    color: cs.onSurface.withValues(alpha: 0.5)),
               ),
           ],
         ),
@@ -181,32 +192,32 @@ class TeamManagementScreen extends StatelessWidget {
   }
 
   void _handleMemberAction(BuildContext context, ClubViewModel vm,
-      ClubMember member, String action) async {
+      ClubMember member, String action, ColorScheme cs) async {
     switch (action) {
       case 'make_entrenador':
         final err = await vm.updateMemberRole(member.id, ClubRole.entrenador);
         if (err != null) _showError(context, err);
-        break;
       case 'make_asistente':
         final err = await vm.updateMemberRole(member.id, ClubRole.asistente);
         if (err != null) _showError(context, err);
-        break;
       case 'remove':
         final confirm = await showDialog<bool>(
           context: context,
           builder: (ctx) => AlertDialog(
-            backgroundColor: const Color(0xFF1A1F3D),
-            title: const Text('Eliminar miembro',
-                style: TextStyle(color: Colors.white)),
+            backgroundColor: cs.surfaceContainerHighest,
+            title: Text('Eliminar miembro',
+                style: TextStyle(color: cs.onSurface)),
             content: Text('¿Eliminar a ${member.displayName} del club?',
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.7))),
+                style:
+                    TextStyle(color: cs.onSurface.withValues(alpha: 0.7))),
             actions: [
               TextButton(
                   onPressed: () => Navigator.pop(ctx, false),
                   child: const Text('Cancelar')),
               TextButton(
                   onPressed: () => Navigator.pop(ctx, true),
-                  child: const Text('Eliminar', style: TextStyle(color: Colors.red))),
+                  child: const Text('Eliminar',
+                      style: TextStyle(color: Colors.red))),
             ],
           ),
         );
@@ -214,39 +225,38 @@ class TeamManagementScreen extends StatelessWidget {
           final err = await vm.removeMember(member.id);
           if (err != null) _showError(context, err);
         }
-        break;
     }
   }
 
-  Widget _dangerZone(BuildContext context, ClubViewModel vm) {
-    final others = vm.members
-        .where((m) => m.userId != vm.uid && m.isActive)
-        .toList();
+  Widget _dangerZone(BuildContext context, ClubViewModel vm, ColorScheme cs) {
+    final others =
+        vm.members.where((m) => m.userId != vm.uid && m.isActive).toList();
     return Column(
       children: [
         Card(
-          color: const Color(0xFF2D1B1B),
+          color: cs.errorContainer,
           child: ExpansionTile(
-            leading: const Icon(Icons.warning, color: Colors.red),
-            title: const Text('Zona de peligro',
-                style: TextStyle(color: Colors.red)),
+            leading: Icon(Icons.warning, color: cs.error),
+            title: Text('Zona de peligro', style: TextStyle(color: cs.error)),
             children: [
               if (others.isNotEmpty)
                 ListTile(
-                  leading: const Icon(Icons.swap_horiz, color: Colors.red),
-                  title: const Text('Transferir propiedad',
-                      style: TextStyle(color: Colors.white)),
+                  leading: Icon(Icons.swap_horiz, color: cs.error),
+                  title: Text('Transferir propiedad',
+                      style: TextStyle(color: cs.onSurface)),
                   subtitle: Text('Elige un nuevo propietario',
-                      style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
-                  onTap: () => _showTransferDialog(context, vm, others),
+                      style: TextStyle(
+                          color: cs.onSurface.withValues(alpha: 0.5))),
+                  onTap: () => _showTransferDialog(context, vm, others, cs),
                 ),
               ListTile(
-                leading: const Icon(Icons.delete_forever, color: Colors.red),
-                title: const Text('Eliminar club',
-                    style: TextStyle(color: Colors.red)),
+                leading: Icon(Icons.delete_forever, color: cs.error),
+                title: Text('Eliminar club',
+                    style: TextStyle(color: cs.error)),
                 subtitle: Text('Esta acción no se puede deshacer',
-                    style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
-                onTap: () => _deleteClub(context, vm),
+                    style: TextStyle(
+                        color: cs.onSurface.withValues(alpha: 0.5))),
+                onTap: () => _deleteClub(context, vm, cs),
               ),
             ],
           ),
@@ -255,70 +265,70 @@ class TeamManagementScreen extends StatelessWidget {
     );
   }
 
-  void _showTransferDialog(
-      BuildContext context, ClubViewModel vm, List<ClubMember> candidates) {
+  void _showTransferDialog(BuildContext context, ClubViewModel vm,
+      List<ClubMember> candidates, ColorScheme cs) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1A1F3D),
-        title: const Text('Transferir propiedad',
-            style: TextStyle(color: Colors.white)),
+        backgroundColor: cs.surfaceContainerHighest,
+        title: Text('Transferir propiedad',
+            style: TextStyle(color: cs.onSurface)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          children: candidates.map((m) =>
-              ListTile(
-                leading: CircleAvatar(
-                  child: Text(m.displayName[0].toUpperCase()),
-                ),
-                title: Text(m.displayName,
-                    style: const TextStyle(color: Colors.white)),
-                subtitle: Text(_roleLabel(m.role),
-                    style: TextStyle(color: Colors.white.withValues(alpha: 0.6))),
-                onTap: () async {
-                  Navigator.pop(ctx);
-                  final confirm = await showDialog<bool>(
-                    context: context,
-                    builder: (c) => AlertDialog(
-                      backgroundColor: const Color(0xFF1A1F3D),
-                      title: const Text('Confirmar',
-                          style: TextStyle(color: Colors.white)),
-                      content: Text(
-                          '¿Transferir propiedad a ${m.displayName}?',
-                          style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.7))),
-                      actions: [
-                        TextButton(
-                            onPressed: () => Navigator.pop(c, false),
-                            child: const Text('Cancelar')),
-                        TextButton(
-                            onPressed: () => Navigator.pop(c, true),
-                            child: const Text('Transferir',
-                                style: TextStyle(color: Color(0xFFFF8C00)))),
-                      ],
+          children: candidates
+              .map((m) => ListTile(
+                    leading: CircleAvatar(
+                      child: Text(m.displayName[0].toUpperCase()),
                     ),
-                  );
-                  if (confirm == true) {
-                    final err = await vm.transferOwnership(m.userId);
-                    if (err != null) _showError(context, err);
-                  }
-                },
-              ),
-          ).toList(),
+                    title: Text(m.displayName,
+                        style: TextStyle(color: cs.onSurface)),
+                    subtitle: Text(_roleLabel(m.role),
+                        style: TextStyle(
+                            color: cs.onSurface.withValues(alpha: 0.6))),
+                    onTap: () async {
+                      Navigator.pop(ctx);
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder: (c) => AlertDialog(
+                          backgroundColor: cs.surfaceContainerHighest,
+                          title: Text('Confirmar',
+                              style: TextStyle(color: cs.onSurface)),
+                          content: Text(
+                              '¿Transferir propiedad a ${m.displayName}?',
+                              style: TextStyle(
+                                  color: cs.onSurface.withValues(alpha: 0.7))),
+                          actions: [
+                            TextButton(
+                                onPressed: () => Navigator.pop(c, false),
+                                child: const Text('Cancelar')),
+                            TextButton(
+                                onPressed: () => Navigator.pop(c, true),
+                                child: Text('Transferir',
+                                    style: TextStyle(color: cs.primary))),
+                          ],
+                        ),
+                      );
+                      if (confirm == true) {
+                        final err = await vm.transferOwnership(m.userId);
+                        if (err != null) _showError(context, err);
+                      }
+                    },
+                  ))
+              .toList(),
         ),
       ),
     );
   }
 
-  void _deleteClub(BuildContext context, ClubViewModel vm) async {
+  void _deleteClub(BuildContext context, ClubViewModel vm, ColorScheme cs) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1A1F3D),
-        title:
-            const Text('¿Eliminar club?', style: TextStyle(color: Colors.white)),
+        backgroundColor: cs.surfaceContainerHighest,
+        title: Text('¿Eliminar club?', style: TextStyle(color: cs.onSurface)),
         content: Text(
           'Se eliminarán todos los datos del club ${vm.currentClub?.name}. ¿Estás seguro?',
-          style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+          style: TextStyle(color: cs.onSurface.withValues(alpha: 0.7)),
         ),
         actions: [
           TextButton(
@@ -326,7 +336,8 @@ class TeamManagementScreen extends StatelessWidget {
               child: const Text('Cancelar')),
           TextButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Eliminar', style: TextStyle(color: Colors.red))),
+              child:
+                  const Text('Eliminar', style: TextStyle(color: Colors.red))),
         ],
       ),
     );

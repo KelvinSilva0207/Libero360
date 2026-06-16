@@ -4,7 +4,6 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:path_provider/path_provider.dart';
 import '../../../estadisticas/data/local_db/database_service.dart';
-import '../../../estadisticas/data/models/attendance_record.dart';
 import '../../../estadisticas/data/models/models.dart';
 
 class AttendancePdfExport {
@@ -24,6 +23,16 @@ class AttendancePdfExport {
       final dates = monthRecords.map((r) =>
         DateTime(r.fecha.year, r.fecha.month, r.fecha.day)).toSet().toList()..sort();
 
+      final activePlayers = players
+          .where((p) => p.atletaStatus == AthleteStatus.active)
+          .toList()
+        ..sort((a, b) => (a.numero ?? 0).compareTo(b.numero ?? 0));
+
+      final restingPlayers = players
+          .where((p) => p.atletaStatus == AthleteStatus.resting)
+          .toList()
+        ..sort((a, b) => (a.numero ?? 0).compareTo(b.numero ?? 0));
+
       final pdf = pw.Document();
 
       pdf.addPage(
@@ -33,31 +42,101 @@ class AttendancePdfExport {
           header: (context) => pw.Header(
             level: 0,
             child: pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              crossAxisAlignment: pw.CrossAxisAlignment.center,
               children: [
-                pw.Text('Libero360 - Reporte de Asistencia',
-                  style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: PdfColors.orange)),
-                pw.SizedBox(height: 4),
-                pw.Text('${_monthName(month.month)} ${month.year}',
-                  style: pw.TextStyle(fontSize: 12, color: PdfColors.grey)),
                 pw.SizedBox(height: 8),
-                pw.Divider(),
+                pw.Text('LIBERO 360',
+                  style: pw.TextStyle(
+                    fontSize: 22,
+                    fontWeight: pw.FontWeight.bold,
+                    color: PdfColors.orange,
+                    letterSpacing: 4,
+                  )),
+                pw.SizedBox(height: 4),
+                pw.Text(
+                  'Reporte Mensual de Asistencia',
+                  style: pw.TextStyle(fontSize: 14, color: PdfColors.grey),
+                ),
+                pw.SizedBox(height: 4),
+                pw.Text(
+                  '${_monthName(month.month)} ${month.year}',
+                  style: pw.TextStyle(
+                    fontSize: 16,
+                    fontWeight: pw.FontWeight.bold,
+                    color: PdfColors.black,
+                  ),
+                ),
+                pw.SizedBox(height: 8),
+                pw.Divider(thickness: 1.5, color: PdfColors.orange),
               ],
             ),
           ),
           footer: (context) => pw.Container(
             alignment: pw.Alignment.center,
+            margin: const pw.EdgeInsets.only(top: 8),
             child: pw.Text(
-              'Libero360 - Generado el ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}',
-              style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey),
+              'Libero 360 - Generado el ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}',
+              style: const pw.TextStyle(fontSize: 7, color: PdfColors.grey),
             ),
           ),
           build: (context) => [
-            _buildStatsTable(dates, players, monthRecords.toList()),
+            // Summary row
+            pw.Container(
+              padding: const pw.EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+              decoration: pw.BoxDecoration(
+                color: PdfColors.orange50,
+                borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+              ),
+              child: pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
+                children: [
+                  _summaryBox('Total días', '${dates.length}', PdfColors.blueGrey),
+                  _summaryBox('Presentes', '${monthRecords.where((r) => r.asistio).length}', PdfColors.green),
+                  _summaryBox('Ausentes', '${monthRecords.where((r) => !r.asistio).length}', PdfColors.red),
+                ],
+              ),
+            ),
+            pw.SizedBox(height: 16),
+
+            // Subtitle: Período
+            pw.Text('Período: ${_monthName(month.month)} ${month.year}',
+              style: pw.TextStyle(fontSize: 10, color: PdfColors.grey)),
+            pw.SizedBox(height: 4),
+            pw.Text('Total atletas registrados: ${players.length}',
+              style: pw.TextStyle(fontSize: 10, color: PdfColors.grey)),
+            pw.SizedBox(height: 12),
+
+            // Section: Atletas Presentes
+            pw.Text('ATLETAS PRESENTES',
+              style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold, color: PdfColors.green)),
+            pw.SizedBox(height: 8),
+            if (activePlayers.isEmpty)
+              pw.Text('Sin registros', style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey))
+            else
+              _buildPresenceTable(activePlayers, dates, monthRecords.toList()),
+
             pw.SizedBox(height: 20),
-            _buildRankingTable(players, monthRecords.toList()),
+
+            // Section: Atletas Ausentes
+            pw.Text('ATLETAS AUSENTES',
+              style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold, color: PdfColors.red)),
+            pw.SizedBox(height: 8),
+            if (activePlayers.where((p) => !monthRecords.any((r) => r.playerId == p.id)).toList().isEmpty &&
+                !activePlayers.any((p) => monthRecords.any((r) => r.playerId == p.id && !r.asistio)))
+              pw.Text('Sin ausencias este mes', style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey))
+            else
+              _buildAbsentTable(activePlayers, monthRecords.toList()),
+
             pw.SizedBox(height: 20),
-            _buildStreaks(players, monthRecords.toList()),
+
+            // Section: Reposos
+            pw.Text('ATLETAS EN REPOSO / LESIONADOS',
+              style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold, color: PdfColors.orange)),
+            pw.SizedBox(height: 8),
+            if (restingPlayers.isEmpty)
+              pw.Text('Sin atletas en reposo este mes', style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey))
+            else
+              _buildRestingTable(restingPlayers),
           ],
         ),
       );
@@ -83,23 +162,30 @@ class AttendancePdfExport {
     }
   }
 
-  static pw.Widget _buildStatsTable(
-    List<DateTime> dates,
+  static pw.Widget _summaryBox(String label, String value, PdfColor color) {
+    return pw.Column(
+      children: [
+        pw.Text(value,
+          style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: color)),
+        pw.Text(label,
+          style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey)),
+      ],
+    );
+  }
+
+  static pw.Widget _buildPresenceTable(
     List<Player> players,
+    List<DateTime> dates,
     List<AttendanceRecord> records,
   ) {
-    final activePlayers = players.where((p) => p.atletaStatus == AthleteStatus.active).toList();
-    activePlayers.sort((a, b) => (a.numero ?? 0).compareTo(b.numero ?? 0));
-
     final headers = ['#', 'Atleta'];
     for (final d in dates) {
-      final label = '${d.day}/${d.month}';
-      headers.add(label);
+      headers.add('${d.day}');
     }
     headers.addAll(['%', 'Asist.', 'Faltas']);
 
     final rows = <List<String>>[];
-    for (final p in activePlayers) {
+    for (final p in players) {
       final row = <String>['${p.numero ?? "-"}', p.nombre];
       int asistencias = 0;
       int faltas = 0;
@@ -119,15 +205,10 @@ class AttendancePdfExport {
         }
       }
 
-      if (!records.any((r) => r.playerId == p.id)) {
-        continue;
-      }
-
       faltas = dates.length - asistencias;
       final total = asistencias + faltas;
       final pct = total > 0 ? ((asistencias / total) * 100).toStringAsFixed(0) : '0';
       row.addAll(['$pct%', '$asistencias', '$faltas']);
-
       rows.add(row);
     }
 
@@ -143,87 +224,67 @@ class AttendancePdfExport {
       columnWidths: {
         0: const pw.FixedColumnWidth(15),
         1: const pw.FixedColumnWidth(80),
-        for (int i = 2; i < headers.length - 3; i++) i: const pw.FixedColumnWidth(20),
-        headers.length - 3: const pw.FixedColumnWidth(25),
-        headers.length - 2: const pw.FixedColumnWidth(25),
-        headers.length - 1: const pw.FixedColumnWidth(25),
+        for (int i = 2; i < headers.length - 3; i++) i: const pw.FixedColumnWidth(18),
+        headers.length - 3: const pw.FixedColumnWidth(22),
+        headers.length - 2: const pw.FixedColumnWidth(22),
+        headers.length - 1: const pw.FixedColumnWidth(22),
       },
     );
   }
 
-  static pw.Widget _buildRankingTable(List<Player> players, List<AttendanceRecord> records) {
-    return pw.Column(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
-      children: [
-        pw.Text('Ranking de Asistencia',
-          style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
-        pw.SizedBox(height: 8),
-        pw.TableHelper.fromTextArray(
-          headers: ['#', 'Atleta', 'Asistencia', 'Faltas', '%'],
-          data: players.where((p) => records.any((r) => r.playerId == p.id)).map((p) {
-            final pRecords = records.where((r) => r.playerId == p.id).toList();
-            final asistencias = pRecords.where((r) => r.asistio).length;
-            final faltas = pRecords.where((r) => !r.asistio).length;
-            final total = asistencias + faltas;
-            final pct = total > 0 ? ((asistencias / total) * 100).toStringAsFixed(0) : '0';
-            return ['${p.numero ?? "-"}', p.nombre, '$asistencias', '$faltas', '$pct%'];
-          }).toList()
-            ..sort((a, b) => int.parse(b[4].replaceAll('%', '')).compareTo(int.parse(a[4].replaceAll('%', '')))),
-          headerStyle: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: PdfColors.white),
-          headerDecoration: const pw.BoxDecoration(color: PdfColors.orange),
-          cellStyle: const pw.TextStyle(fontSize: 8),
-          cellAlignments: {
-            0: pw.Alignment.center,
-            1: pw.Alignment.centerLeft,
-            2: pw.Alignment.center,
-            3: pw.Alignment.center,
-            4: pw.Alignment.center,
-          },
-        ),
-      ],
+  static pw.Widget _buildAbsentTable(List<Player> players, List<AttendanceRecord> records) {
+    final absentPlayers = players.where((p) =>
+      records.any((r) => r.playerId == p.id && !r.asistio)).toList();
+
+    return pw.TableHelper.fromTextArray(
+      headers: ['#', 'Atleta', 'Faltas', 'Última falta'],
+      data: absentPlayers.map((p) {
+        final pRecords = records.where((r) => r.playerId == p.id && !r.asistio).toList();
+        final lastDate = pRecords.isNotEmpty
+            ? '${pRecords.last.fecha.day}/${pRecords.last.fecha.month}'
+            : '-';
+        return ['${p.numero ?? "-"}', p.nombre, '${pRecords.length}', lastDate];
+      }).toList()
+        ..sort((a, b) => int.parse(b[2]).compareTo(int.parse(a[2]))),
+      headerStyle: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: PdfColors.white),
+      headerDecoration: const pw.BoxDecoration(color: PdfColors.red),
+      cellStyle: const pw.TextStyle(fontSize: 8),
+      cellAlignments: {
+        0: pw.Alignment.center,
+        1: pw.Alignment.centerLeft,
+        2: pw.Alignment.center,
+        3: pw.Alignment.center,
+      },
     );
   }
 
-  static pw.Widget _buildStreaks(List<Player> players, List<AttendanceRecord> records) {
-    return pw.Column(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
-      children: [
-        pw.Text('Rachas',
-          style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
-        pw.SizedBox(height: 8),
-        ...players.where((p) => records.any((r) => r.playerId == p.id)).map((p) {
-          final pRecords = records.where((r) => r.playerId == p.id).toList()
-            ..sort((a, b) => a.fecha.compareTo(b.fecha));
-          int streak = 0;
-          int maxStreak = 0;
-          int maxAbsent = 0;
-          int currentAbsent = 0;
-          for (final r in pRecords) {
-            if (r.asistio) {
-              streak++;
-              if (streak > maxStreak) maxStreak = streak;
-              currentAbsent = 0;
-            } else {
-              currentAbsent++;
-              if (currentAbsent > maxAbsent) maxAbsent = currentAbsent;
-              streak = 0;
-            }
-          }
-          return pw.Padding(
-            padding: const pw.EdgeInsets.symmetric(vertical: 2),
-            child: pw.Row(
-              children: [
-                pw.Text('${p.nombre}: ', style: const pw.TextStyle(fontSize: 9)),
-                pw.Text('🔥 $maxStreak asistencias seguidas',
-                  style: pw.TextStyle(fontSize: 9, color: PdfColors.green)),
-                if (maxAbsent > 0)
-                  pw.Text('  ⚠ $maxAbsent faltas seguidas',
-                    style: pw.TextStyle(fontSize: 9, color: PdfColors.red)),
-              ],
-            ),
-          );
-        }),
-      ],
+  static pw.Widget _buildRestingTable(List<Player> players) {
+    return pw.TableHelper.fromTextArray(
+      headers: ['#', 'Atleta', 'Estado', 'Motivo'],
+      data: players.map((p) {
+        final reason = p.statusReason?.isNotEmpty == true ? p.statusReason! : '';
+        return [
+          '${p.numero ?? "-"}',
+          p.nombre,
+          p.atletaStatus.label,
+          reason,
+        ];
+      }).toList(),
+      headerStyle: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: PdfColors.white),
+      headerDecoration: const pw.BoxDecoration(color: PdfColors.orange),
+      cellStyle: const pw.TextStyle(fontSize: 8),
+      cellAlignments: {
+        0: pw.Alignment.center,
+        1: pw.Alignment.centerLeft,
+        2: pw.Alignment.center,
+        3: pw.Alignment.centerLeft,
+      },
+      columnWidths: {
+        0: const pw.FixedColumnWidth(20),
+        1: const pw.FixedColumnWidth(100),
+        2: const pw.FixedColumnWidth(60),
+        3: const pw.FixedColumnWidth(120),
+      },
     );
   }
 

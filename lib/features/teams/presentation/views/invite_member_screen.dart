@@ -23,13 +23,14 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.read<ClubViewModel>();
+    final vm = context.watch<ClubViewModel>();
+    final cs = Theme.of(context).colorScheme;
+    final isOwner = vm.isOwner;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0E21),
+      backgroundColor: cs.surface,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0A0E21),
-        title: const Text('Invitar entrenador'),
+        title: const Text('Invitar miembro del staff'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(24),
@@ -38,16 +39,16 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
           children: [
             Text('Correo electrónico',
                 style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.7), fontSize: 14)),
+                    color: cs.onSurface.withValues(alpha: 0.7), fontSize: 14)),
             const SizedBox(height: 8),
             TextField(
               controller: _emailCtrl,
-              style: const TextStyle(color: Colors.white),
+              style: TextStyle(color: cs.onSurface),
               decoration: InputDecoration(
                 hintText: 'correo@ejemplo.com',
-                hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
+                hintStyle: TextStyle(color: cs.onSurface.withValues(alpha: 0.3)),
                 filled: true,
-                fillColor: const Color(0xFF1A1F3D),
+                fillColor: cs.surfaceContainerHighest,
                 border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none),
@@ -57,28 +58,28 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
             const SizedBox(height: 24),
             Text('Rol',
                 style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.7), fontSize: 14)),
+                    color: cs.onSurface.withValues(alpha: 0.7), fontSize: 14)),
             const SizedBox(height: 8),
-            _roleSelector(),
+            _roleSelector(cs, isOwner),
             const SizedBox(height: 32),
             SizedBox(
               height: 52,
               child: ElevatedButton(
                 onPressed: _sending ? null : () => _sendInvite(context, vm),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFF8C00),
+                  backgroundColor: cs.primary,
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
                 ),
                 child: _sending
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 24,
                         height: 24,
                         child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white),
+                            strokeWidth: 2, color: cs.onPrimary),
                       )
-                    : const Text('Enviar invitación',
-                        style: TextStyle(fontSize: 16, color: Colors.white)),
+                    : Text('Enviar invitación',
+                        style: TextStyle(fontSize: 16, color: cs.onPrimary)),
               ),
             ),
           ],
@@ -87,27 +88,35 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
     );
   }
 
-  Widget _roleSelector() {
-    const roles = [
-      (ClubRole.entrenador, '🏐 Entrenador', 'Puede registrar y editar atletas, crear partidos, pasar asistencia'),
-      (ClubRole.asistente, '📋 Asistente', 'Puede ver atletas, pasar asistencia, registrar eventos'),
+  Widget _roleSelector(ColorScheme cs, bool isOwner) {
+    final roles = [
+      if (isOwner)
+        (ClubRole.owner as ClubRole?, '👑 Propietario',
+            'Control total del club: gestionar staff, atletas y configuración'),
+      (ClubRole.entrenador, '🏐 Entrenador',
+          'Puede registrar y editar atletas, crear partidos, pasar asistencia'),
+      (ClubRole.asistente, '📋 Asistente',
+          'Puede ver atletas, pasar asistencia, registrar eventos'),
     ];
 
     return Column(
-      children: roles.map((r) {
+      children: roles.where((r) => r.$1 != null).map((r) {
         final (role, label, desc) = r;
         final selected = _selectedRole == role;
         return Card(
-          color: selected ? const Color(0xFFFF8C00).withValues(alpha: 0.15) : const Color(0xFF1A1F3D),
+          color: selected
+              ? cs.primary.withValues(alpha: 0.15)
+              : cs.surfaceContainerHighest,
           margin: const EdgeInsets.only(bottom: 8),
           child: RadioListTile<ClubRole>(
-            value: role,
+            value: role!,
             groupValue: _selectedRole,
-            activeColor: const Color(0xFFFF8C00),
+            activeColor: cs.primary,
             onChanged: (v) => setState(() => _selectedRole = v!),
-            title: Text(label, style: const TextStyle(color: Colors.white)),
+            title: Text(label, style: TextStyle(color: cs.onSurface)),
             subtitle: Text(desc,
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12)),
+                style: TextStyle(
+                    color: cs.onSurface.withValues(alpha: 0.5), fontSize: 12)),
           ),
         );
       }).toList(),

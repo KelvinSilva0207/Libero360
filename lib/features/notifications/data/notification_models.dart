@@ -144,6 +144,9 @@ class NotificationPreference {
 
   const NotificationPreference({required this.enabledTypes});
 
+  bool get allEnabled =>
+      enabledTypes.values.every((v) => v) && enabledTypes.length == NotificationType.values.length;
+
   bool isEnabled(NotificationType type) =>
       enabledTypes[type.name] ?? true;
 

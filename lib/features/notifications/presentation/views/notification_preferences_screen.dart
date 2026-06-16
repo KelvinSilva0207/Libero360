@@ -15,6 +15,7 @@ class _NotificationPreferencesScreenState
     extends State<NotificationPreferencesScreen> {
   NotificationPreference? _prefs;
   bool _loading = true;
+  bool _modoTodas = true;
 
   @override
   void initState() {
@@ -28,94 +29,157 @@ class _NotificationPreferencesScreenState
     setState(() {
       _prefs = prefs;
       _loading = false;
+      _modoTodas = prefs.allEnabled;
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0E21),
+      backgroundColor: cs.surface,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0A0E21),
         title: const Text('Preferencias de notificaciones'),
         actions: [
           TextButton(
             onPressed: _save,
-            child: const Text('Guardar',
-                style: TextStyle(color: Color(0xFFFF8C00))),
+            child: Text('Guardar', style: TextStyle(color: cs.primary)),
           ),
         ],
       ),
       body: _loading
-          ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFFFF8C00)))
-          : _buildForm(),
+          ? Center(child: CircularProgressIndicator(color: cs.primary))
+          : _buildForm(cs),
     );
   }
 
-  Widget _buildForm() {
+  Widget _buildForm(ColorScheme cs) {
     if (_prefs == null) return const SizedBox.shrink();
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        _section('Atletas', [
-          _toggle(NotificationType.athleteCreated),
-          _toggle(NotificationType.athleteEdited),
-          _toggle(NotificationType.categoryChanged),
-          _toggle(NotificationType.birthday),
-        ]),
+        Card(
+          color: cs.surfaceContainerHighest,
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Modo de notificaciones',
+                    style: TextStyle(
+                        color: cs.onSurface,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _modeChip(cs, 'Todas', true, Icons.notifications_active),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _modeChip(cs, 'Personalizadas', false, Icons.tune),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
         const SizedBox(height: 16),
-        _section('Asistencia', [
-          _toggle(NotificationType.attendanceWarning),
-          _toggle(NotificationType.consecutiveAbsences),
-          _toggle(NotificationType.perfectAttendance),
-          _toggle(NotificationType.restPeriodEnded),
-          _toggle(NotificationType.injuryRegistered),
-        ]),
-        const SizedBox(height: 16),
-        _section('Partidos', [
-          _toggle(NotificationType.matchCreated),
-          _toggle(NotificationType.mvpRegistered),
-          _toggle(NotificationType.matchResultSaved),
-          _toggle(NotificationType.newLeague),
-          _toggle(NotificationType.newTournament),
-        ]),
-        const SizedBox(height: 16),
-        _section('Colaboración', [
-          _toggle(NotificationType.newCoach),
-          _toggle(NotificationType.invitationReceived),
-          _toggle(NotificationType.invitationAccepted),
-        ]),
+        if (!_modoTodas) ...[
+          _section(cs, 'Atletas', [
+            _toggle(cs, NotificationType.athleteCreated),
+            _toggle(cs, NotificationType.athleteEdited),
+            _toggle(cs, NotificationType.categoryChanged),
+            _toggle(cs, NotificationType.birthday),
+          ]),
+          const SizedBox(height: 16),
+          _section(cs, 'Asistencia', [
+            _toggle(cs, NotificationType.attendanceWarning),
+            _toggle(cs, NotificationType.consecutiveAbsences),
+            _toggle(cs, NotificationType.perfectAttendance),
+            _toggle(cs, NotificationType.restPeriodEnded),
+            _toggle(cs, NotificationType.injuryRegistered),
+          ]),
+          const SizedBox(height: 16),
+          _section(cs, 'Partidos', [
+            _toggle(cs, NotificationType.matchCreated),
+            _toggle(cs, NotificationType.mvpRegistered),
+            _toggle(cs, NotificationType.matchResultSaved),
+            _toggle(cs, NotificationType.newLeague),
+            _toggle(cs, NotificationType.newTournament),
+          ]),
+          const SizedBox(height: 16),
+          _section(cs, 'Colaboración', [
+            _toggle(cs, NotificationType.newCoach),
+            _toggle(cs, NotificationType.invitationReceived),
+            _toggle(cs, NotificationType.invitationAccepted),
+          ]),
+        ],
       ],
     );
   }
 
-  Widget _section(String title, List<Widget> children) {
+  Widget _modeChip(ColorScheme cs, String label, bool isAll, IconData icon) {
+    final selected = _modoTodas == isAll;
+    return GestureDetector(
+      onTap: () => setState(() => _modoTodas = isAll),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: selected ? cs.primary.withValues(alpha: 0.15) : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: selected ? cs.primary : cs.outlineVariant,
+            width: selected ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon,
+                size: 16,
+                color: selected ? cs.primary : cs.onSurface.withValues(alpha: 0.6)),
+            const SizedBox(width: 6),
+            Text(label,
+                style: TextStyle(
+                    color: selected ? cs.primary : cs.onSurface,
+                    fontWeight: selected ? FontWeight.w600 : FontWeight.normal)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _section(ColorScheme cs, String title, List<Widget> children) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
           padding: const EdgeInsets.only(bottom: 8),
           child: Text(title,
-              style: const TextStyle(
-                  color: Color(0xFFFF8C00),
+              style: TextStyle(
+                  color: cs.primary,
                   fontSize: 14,
                   fontWeight: FontWeight.bold)),
         ),
         Card(
-          color: const Color(0xFF1A1F3D),
+          color: cs.surfaceContainerHighest,
           child: Column(children: children),
         ),
       ],
     );
   }
 
-  Widget _toggle(NotificationType type) {
+  Widget _toggle(ColorScheme cs, NotificationType type) {
     return SwitchListTile(
       title: Text(type.label,
-          style: const TextStyle(color: Colors.white, fontSize: 14)),
+          style: TextStyle(color: cs.onSurface, fontSize: 14)),
       value: _prefs?.isEnabled(type) ?? true,
-      activeColor: const Color(0xFFFF8C00),
+      activeTrackColor: cs.primary.withValues(alpha: 0.5),
+      activeThumbColor: cs.primary,
       onChanged: (v) {
         setState(() {
           final map = Map<String, bool>.from(_prefs!.enabledTypes);
@@ -129,7 +193,10 @@ class _NotificationPreferencesScreenState
   Future<void> _save() async {
     if (_prefs == null) return;
     final vm = context.read<NotificationViewModel>();
-    await vm.savePreferences(_prefs!);
+    final prefsToSave = _modoTodas
+        ? NotificationPreference.allEnabled()
+        : _prefs!;
+    await vm.savePreferences(prefsToSave);
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

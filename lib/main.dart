@@ -52,12 +52,19 @@ class Libero360App extends StatelessWidget {
     return MaterialApp(
       title: 'Libero360',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.dark,
+      theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: theme.mode,
       initialRoute: '/',
       onGenerateRoute: _onGenerateRoute,
       home: const AuthGate(),
+      builder: (context, child) {
+        return AnimatedTheme(
+          data: Theme.of(context),
+          duration: const Duration(milliseconds: 250),
+          child: child!,
+        );
+      },
     );
   }
 

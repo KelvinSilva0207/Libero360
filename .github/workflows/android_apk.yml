@@ -19,16 +19,20 @@ jobs:
         with:
           channel: stable
 
-      - name: Create keystore for release signing
+      - name: Restore keystore for release signing
         run: |
-          echo "storePassword=libero360" > android/key.properties
-          echo "keyPassword=libero360" >> android/key.properties
-          echo "keyAlias=upload" >> android/key.properties
-          echo "storeFile=upload-keystore.jks" >> android/key.properties
-          keytool -genkey -v -keystore android/app/upload-keystore.jks \
-            -storetype JKS -keyalg RSA -keysize 2048 -validity 10000 \
-            -storepass libero360 -keypass libero360 -alias upload \
-            -dname "CN=Libero360, OU=Dev, O=Libero360, L=City, ST=State, C=VE"
+          if [ ! -f android/key.properties ]; then
+            echo "storePassword=libero360" > android/key.properties
+            echo "keyPassword=libero360" >> android/key.properties
+            echo "keyAlias=upload" >> android/key.properties
+            echo "storeFile=upload-keystore.jks" >> android/key.properties
+          fi
+          if [ ! -f android/app/upload-keystore.jks ]; then
+            keytool -genkey -v -keystore android/app/upload-keystore.jks \
+              -storetype JKS -keyalg RSA -keysize 2048 -validity 10000 \
+              -storepass libero360 -keypass libero360 -alias upload \
+              -dname "CN=Libero360, OU=Dev, O=Libero360, L=City, ST=State, C=VE"
+          fi
 
       - name: Install dependencies
         run: flutter pub get
@@ -36,8 +40,11 @@ jobs:
       - name: Build APK
         run: flutter build apk --release
 
+      - name: Rename APK
+        run: mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/Libero-360.apk
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: libero360-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: Libero-360
+          path: build/app/outputs/flutter-apk/Libero-360.apk

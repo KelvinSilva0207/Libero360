@@ -9,6 +9,7 @@ import '../../../../features/auth/presentation/viewmodels/auth_viewmodel.dart';
 import '../../../../features/asistencia/presentation/views/athlete_list_screen.dart';
 import '../../../../features/teams/teams.dart';
 import '../../../../features/notifications/notifications.dart';
+import '../../../../features/settings/presentation/views/settings_screen.dart';
 import '../../../../features/estadisticas/data/local_db/database_service.dart';
 
 class AdminScreen extends StatefulWidget {
@@ -395,6 +396,9 @@ class _AdminScreenState extends State<AdminScreen> {
         Column(
           children: [
             _buildActionRow(
+                cs, Icons.settings_rounded, 'Ajustes', 'Configuración avanzada'),
+            Divider(color: cs.outlineVariant),
+            _buildActionRow(
                 cs, Icons.people_rounded, 'Administrar atletas', 'Ver, editar o eliminar'),
             Divider(color: cs.outlineVariant),
             _buildActionRow(cs, Icons.search_rounded, 'Buscar atletas',
@@ -491,6 +495,8 @@ class _AdminScreenState extends State<AdminScreen> {
     return InkWell(
       onTap: () {
         switch (label) {
+          case 'Ajustes':
+            context.pushSlide(const SettingsScreen());
           case 'Administrar atletas':
           case 'Buscar atletas':
           case 'Editar atletas':

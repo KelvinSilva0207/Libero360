@@ -4,9 +4,9 @@ class AppColors {
   AppColors._();
 
   // ========== DARK THEME ==========
-  static const Color background = Color(0xFF071126);
-  static const Color surface = Color(0xFF101B3A);
-  static const Color surfaceLight = Color(0xFF182548);
+  static const Color background = Color(0xFF08131E);
+  static const Color surface = Color(0xFF102133);
+  static const Color surfaceLight = Color(0xFF16283D);
   static const Color surfaceDark = Color(0xFF040A1A);
 
   // ========== LIGHT THEME ==========

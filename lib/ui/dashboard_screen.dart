@@ -3,15 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../core/themes/app_colors.dart';
 import '../core/widgets_globales/route_transitions.dart';
-import '../features/estadisticas/data/models/models.dart';
 import '../features/auth/presentation/viewmodels/auth_viewmodel.dart';
 import '../features/partido/presentation/views/match_start_dialog.dart';
 import '../features/asistencia/presentation/views/athlete_list_screen.dart';
 import '../features/asistencia/presentation/views/athlete_form_screen.dart';
 import '../features/asistencia/presentation/views/attendance_screen.dart';
 import '../features/estadisticas/presentation/views/play_by_play_screen.dart';
-import '../features/estadisticas/data/local_db/database_service.dart';
 import '../features/settings/presentation/widgets/settings_drawer.dart';
+import 'dashboard_viewmodel.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -22,29 +21,14 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
-  int _athleteCount = 0;
-  int _matchCount = 0;
-  bool _loaded = false;
+  bool _initialized = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (!_loaded) _loadCounts();
-  }
-
-  Future<void> _loadCounts() async {
-    try {
-      final db = DatabaseService.instance;
-      await db.initialize();
-      final players = await db.getAllPlayers();
-      final matches = await db.getMatchesByState(EstadoPartido.finalizado);
-      if (mounted) setState(() {
-        _athleteCount = players.length;
-        _matchCount = matches.length;
-        _loaded = true;
-      });
-    } catch (_) {
-      if (mounted) setState(() => _loaded = true);
+    if (!_initialized) {
+      _initialized = true;
+      context.read<DashboardViewModel>().init();
     }
   }
 
@@ -122,17 +106,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _statsRow() {
+    final vm = context.watch<DashboardViewModel>();
     return Row(
       children: [
-        Expanded(child: _statCard(Icons.people_rounded, 'Atletas', '$_athleteCount', AppColors.primary,
-          onTap: () => context.pushSlide(const AthleteListScreen()),
+        Expanded(child: _statCard(Icons.people_rounded, 'Atletas', '${vm.athleteCount}', AppColors.primary,
+          onTap: () { context.pushSlide(const AthleteListScreen()); },
         )),
         const SizedBox(width: 10),
-        Expanded(child: _statCard(Icons.sports_volleyball_rounded, 'Partidos', '$_matchCount', AppColors.accent,
-          onTap: () => context.pushSlide(const PlayByPlayScreen()),
+        Expanded(child: _statCard(Icons.sports_volleyball_rounded, 'Partidos', '${vm.matchCount}', AppColors.accent,
+          onTap: () { context.pushSlide(const PlayByPlayScreen()); },
         )),
         const SizedBox(width: 10),
-        Expanded(child: _statCard(Icons.show_chart_rounded, 'Sets', '--', AppColors.success)),
+        Expanded(child: _statCard(Icons.show_chart_rounded, 'Sets', '${vm.setCount}', AppColors.success)),
       ],
     );
   }

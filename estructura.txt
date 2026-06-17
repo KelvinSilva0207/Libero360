@@ -1,0 +1,265 @@
+Listado de rutas de carpetas para el volumen SYSTEM
+El n£mero de serie del volumen es 000002A5 3043:70D8
+C:\USERS\RICKULTRA\DOCUMENTS\PROGRAMACION\PROGRAMACION\LIBERO360\LIBERO360\LIB
+³   main.dart
+³   
+ÃÄÄÄcore
+³   ³   config.dart
+³   ³   
+³   ÃÄÄÄconstants
+³   ³       .gitkeep
+³   ³       
+³   ÃÄÄÄdatabase
+³   ³       database_provider.dart
+³   ³       database_provider_io.dart
+³   ³       database_provider_web.dart
+³   ³       
+³   ÃÄÄÄmodels
+³   ³       athlete_status.dart
+³   ³       
+³   ÃÄÄÄservices
+³   ³       abstract_auth_service.dart
+³   ³       abstract_data_service.dart
+³   ³       club_data_service.dart
+³   ³       firebase_sync_service.dart
+³   ³       google_auth_service.dart
+³   ³       service_locator.dart
+³   ³       
+³   ÃÄÄÄthemes
+³   ³       .gitkeep
+³   ³       app_colors.dart
+³   ³       app_theme.dart
+³   ³       app_typography.dart
+³   ³       
+³   ÃÄÄÄtheme_provider
+³   ³       theme_notifier.dart
+³   ³       
+³   ÀÄÄÄwidgets_globales
+³           .gitkeep
+³           nav_helpers.dart
+³           route_transitions.dart
+³           
+ÃÄÄÄdata
+³   ÃÄÄÄlocal_db
+³   ³       .gitkeep
+³   ³       
+³   ÃÄÄÄmodels
+³   ³       .gitkeep
+³   ³       
+³   ÀÄÄÄrepositories
+³           .gitkeep
+³           
+ÃÄÄÄfeatures
+³   ÃÄÄÄadmin
+³   ³   ÀÄÄÄpresentation
+³   ³       ÀÄÄÄviews
+³   ³               admin_screen.dart
+³   ³               
+³   ÃÄÄÄasistencia
+³   ³   ³   .gitkeep
+³   ³   ³   asistencia.dart
+³   ³   ³   
+³   ³   ÀÄÄÄpresentation
+³   ³       ÃÄÄÄviews
+³   ³       ³       athlete_edit_screen.dart
+³   ³       ³       athlete_form_screen.dart
+³   ³       ³       athlete_list_screen.dart
+³   ³       ³       attendance_history_detail_screen.dart
+³   ³       ³       attendance_history_screen.dart
+³   ³       ³       attendance_screen.dart
+³   ³       ³       player_detail_screen.dart
+³   ³       ³       
+³   ³       ÀÄÄÄwidgets
+³   ³               attendance_pdf_export.dart
+³   ³               
+³   ÃÄÄÄatleta
+³   ³       .gitkeep
+³   ³       
+³   ÃÄÄÄauth
+³   ³   ³   auth.dart
+³   ³   ³   
+³   ³   ÃÄÄÄdata
+³   ³   ³   ÃÄÄÄmodels
+³   ³   ³   ³       user_model.dart
+³   ³   ³   ³       
+³   ³   ³   ÀÄÄÄrepositories
+³   ³   ³           auth_repository.dart
+³   ³   ³           firebase_auth_repository.dart
+³   ³   ³           
+³   ³   ÀÄÄÄpresentation
+³   ³       ÃÄÄÄviewmodels
+³   ³       ³       auth_viewmodel.dart
+³   ³       ³       
+³   ³       ÀÄÄÄviews
+³   ³               login_screen.dart
+³   ³               register_screen.dart
+³   ³               welcome_screen.dart
+³   ³               
+³   ÃÄÄÄcancha
+³   ³   ³   cancha.dart
+³   ³   ³   
+³   ³   ÃÄÄÄdata
+³   ³   ³       court_models.dart
+³   ³   ³       
+³   ³   ÀÄÄÄpresentation
+³   ³       ÃÄÄÄviewmodels
+³   ³       ³       court_viewmodel.dart
+³   ³       ³       
+³   ³       ÃÄÄÄviews
+³   ³       ³       court_screen.dart
+³   ³       ³       court_setup_dialog.dart
+³   ³       ³       
+³   ³       ÀÄÄÄwidgets
+³   ³               court_painter.dart
+³   ³               position_slot.dart
+³   ³               rotation_timeline.dart
+³   ³               
+³   ÃÄÄÄestadisticas
+³   ³   ³   .gitkeep
+³   ³   ³   estadisticas.dart
+³   ³   ³   
+³   ³   ÃÄÄÄdata
+³   ³   ³   ÃÄÄÄlocal_db
+³   ³   ³   ³       database_service.dart
+³   ³   ³   ³       stats_stream_service.dart
+³   ³   ³   ³       
+³   ³   ³   ÃÄÄÄmodels
+³   ³   ³   ³       attendance_record.dart
+³   ³   ³   ³       match.dart
+³   ³   ³   ³       models.dart
+³   ³   ³   ³       player.dart
+³   ³   ³   ³       season.dart
+³   ³   ³   ³       stat_event.dart
+³   ³   ³   ³       
+³   ³   ³   ÀÄÄÄrepositories
+³   ³   ³           match_repository.dart
+³   ³   ³           repositories.dart
+³   ³   ³           stat_event_repository.dart
+³   ³   ³           
+³   ³   ÃÄÄÄdomain
+³   ³   ³   ÀÄÄÄservices
+³   ³   ³           mvp_calculator.dart
+³   ³   ³           stats_calculator.dart
+³   ³   ³           
+³   ³   ÀÄÄÄpresentation
+³   ³       ÃÄÄÄviewmodels
+³   ³       ³       play_by_play_viewmodel.dart
+³   ³       ³       
+³   ³       ÃÄÄÄviews
+³   ³       ³       live_stats_dashboard_screen.dart
+³   ³       ³       play_by_play_screen.dart
+³   ³       ³       
+³   ³       ÀÄÄÄwidgets
+³   ³               live_stats_widget.dart
+³   ³               stats_charts_widget.dart
+³   ³               stat_recorder_widget.dart
+³   ³               
+³   ÃÄÄÄnotifications
+³   ³   ³   notifications.dart
+³   ³   ³   
+³   ³   ÃÄÄÄdata
+³   ³   ³       notification_models.dart
+³   ³   ³       notification_service.dart
+³   ³   ³       
+³   ³   ÀÄÄÄpresentation
+³   ³       ÃÄÄÄviewmodels
+³   ³       ³       notification_viewmodel.dart
+³   ³       ³       
+³   ³       ÀÄÄÄviews
+³   ³               notifications_screen.dart
+³   ³               notification_bell.dart
+³   ³               notification_preferences_screen.dart
+³   ³               
+³   ÃÄÄÄpartido
+³   ³   ³   .gitkeep
+³   ³   ³   partido.dart
+³   ³   ³   
+³   ³   ÃÄÄÄdata
+³   ³   ³       match_config.dart
+³   ³   ³       match_event.dart
+³   ³   ³       
+³   ³   ÀÄÄÄpresentation
+³   ³       ÃÄÄÄviewmodels
+³   ³       ³       partido_viewmodel.dart
+³   ³       ³       
+³   ³       ÃÄÄÄviews
+³   ³       ³       coach_mode_screen.dart
+³   ³       ³       match_screen.dart
+³   ³       ³       match_setup_screen.dart
+³   ³       ³       match_start_dialog.dart
+³   ³       ³       player_selection_screen.dart
+³   ³       ³       
+³   ³       ÀÄÄÄwidgets
+³   ³               action_buttons_widget.dart
+³   ³               full_court_widget.dart
+³   ³               player_stats_dialog.dart
+³   ³               roster_management_sheet.dart
+³   ³               rotation_widget.dart
+³   ³               scoreboard_widget.dart
+³   ³               stat_recorder_widget.dart
+³   ³               volleyball_court_widget.dart
+³   ³               
+³   ÃÄÄÄsettings
+³   ³   ÀÄÄÄpresentation
+³   ³       ÃÄÄÄviews
+³   ³       ³       settings_screen.dart
+³   ³       ³       
+³   ³       ÀÄÄÄwidgets
+³   ³               settings_drawer.dart
+³   ³               
+³   ÃÄÄÄstatistics
+³   ³   ³   statistics.dart
+³   ³   ³   
+³   ³   ÃÄÄÄdata
+³   ³   ³       statistics_models.dart
+³   ³   ³       statistics_service.dart
+³   ³   ³       
+³   ³   ÀÄÄÄpresentation
+³   ³       ÀÄÄÄviews
+³   ³               athlete_statistics_screen.dart
+³   ³               statistics_screen.dart
+³   ³               
+³   ÀÄÄÄteams
+³       ³   teams.dart
+³       ³   
+³       ÃÄÄÄdata
+³       ³       club_service.dart
+³       ³       invitation_service.dart
+³       ³       permission_service.dart
+³       ³       team_models.dart
+³       ³       
+³       ÀÄÄÄpresentation
+³           ÃÄÄÄviewmodels
+³           ³       club_viewmodel.dart
+³           ³       
+³           ÀÄÄÄviews
+³                   club_switcher.dart
+³                   create_club_screen.dart
+³                   invitation_banner.dart
+³                   invite_member_screen.dart
+³                   team_management_screen.dart
+³                   
+ÀÄÄÄui
+    ³   app_shell.dart
+    ³   dashboard_screen.dart
+    ³   
+    ÃÄÄÄcomponents
+    ³       .gitkeep
+    ³       app_button.dart
+    ³       app_logo.dart
+    ³       app_text_field.dart
+    ³       
+    ÃÄÄÄlayouts
+    ³       .gitkeep
+    ³       
+    ÀÄÄÄscreens
+            .gitkeep
+            
+Listado de rutas de carpetas para el volumen SYSTEM
+El n£mero de serie del volumen es 000002E2 3043:70D8
+C:\USERS\RICKULTRA\DOCUMENTS\PROGRAMACION\PROGRAMACION\LIBERO360\LIBERO360\LIB_FIREBASE
+ÀÄÄÄcore
+    ÀÄÄÄservices
+            firebase_auth_service.dart
+            firebase_data_service.dart
+            

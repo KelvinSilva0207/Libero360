@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../../../estadisticas/data/models/models.dart';
 import '../../data/match_config.dart';
+import '../controllers/match_controller.dart';
 import '../viewmodels/partido_viewmodel.dart';
 import '../widgets/scoreboard_widget.dart';
 import '../widgets/full_court_widget.dart';
@@ -20,7 +21,7 @@ class _MatchScreenState extends State<MatchScreen> {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => PartidoViewModel()..init(widget.config),
+      create: (ctx) => PartidoViewModel(ctx.read<MatchController>())..init(widget.config),
       child: Consumer<PartidoViewModel>(
         builder: (context, vm, _) {
           if (vm.isLoading && vm.match == null) {

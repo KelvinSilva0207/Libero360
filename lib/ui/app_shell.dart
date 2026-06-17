@@ -2,15 +2,18 @@ import 'package:flutter/material.dart';
 
 import 'package:provider/provider.dart';
 import '../core/themes/app_colors.dart';
+import '../core/widgets_globales/route_transitions.dart';
 import '../features/auth/presentation/viewmodels/auth_viewmodel.dart';
 import '../features/asistencia/asistencia.dart';
 import '../features/partido/presentation/views/match_start_dialog.dart';
+import '../features/partido/presentation/views/coach_mode_screen.dart';
 import '../features/statistics/presentation/views/statistics_screen.dart';
 import '../features/admin/presentation/views/admin_screen.dart';
 import '../features/teams/teams.dart';
 import '../features/notifications/notifications.dart';
 import '../features/cancha/presentation/views/court_screen.dart';
 import 'dashboard_screen.dart';
+import 'dashboard_viewmodel.dart';
 
 enum NavItem { dashboard, athletes, matches, stats, attendance, settings }
 
@@ -37,6 +40,10 @@ class _AppShellState extends State<AppShell> {
       const AttendanceScreen(),
       const AdminScreen(),
     ]);
+  }
+
+  void _selectTab(int index) {
+    setState(() => _selectedIndex = index);
   }
 
   @override
@@ -208,7 +215,7 @@ class _AppShellState extends State<AppShell> {
         color: isSelected ? AppColors.primary.withValues(alpha: 0.15) : Colors.transparent,
         borderRadius: BorderRadius.circular(10),
         child: InkWell(
-          onTap: () => setState(() => _selectedIndex = index),
+          onTap: () => _selectTab(index),
           borderRadius: BorderRadius.circular(10),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
@@ -246,7 +253,7 @@ class _AppShellState extends State<AppShell> {
         selectedFontSize: 11,
         unselectedFontSize: 11,
         currentIndex: _selectedIndex,
-        onTap: (i) => setState(() => _selectedIndex = i),
+        onTap: (i) => _selectTab(i),
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.dashboard_rounded), label: 'Dashboard'),
           BottomNavigationBarItem(icon: Icon(Icons.people_rounded), label: 'Atletas'),
@@ -411,6 +418,17 @@ class _MatchLauncherPlaceholder extends StatelessWidget {
               ),
               icon: const Icon(Icons.grid_view_rounded, size: 16),
               label: const Text('Cancha de práctica'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: colors.onSurface,
+                side: BorderSide(color: colors.outlineVariant),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+              ),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: () => context.pushSlide(const CoachModeScreen()),
+              icon: const Icon(Icons.school_rounded, size: 16),
+              label: const Text('Modo Entrenador'),
               style: OutlinedButton.styleFrom(
                 foregroundColor: colors.onSurface,
                 side: BorderSide(color: colors.outlineVariant),

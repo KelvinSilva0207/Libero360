@@ -81,7 +81,9 @@ class ClubDataService {
   }
 
   Stream<List<Player>> streamPlayers() {
-    if (!AppConfig.useFirebase) return const Stream.empty();
+    if (!AppConfig.useFirebase) {
+      return DatabaseService.instance.watchAllPlayers();
+    }
     return _firestore
         .collectionGroup('athletes')
         .snapshots()

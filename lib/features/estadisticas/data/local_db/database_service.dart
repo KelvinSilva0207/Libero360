@@ -229,6 +229,25 @@ class DatabaseService extends AbstractDataService {
     return await _matchStore.count(_database);
   }
 
+  // ==================== STREAMS (REACTIVE) ====================
+
+  Stream<List<Player>> watchAllPlayers() {
+    return _playerStore.query().onSnapshots(_database).map(
+      (snapshots) => snapshots.map((e) => _playerFromMap(e.value)..id = e.key).toList(),
+    );
+  }
+
+  Stream<List<Match>> watchMatchesByState(EstadoPartido estado) {
+    return _matchStore.query(
+      finder: Finder(
+        filter: Filter.equals('estado', estado.index),
+        sortOrders: [SortOrder('createdAt', false)],
+      ),
+    ).onSnapshots(_database).map(
+      (snapshots) => snapshots.map((e) => _matchFromMap(e.value)..id = e.key).toList(),
+    );
+  }
+
   // ==================== STAT EVENTS (OPTIMIZED) ====================
 
   Future<List<StatEvent>> getAllEvents() async {

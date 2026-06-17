@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../../data/models/models.dart';
+import '../../../partido/presentation/controllers/match_controller.dart';
 import '../viewmodels/play_by_play_viewmodel.dart';
 
 class PlayByPlayScreen extends StatelessWidget {
@@ -10,7 +11,7 @@ class PlayByPlayScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => PlayByPlayViewModel(),
+      create: (ctx) => PlayByPlayViewModel(ctx.read<MatchController>()),
       child: const _PlayByPlayContent(),
     );
   }

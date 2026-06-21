@@ -1,6 +1,8 @@
 class AttendanceRecord {
   int id = 0;
   int playerId = 0;
+  String? profileId;
+  String? clubId;
   DateTime fecha = DateTime.now();
   bool asistio = false;
   String observaciones = '';

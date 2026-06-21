@@ -40,6 +40,8 @@ class StatEvent {
   String? descripcion;
   int playerId = 0;
   int matchId = 0;
+  String? profileId;
+  String? clubId;
   DateTime createdAt = DateTime.now();
 
   StatEvent();
@@ -55,6 +57,8 @@ class StatEvent {
     required int playerId,
     required int matchId,
     String? descripcion,
+    String? profileId,
+    String? clubId,
   }) {
     return StatEvent()
       ..tipoAccion = tipoAccion
@@ -68,6 +72,8 @@ class StatEvent {
       ..playerId = playerId
       ..matchId = matchId
       ..descripcion = descripcion
+      ..profileId = profileId
+      ..clubId = clubId
       ..createdAt = DateTime.now();
   }
 

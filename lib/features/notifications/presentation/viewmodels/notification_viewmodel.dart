@@ -18,27 +18,40 @@ class NotificationViewModel extends ChangeNotifier {
   bool get loading => _loading;
 
   void init(String clubId) {
-    if (_initialized) {
-      _service.setCurrentClub(clubId);
+    if (_initialized && _service.currentClubId == clubId) {
       return;
     }
+
+    if (_initialized && _service.currentClubId != clubId) {
+      print("🟡 NOTIF: cambiando de club ${_service.currentClubId} → $clubId");
+      _notifSub?.cancel();
+      _unreadSub?.cancel();
+      _service.setCurrentClub(clubId);
+      _listen();
+      return;
+    }
+
+    print("🔵 NOTIF: inicializando club $clubId");
     _initialized = true;
     _service.setCurrentClub(clubId);
-    _notifSub?.cancel();
-    _unreadSub?.cancel();
     _listen();
   }
 
   void _listen() {
-    _notifSub = _service.notificationsStream().listen((list) {
-      _notifications = list;
-      _loading = false;
-      notifyListeners();
-    });
-    _unreadSub = _service.unreadCountStream().listen((count) {
-      _unreadCount = count;
-      notifyListeners();
-    });
+    print("🟢 NOTIF: streams re-suscritos para club ${_service.currentClubId}");
+    try {
+      _notifSub = _service.notificationsStream().listen((list) {
+        _notifications = list;
+        _loading = false;
+        notifyListeners();
+      });
+      _unreadSub = _service.unreadCountStream().listen((count) {
+        _unreadCount = count;
+        notifyListeners();
+      });
+    } catch (e) {
+      print("🔴 NOTIF: error al escuchar notificaciones — $e");
+    }
   }
 
   Future<void> markAsRead(String notifId) async {

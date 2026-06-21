@@ -11,6 +11,7 @@ import 'features/auth/data/repositories/firebase_auth_repository.dart';
 import 'features/teams/teams.dart';
 import 'features/notifications/notifications.dart';
 import 'features/partido/presentation/controllers/match_controller.dart';
+import 'features/profiles/profiles.dart';
 import 'ui/app_shell.dart';
 import 'ui/dashboard_viewmodel.dart';
 
@@ -24,6 +25,7 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthViewModel()),
         ChangeNotifierProvider(create: (_) => ThemeNotifier()),
+        ChangeNotifierProvider(create: (_) => ProfileViewModel()..loadProfiles()),
         ChangeNotifierProvider(create: (_) => DashboardViewModel()),
         ChangeNotifierProvider(create: (_) {
           final vm = ClubViewModel();

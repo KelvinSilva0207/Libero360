@@ -35,6 +35,8 @@ class Match {
   String? lugar;
   String? competitionName;
   int? seasonId;
+  String? profileId;
+  String? clubId;
   int duracionSegundos = 0;
   bool ultimoPuntoFueLocal = true;
 

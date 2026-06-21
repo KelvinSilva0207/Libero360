@@ -164,7 +164,7 @@ class _StatRecorderWidgetState extends State<StatRecorderWidget> {
             // Líneas de la cancha
             CustomPaint(
               size: Size(constraints.maxWidth, constraints.maxHeight),
-              painter: _CanchaPainter(),
+              painter: _StatsCourtPainter(),
             ),
             // Jugadores
             ...List.generate(
@@ -553,43 +553,33 @@ class _StatRecorderWidgetState extends State<StatRecorderWidget> {
   }
 }
 
-/// Painter para dibujar las líneas de la cancha de voleibol
-class _CanchaPainter extends CustomPainter {
+class _StatsCourtPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.white.withOpacity(0.3)
+      ..color = Colors.white.withValues(alpha: 0.3)
       ..strokeWidth = 2
       ..style = PaintingStyle.stroke;
 
-    // Línea central (red)
     final redPaint = Paint()
-      ..color = Colors.white.withOpacity(0.5)
+      ..color = Colors.white.withValues(alpha: 0.5)
       ..strokeWidth = 3
       ..style = PaintingStyle.stroke;
 
-    // Dibujar cancha completa
     final rect = Rect.fromLTWH(10, 10, size.width - 20, size.height - 20);
     canvas.drawRect(rect, paint);
 
-    // Línea de 3 metros (zona de ataque)
     final ataqueY = size.height * 0.3;
-    canvas.drawLine(
-      Offset(10, ataqueY),
-      Offset(size.width - 10, ataqueY),
-      paint,
-    );
+    canvas.drawLine(Offset(10, ataqueY), Offset(size.width - 10, ataqueY), paint);
 
-    // Red (línea central)
     canvas.drawLine(
       Offset(10, size.height / 2),
       Offset(size.width - 10, size.height / 2),
       redPaint,
     );
 
-    // Red пунктир
     final dashPaint = Paint()
-      ..color = Colors.white.withOpacity(0.3)
+      ..color = Colors.white.withValues(alpha: 0.3)
       ..strokeWidth = 1;
 
     for (double x = 20; x < size.width - 20; x += 20) {
@@ -604,3 +594,4 @@ class _CanchaPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
+

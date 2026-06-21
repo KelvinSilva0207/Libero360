@@ -30,8 +30,8 @@ class _LoginScreenState extends State<LoginScreen> {
       _emailCtrl.text.trim(),
       _passwordCtrl.text,
     );
-    if (success && mounted) {
-      Navigator.pop(context);
+    if (success) {
+      return;
     } else if (!success && mounted) {
       _showError(vm.error ?? 'Error al iniciar sesión');
     }

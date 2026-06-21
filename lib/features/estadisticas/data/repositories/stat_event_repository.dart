@@ -81,6 +81,8 @@ class StatEventRepository {
       zona: zona,
       playerId: playerId,
       matchId: matchId,
+      profileId: match.profileId,
+      clubId: match.clubId,
     );
 
     await _db.saveStatEvent(evento);
@@ -109,6 +111,8 @@ class StatEventRepository {
       zona: ZonaCancha.saque,
       playerId: playerId,
       matchId: matchId,
+      profileId: match.profileId,
+      clubId: match.clubId,
     );
 
     await _db.saveStatEvent(evento);
@@ -137,6 +141,8 @@ class StatEventRepository {
       zona: ZonaCancha.central,
       playerId: playerId,
       matchId: matchId,
+      profileId: match.profileId,
+      clubId: match.clubId,
     );
 
     await _db.saveStatEvent(evento);
@@ -166,6 +172,8 @@ class StatEventRepository {
       playerId: playerId,
       matchId: matchId,
       descripcion: descripcion,
+      profileId: match.profileId,
+      clubId: match.clubId,
     );
 
     await _db.saveStatEvent(evento);
@@ -188,11 +196,13 @@ class StatEventRepository {
       setNumero: match.setActual,
       puntoLocal: match.puntosLocal,
       puntoVisitante: match.puntosVisitante,
-      esEquipoLocal: !esEquipoLocal, // El contrario
+      esEquipoLocal: !esEquipoLocal,
       zona: ZonaCancha.central,
-      playerId: 0, // Sin jugador específico
+      playerId: 0,
       matchId: matchId,
       descripcion: 'Error del equipo contrario',
+      profileId: match.profileId,
+      clubId: match.clubId,
     );
 
     await _db.saveStatEvent(evento);

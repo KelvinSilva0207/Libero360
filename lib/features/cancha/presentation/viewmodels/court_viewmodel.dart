@@ -17,6 +17,7 @@ class CourtViewModel extends ChangeNotifier {
 
   bool _isLoading = false;
   String? _error;
+  String? _profileId;
 
   List<Player> get allPlayers => _allPlayers;
   List<PlayerAssignment?> get positions => _positions;
@@ -45,18 +46,24 @@ class CourtViewModel extends ChangeNotifier {
     return -1;
   }
 
-  Future<void> init() async {
+  Future<void> init({String? profileId}) async {
+    _profileId = profileId;
     _isLoading = true;
     notifyListeners();
     try {
       await _db.initialize();
-      _allPlayers = await _db.getAllPlayers();
+      _allPlayers = await _db.getPlayersByProfile(profileId);
       _error = null;
     } catch (e) {
       _error = 'Error al cargar: $e';
     }
     _isLoading = false;
     notifyListeners();
+  }
+
+  void setProfileFilter(String? profileId) {
+    if (_profileId == profileId) return;
+    init(profileId: profileId);
   }
 
   void assignPlayerDirect(Player player, int index) {
@@ -153,6 +160,7 @@ class CourtViewModel extends ChangeNotifier {
         tipoPartido: 'practica',
         competenciaNombre: 'Cancha de práctica',
         rotacion: _rotationCount,
+        profileId: _profileId,
       );
       await _db.saveMatchEvent(event);
     } catch (_) {}

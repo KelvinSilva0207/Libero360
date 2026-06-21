@@ -2,6 +2,8 @@ import 'dart:collection';
 import 'package:flutter/foundation.dart';
 import '../../../estadisticas/data/models/models.dart';
 import '../../data/match_config.dart';
+import '../../data/substitution_record.dart';
+import '../../data/timeout_event.dart';
 import '../controllers/match_controller.dart';
 
 class PartidoViewModel extends ChangeNotifier {
@@ -35,12 +37,29 @@ class PartidoViewModel extends ChangeNotifier {
   List<MapEntry<int, int>> get setScores => UnmodifiableListView(_controller.setScores);
   int get puntosPorSet => _controller.puntosPorSet;
   int get setsPorPartido => _controller.setsPorPartido;
-  int get tiempoPorSet => _controller.tiempoPorSet;
+  int get timeoutsPerSet => _controller.timeoutsPerSet;
+  int get timeoutDurationSeconds => _controller.timeoutDurationSeconds;
+  Categoria get categoria => _controller.categoria;
   List<Player> get jugadores => _controller.jugadores;
   List<Player> get jugadoresVisitante => _controller.jugadoresVisitante;
   int get rotacionLocal => _controller.rotacionLocal;
   int get rotacionVisitante => _controller.rotacionVisitante;
   bool get isLocalServing => _controller.isLocalServing;
+
+  // Timeout
+  TimeoutState get timeoutState => _controller.timeoutState;
+  bool get activeTimeoutIsLocal => _controller.activeTimeoutIsLocal;
+  int get timeoutCountdown => _controller.timeoutCountdown;
+  int get localTimeoutsUsed => _controller.localTimeoutsUsed;
+  int get visitorTimeoutsUsed => _controller.visitorTimeoutsUsed;
+  int get localTimeoutsRemaining => _controller.localTimeoutsRemaining;
+  int get visitorTimeoutsRemaining => _controller.visitorTimeoutsRemaining;
+  List<TimeoutRecord> get timeoutHistory => _controller.timeoutHistory;
+
+  // Substitution & Edit Mode
+  bool get editMode => _controller.editMode;
+  List<SubstitutionRecord> get substitutionHistory =>
+      _controller.substitutionHistory;
 
   int get duracionSegundos => _controller.duracionSegundos;
   int get duracionSegundosMatch => _controller.duracionSegundosMatch;
@@ -51,7 +70,10 @@ class PartidoViewModel extends ChangeNotifier {
 
   // ========== DELEGATED METHODS ==========
 
-  Future<void> init([MatchConfig? config]) => _controller.init(config);
+  Future<void> init([MatchConfig? config]) async {
+    await _controller.init(config);
+    notifyListeners();
+  }
 
   Future<void> sumarPuntoLocal() => _controller.sumarPuntoLocal();
 
@@ -78,11 +100,35 @@ class PartidoViewModel extends ChangeNotifier {
 
   void actualizarNombreVisitante(String nombre) => _controller.actualizarNombreVisitante(nombre);
 
-  void actualizarConfiguracion({int? puntosPorSet, int? setsPorPartido, int? tiempoPorSet}) =>
+  void actualizarConfiguracion({int? puntosPorSet, int? setsPorPartido, int? timeoutsPerSet, int? timeoutDurationSeconds}) =>
       _controller.actualizarConfiguracion(
         puntosPorSet: puntosPorSet,
         setsPorPartido: setsPorPartido,
-        tiempoPorSet: tiempoPorSet,
+        timeoutsPerSet: timeoutsPerSet,
+        timeoutDurationSeconds: timeoutDurationSeconds,
+      );
+
+  void startTimeout(bool isLocal) => _controller.startTimeout(isLocal);
+  void cancelTimeout() => _controller.cancelTimeout();
+  void dismissTimeoutResult() => _controller.dismissTimeoutResult();
+
+  void toggleEditMode() => _controller.toggleEditMode();
+
+  void addSubstitution({
+    required int playerOutNumber,
+    required int playerInNumber,
+    required String playerOutName,
+    required String playerInName,
+    required int setNumber,
+    required int rotationIndex,
+  }) =>
+      _controller.addSubstitution(
+        playerOutNumber: playerOutNumber,
+        playerInNumber: playerInNumber,
+        playerOutName: playerOutName,
+        playerInName: playerInName,
+        setNumber: setNumber,
+        rotationIndex: rotationIndex,
       );
 
   Future<void> pausarReanudar() => _controller.pausarReanudar();

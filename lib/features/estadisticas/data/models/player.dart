@@ -31,6 +31,9 @@ class Player {
   String condicionFisica = 'Excelente';
   DateTime createdAt = DateTime.now();
 
+  String? profileId;
+  String? clubId;
+
   // AthleteStatus fields
   AthleteStatus atletaStatus = AthleteStatus.active;
   String? statusReason;

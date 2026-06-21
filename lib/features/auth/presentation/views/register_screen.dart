@@ -36,9 +36,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _emailCtrl.text.trim(),
       _passwordCtrl.text,
     );
-    if (error == null && mounted) {
-      Navigator.pop(context);
-    } else if (error != null && mounted) {
+    if (error == null) {
+      return;
+    } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(error), backgroundColor: AppColors.error),
       );

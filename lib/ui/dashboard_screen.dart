@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../core/themes/app_colors.dart';
 import '../core/widgets_globales/route_transitions.dart';
 import '../features/auth/presentation/viewmodels/auth_viewmodel.dart';
+import '../features/profiles/profiles.dart';
 import '../features/partido/presentation/views/match_start_dialog.dart';
 import '../features/asistencia/presentation/views/athlete_list_screen.dart';
 import '../features/asistencia/presentation/views/athlete_form_screen.dart';
@@ -28,8 +29,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
     super.didChangeDependencies();
     if (!_initialized) {
       _initialized = true;
-      context.read<DashboardViewModel>().init();
+      _initAsync();
     }
+  }
+
+  Future<void> _initAsync() async {
+    final profileVm = context.read<ProfileViewModel>();
+    await profileVm.loadProfiles();
+    context.read<DashboardViewModel>().init(profileId: profileVm.currentProfile?.id);
   }
 
   @override
@@ -91,6 +98,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ],
           ),
         ),
+        const ProfileSelector(),
+        const SizedBox(width: 8),
         Container(
           decoration: BoxDecoration(
             color: AppColors.surfaceLight,

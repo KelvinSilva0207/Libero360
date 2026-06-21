@@ -12,6 +12,7 @@ import '../features/admin/presentation/views/admin_screen.dart';
 import '../features/teams/teams.dart';
 import '../features/notifications/notifications.dart';
 import '../features/cancha/presentation/views/court_screen.dart';
+import '../features/profiles/profiles.dart';
 import 'dashboard_screen.dart';
 import 'dashboard_viewmodel.dart';
 
@@ -83,6 +84,7 @@ class _AppShellState extends State<AppShell> {
                   actions: [
                     const NotificationBell(),
                     const ClubSwitcher(),
+                    const ProfileSelector(),
                     _userMenu(context, user),
                   ],
                 )
@@ -98,7 +100,9 @@ class _AppShellState extends State<AppShell> {
                     children: [
                       if (!useMobileLayout) _buildSidebar(context, user),
                       Expanded(
-                        child: _screens[_selectedIndex],
+                        child: _ProfileCoordinator(
+                          child: _screens[_selectedIndex],
+                        ),
                       ),
                     ],
                   ),
@@ -141,9 +145,17 @@ class _AppShellState extends State<AppShell> {
               ],
             ),
           ),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: ClubSwitcher(),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Row(
+              children: [
+                const ClubSwitcher(),
+                const SizedBox(width: 8),
+                const ProfileSelector(),
+                const Spacer(),
+                const NotificationBell(),
+              ],
+            ),
           ),
           Expanded(child: _navItems()),
           Container(
@@ -259,6 +271,8 @@ class _AppShellState extends State<AppShell> {
           BottomNavigationBarItem(icon: Icon(Icons.people_rounded), label: 'Atletas'),
           BottomNavigationBarItem(icon: Icon(Icons.sports_volleyball_rounded), label: 'Partidos'),
           BottomNavigationBarItem(icon: Icon(Icons.bar_chart_rounded), label: 'Estadísticas'),
+          BottomNavigationBarItem(icon: Icon(Icons.checklist_rounded), label: 'Asistencia'),
+          BottomNavigationBarItem(icon: Icon(Icons.settings_rounded), label: 'Configuración'),
         ],
       ),
     );
@@ -278,7 +292,6 @@ class _AppShellState extends State<AppShell> {
       onSelected: (value) {
         if (value == 'logout') context.read<AuthViewModel>().logout();
         if (value == 'settings') setState(() => _selectedIndex = 5);
-        if (value == 'admin') setState(() => _selectedIndex = 5);
         if (value == 'team') setState(() => _selectedIndex = 1);
       },
       itemBuilder: (context) => [
@@ -303,12 +316,12 @@ class _AppShellState extends State<AppShell> {
           ),
         ),
         PopupMenuItem(
-          value: 'admin',
+          value: 'settings',
           child: Row(
             children: [
-              Icon(Icons.admin_panel_settings_rounded, color: colors.onSurfaceVariant, size: 16),
+              Icon(Icons.settings_rounded, color: colors.onSurfaceVariant, size: 16),
               const SizedBox(width: 10),
-              const Text('Administrar'),
+              const Text('Configuración'),
             ],
           ),
         ),
@@ -351,12 +364,12 @@ class _AppShellState extends State<AppShell> {
           ),
         ),
         PopupMenuItem<String>(
-          value: 'admin',
+          value: 'settings',
           child: Row(
             children: [
-              Icon(Icons.admin_panel_settings_rounded, color: colors.onSurfaceVariant, size: 16),
+              Icon(Icons.settings_rounded, color: colors.onSurfaceVariant, size: 16),
               const SizedBox(width: 10),
-              const Text('Administrar'),
+              const Text('Configuración'),
             ],
           ),
         ),
@@ -375,7 +388,7 @@ class _AppShellState extends State<AppShell> {
     ).then((v) {
       if (v == 'logout') loginVm.logout();
       if (v == 'team') setState(() => _selectedIndex = 1);
-      if (v == 'admin') setState(() => _selectedIndex = 5);
+      if (v == 'settings') setState(() => _selectedIndex = 5);
     });
   }
 }
@@ -440,4 +453,54 @@ class _MatchLauncherPlaceholder extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Watches [ProfileViewModel] and propagates profile changes to other
+/// ViewModels (DashboardViewModel, ClubViewModel).  Placed high in the
+/// widget tree so every profile‑select event reaches the data layer.
+class _ProfileCoordinator extends StatefulWidget {
+  final Widget child;
+  const _ProfileCoordinator({required this.child});
+
+  @override
+  State<_ProfileCoordinator> createState() => _ProfileCoordinatorState();
+}
+
+class _ProfileCoordinatorState extends State<_ProfileCoordinator> {
+  ProfileViewModel? _profileVm;
+  String? _lastProfileId;
+  bool _initialized = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _profileVm?.removeListener(_onProfileChanged);
+    _profileVm = context.read<ProfileViewModel>();
+    _profileVm!.addListener(_onProfileChanged);
+    if (!_initialized) {
+      _initialized = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _onProfileChanged());
+    }
+  }
+
+  void _onProfileChanged() {
+    final vm = _profileVm;
+    if (vm == null) return;
+    final profile = vm.currentProfile;
+    if (profile?.id == _lastProfileId) return;
+    _lastProfileId = profile?.id;
+    try {
+      context.read<DashboardViewModel>().setProfile(profile?.id);
+      context.read<ClubViewModel>().setProfileFilter(profile?.id);
+    } catch (_) {}
+  }
+
+  @override
+  void dispose() {
+    _profileVm?.removeListener(_onProfileChanged);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }

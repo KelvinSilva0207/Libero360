@@ -22,7 +22,13 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
   TipoPartido _tipoPartido = TipoPartido.amistoso;
   int _setsTotales = 5;
 
-  // Step 2
+  // Step 2 – Match Config
+  MatchFormat _formato = MatchFormat.bestOf5;
+  Categoria _categoria = Categoria.libre;
+  List<bool> _serviceOrder = [];
+  bool _localServesSet1 = true;
+
+  // Step 3 – Players
   List<Player> _allPlayers = [];
   final Set<int> _selectedIds = {};
   bool _loadingPlayers = true;
@@ -36,6 +42,7 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
   @override
   void initState() {
     super.initState();
+    _serviceOrder = defaultServiceOrder(_setsTotales);
     _loadPlayers();
   }
 
@@ -63,14 +70,16 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
     }
   }
 
-  void _irAlPaso2() {
-    _pageCtrl.animateToPage(1, duration: const Duration(milliseconds: 350), curve: Curves.easeInOut);
+  void _irAlPaso(int page) {
+    _pageCtrl.animateToPage(page,
+        duration: const Duration(milliseconds: 350), curve: Curves.easeInOut);
   }
 
   void _finalizar() {
     final local = _localCtrl.text.trim();
     final visitor = _visitorCtrl.text.trim();
-    final selected = _allPlayers.where((p) => _selectedIds.contains(p.id)).toList();
+    final selected =
+        _allPlayers.where((p) => _selectedIds.contains(p.id)).toList();
 
     final config = MatchConfig(
       localName: local.isNotEmpty ? local : 'Local',
@@ -80,6 +89,11 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
       lugar: null,
       competitionName: _isCompetitivo ? _competenciaCtrl.text.trim() : null,
       selectedPlayers: selected.take(12).toList(),
+      formato: _formato,
+      categoria: _categoria,
+      serviceOrderPerSet: _serviceOrder,
+      timeoutsPerSet: _categoria.timeoutsPerSet,
+      timeoutDurationSeconds: _categoria.timeoutDurationSeconds,
     );
 
     Navigator.of(context).pop();
@@ -91,11 +105,12 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
   List<Player> get _filteredPlayers {
     if (_filter.isEmpty) return _allPlayers;
     final q = _filter.toLowerCase();
-    return _allPlayers.where((p) =>
-      p.nombre.toLowerCase().contains(q) ||
-      p.cedula.toLowerCase().contains(q) ||
-      (p.numero?.toString() ?? '').contains(q)
-    ).toList();
+    return _allPlayers
+        .where((p) =>
+            p.nombre.toLowerCase().contains(q) ||
+            p.cedula.toLowerCase().contains(q) ||
+            (p.numero?.toString() ?? '').contains(q))
+        .toList();
   }
 
   @override
@@ -127,6 +142,7 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
                   children: [
                     _buildStep1(),
                     _buildStep2(),
+                    _buildStep3(),
                   ],
                 ),
               ),
@@ -155,7 +171,10 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
           Expanded(
             child: Text(
               'Nuevo Partido',
-              style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold),
             ),
           ),
           _buildStepIndicator(),
@@ -167,22 +186,27 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
   Widget _buildStepIndicator() {
     return Row(
       mainAxisSize: MainAxisSize.min,
-      children: [0, 1].map((i) {
+      children: [0, 1, 2].map((i) {
         final isActive = i == _currentPage;
         final isDone = i < _currentPage;
         return Container(
           margin: const EdgeInsets.symmetric(horizontal: 3),
-          width: 24, height: 4,
+          width: 24,
+          height: 4,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(2),
-            color: isActive ? AppColors.accent : (isDone ? AppColors.accent.withValues(alpha: 0.5) : Colors.white24),
+            color: isActive
+                ? AppColors.accent
+                : (isDone
+                    ? AppColors.accent.withValues(alpha: 0.5)
+                    : Colors.white24),
           ),
         );
       }).toList(),
     );
   }
 
-  // ========== STEP 1 ==========
+  // ========== STEP 1 – Teams ==========
 
   Widget _buildStep1() {
     return Padding(
@@ -195,7 +219,11 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
           const Text(
             'REGISTRO DE EQUIPOS',
             textAlign: TextAlign.center,
-            style: TextStyle(color: AppColors.accent, fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 1.5),
+            style: TextStyle(
+                color: AppColors.accent,
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.5),
           ),
           const SizedBox(height: 6),
           const Text(
@@ -211,22 +239,24 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
           _buildTipoDropdown(),
           if (_isCompetitivo) ...[
             const SizedBox(height: 12),
-            _buildField(_competenciaCtrl,
-                _tipoPartido == TipoPartido.liga ? 'Nombre de la Liga' : 'Nombre del Torneo',
+            _buildField(
+                _competenciaCtrl,
+                _tipoPartido == TipoPartido.liga
+                    ? 'Nombre de la Liga'
+                    : 'Nombre del Torneo',
                 Icons.emoji_events),
           ],
-          const SizedBox(height: 12),
-          _buildSetsSelector(),
           const Spacer(),
           FilledButton.icon(
-            onPressed: _irAlPaso2,
+            onPressed: () => _irAlPaso(1),
             icon: const Icon(Icons.arrow_forward, size: 18),
             label: const Text('Siguiente'),
             style: FilledButton.styleFrom(
               backgroundColor: AppColors.accent,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
             ),
           ),
         ],
@@ -247,7 +277,8 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
         ),
         filled: true,
         fillColor: AppColors.surfaceLight,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+        border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: AppColors.accent),
@@ -271,7 +302,8 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
         ),
         filled: true,
         fillColor: AppColors.surfaceLight,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+        border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
         contentPadding: const EdgeInsets.symmetric(vertical: 14),
       ),
       items: const [
@@ -286,55 +318,360 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
     );
   }
 
-  Widget _buildSetsSelector() {
+  // ========== STEP 2 – Match Config (Format, Category, Service, Timeouts) ==========
+
+  Widget _buildStep2() {
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'CONFIGURACIÓN DEL PARTIDO',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                  color: AppColors.accent,
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.5),
+            ),
+            const SizedBox(height: 20),
+            _buildFormatSelector(),
+            const SizedBox(height: 16),
+            _buildCategoriaDropdown(),
+            const SizedBox(height: 16),
+            _buildServiceSection(),
+            const SizedBox(height: 16),
+            _buildTimeoutSection(),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _irAlPaso(0),
+                    icon: const Icon(Icons.arrow_back, size: 16),
+                    label: const Text('Atrás'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.white70,
+                      side: const BorderSide(color: Colors.white24),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 2,
+                  child: FilledButton.icon(
+                    onPressed: () => _irAlPaso(2),
+                    icon: const Icon(Icons.arrow_forward, size: 18),
+                    label: const Text('Seleccionar Atletas'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.accent,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFormatSelector() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         children: [
-          const Padding(
-            padding: EdgeInsetsDirectional.only(start: 4, end: 8),
-            child: Icon(Icons.format_list_numbered, color: AppColors.primary, size: 20),
-          ),
-          const Text('Sets a ganar:', style: TextStyle(color: Colors.white70, fontSize: 13)),
-          const Spacer(),
-          _setChip(3),
+          const Icon(Icons.format_list_numbered,
+              color: AppColors.primary, size: 20),
           const SizedBox(width: 8),
-          _setChip(5),
+          const Text('Formato:',
+              style: TextStyle(color: Colors.white70, fontSize: 13)),
+          const Spacer(),
+          _formatChip(MatchFormat.bestOf3, '3 sets'),
+          const SizedBox(width: 8),
+          _formatChip(MatchFormat.bestOf5, '5 sets'),
         ],
       ),
     );
   }
 
-  Widget _setChip(int n) {
-    final selected = _setsTotales == n;
+  Widget _formatChip(MatchFormat fmt, String label) {
+    final selected = _formato == fmt;
     return GestureDetector(
-      onTap: () => setState(() => _setsTotales = n),
+      onTap: () {
+        setState(() {
+          _formato = fmt;
+          _setsTotales = fmt.totalSets;
+          _serviceOrder = defaultServiceOrder(_setsTotales);
+        });
+      },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         decoration: BoxDecoration(
           color: selected ? AppColors.accent : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: selected ? AppColors.accent : Colors.white24),
+          border: Border.all(
+              color: selected ? AppColors.accent : Colors.white24),
+        ),
+        child: Text(label,
+            style: TextStyle(
+              color: selected ? Colors.white : Colors.white54,
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+            )),
+      ),
+    );
+  }
+
+  Widget _buildCategoriaDropdown() {
+    return DropdownButtonFormField<Categoria>(
+      value: _categoria,
+      dropdownColor: AppColors.surfaceLight,
+      style: const TextStyle(color: Colors.white, fontSize: 14),
+      decoration: InputDecoration(
+        labelText: 'Categoría',
+        labelStyle: const TextStyle(color: Colors.white54, fontSize: 13),
+        prefixIcon: const Padding(
+          padding: EdgeInsetsDirectional.only(start: 12, end: 8),
+          child: Icon(Icons.sports_volleyball, color: AppColors.primary, size: 20),
+        ),
+        filled: true,
+        fillColor: AppColors.surfaceLight,
+        border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+        contentPadding: const EdgeInsets.symmetric(vertical: 14),
+      ),
+      items: const [
+        DropdownMenuItem(value: Categoria.u13, child: Text('U13')),
+        DropdownMenuItem(value: Categoria.u15, child: Text('U15')),
+        DropdownMenuItem(value: Categoria.u17, child: Text('U17')),
+        DropdownMenuItem(value: Categoria.u19, child: Text('U19')),
+        DropdownMenuItem(value: Categoria.libre, child: Text('Libre')),
+      ],
+      onChanged: (v) {
+        if (v != null) setState(() => _categoria = v);
+      },
+    );
+  }
+
+  Widget _buildServiceSection() {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceLight,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.sports_kabaddi, color: AppColors.primary, size: 18),
+              SizedBox(width: 6),
+              Text('Servicio',
+                  style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600)),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              const Text('SET 1:',
+                  style: TextStyle(color: Colors.white54, fontSize: 12)),
+              const SizedBox(width: 8),
+              _serviceToggle(true),
+              const SizedBox(width: 6),
+              _serviceToggle(false),
+            ],
+          ),
+          const SizedBox(height: 10),
+          const Text('Rotación automática para los siguientes sets:',
+              style: TextStyle(color: Colors.white38, fontSize: 11)),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 6,
+            runSpacing: 4,
+            children: List.generate(_serviceOrder.length, (i) {
+              final isLocal = _serviceOrder[i];
+              return Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: isLocal
+                      ? Colors.blue.withValues(alpha: 0.2)
+                      : Colors.orange.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(
+                      color: isLocal
+                          ? Colors.blue.withValues(alpha: 0.3)
+                          : Colors.orange.withValues(alpha: 0.3)),
+                ),
+                child: Text(
+                  'SET ${i + 1}: ${isLocal ? 'Local' : 'Visitante'}',
+                  style: TextStyle(
+                    color: isLocal ? Colors.lightBlue : Colors.orangeAccent,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              );
+            }),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _serviceToggle(bool isLocal) {
+    final selected = _localServesSet1 == isLocal;
+    // also sync _serviceOrder[0]
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _localServesSet1 = isLocal;
+          _serviceOrder = [
+            isLocal,
+            ...defaultServiceOrder(_setsTotales).skip(1)
+          ];
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+        decoration: BoxDecoration(
+          color: selected
+              ? (isLocal
+                  ? Colors.blue.withValues(alpha: 0.3)
+                  : Colors.orange.withValues(alpha: 0.3))
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(
+            color: selected
+                ? (isLocal ? Colors.blue : Colors.orange)
+                : Colors.white24,
+          ),
         ),
         child: Text(
-          '$n',
+          isLocal ? 'Local' : 'Visitante',
           style: TextStyle(
-            color: selected ? Colors.white : Colors.white54,
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
+            color: selected
+                ? (isLocal ? Colors.lightBlue : Colors.orangeAccent)
+                : Colors.white38,
+            fontSize: 12,
+            fontWeight: selected ? FontWeight.bold : FontWeight.normal,
           ),
         ),
       ),
     );
   }
 
-  // ========== STEP 2 ==========
+  Widget _buildTimeoutSection() {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceLight,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.timer_outlined, color: AppColors.primary, size: 18),
+              SizedBox(width: 6),
+              Text('Tiempos Muertos',
+                  style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600)),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              const Text('Cantidad por set:',
+                  style: TextStyle(color: Colors.white54, fontSize: 12)),
+              const Spacer(),
+              _timeoutStepper(
+                  _categoria.timeoutsPerSet, (v) => _categoria = _categoria),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              const Text('Duración (seg):',
+                  style: TextStyle(color: Colors.white54, fontSize: 12)),
+              const Spacer(),
+              Text('${_categoria.timeoutDurationSeconds}s',
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold)),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Valores predeterminados para ${_categoria.name.toUpperCase()}',
+            style: const TextStyle(color: Colors.white24, fontSize: 10),
+          ),
+        ],
+      ),
+    );
+  }
 
-  Widget _buildStep2() {
+  Widget _timeoutStepper(int value, void Function(int) onChanged) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _stepperBtn(Icons.remove, () {
+          if (value > 0) onChanged(value - 1);
+        }),
+        const SizedBox(width: 8),
+        Text('$value',
+            style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.bold)),
+        const SizedBox(width: 8),
+        _stepperBtn(Icons.add, () {
+          if (value < 5) onChanged(value + 1);
+        }),
+      ],
+    );
+  }
+
+  Widget _stepperBtn(IconData icon, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Icon(icon, color: Colors.white54, size: 16),
+      ),
+    );
+  }
+
+  // ========== STEP 3 – Athletes ==========
+
+  Widget _buildStep3() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
       child: Column(
@@ -344,7 +681,11 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
           const Text(
             'ELIGE A TUS ATLETAS',
             textAlign: TextAlign.center,
-            style: TextStyle(color: AppColors.accent, fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 1.5),
+            style: TextStyle(
+                color: AppColors.accent,
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.5),
           ),
           const SizedBox(height: 4),
           Container(
@@ -385,7 +726,9 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
                   : null,
               filled: true,
               fillColor: AppColors.surfaceLight,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+              border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide.none),
               contentPadding: const EdgeInsets.symmetric(vertical: 10),
             ),
             onChanged: (v) => setState(() => _filter = v),
@@ -393,24 +736,50 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
           const SizedBox(height: 8),
           Flexible(
             child: _loadingPlayers
-                ? const Center(child: CircularProgressIndicator(color: AppColors.accent))
+                ? const Center(
+                    child: CircularProgressIndicator(color: AppColors.accent))
                 : _allPlayers.isEmpty
                     ? _emptyState()
                     : _playerList(),
           ),
           const SizedBox(height: 8),
-          FilledButton.icon(
-            onPressed: _finalizar,
-            icon: const Icon(Icons.play_arrow, size: 18),
-            label: Text(
-              _selectedIds.isEmpty ? 'Comenzar Partido' : 'Iniciar (${_selectedIds.length})',
-            ),
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.accent,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => _irAlPaso(1),
+                  icon: const Icon(Icons.arrow_back, size: 16),
+                  label: const Text('Atrás'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.white70,
+                    side: const BorderSide(color: Colors.white24),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                flex: 2,
+                child: FilledButton.icon(
+                  onPressed: _finalizar,
+                  icon: const Icon(Icons.play_arrow, size: 18),
+                  label: Text(
+                    _selectedIds.isEmpty
+                        ? 'Comenzar Partido'
+                        : 'Iniciar (${_selectedIds.length})',
+                  ),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.accent,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -424,9 +793,11 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
         children: [
           const Icon(Icons.people_outline, color: Colors.white24, size: 48),
           const SizedBox(height: 8),
-          const Text('No hay atletas registrados', style: TextStyle(color: Colors.white54, fontSize: 14)),
+          const Text('No hay atletas registrados',
+              style: TextStyle(color: Colors.white54, fontSize: 14)),
           const SizedBox(height: 4),
-          const Text('Agrega atletas desde la sección Atletas', style: TextStyle(color: Colors.white38, fontSize: 12)),
+          const Text('Agrega atletas desde la sección Atletas',
+              style: TextStyle(color: Colors.white38, fontSize: 12)),
         ],
       ),
     );
@@ -449,13 +820,19 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
         color: AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: selected ? AppColors.accent.withValues(alpha: 0.5) : Colors.transparent,
+          color: selected
+              ? AppColors.accent.withValues(alpha: 0.5)
+              : Colors.transparent,
           width: 1.2,
         ),
       ),
       child: InkWell(
         onTap: () => setState(() {
-          if (selected) { _selectedIds.remove(p.id); } else { _selectedIds.add(p.id); }
+          if (selected) {
+            _selectedIds.remove(p.id);
+          } else {
+            _selectedIds.add(p.id);
+          }
         }),
         borderRadius: BorderRadius.circular(10),
         child: Padding(
@@ -464,27 +841,43 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
             children: [
               CircleAvatar(
                 radius: 16,
-                backgroundColor: selected ? AppColors.accent : AppColors.primary,
-                child: Text('${p.numero}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 12)),
+                backgroundColor:
+                    selected ? AppColors.accent : AppColors.primary,
+                child: Text('${p.numero}',
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        fontSize: 12)),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(p.nombre, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500, fontSize: 13)),
+                    Text(p.nombre,
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w500,
+                            fontSize: 13)),
                     const SizedBox(height: 1),
                     Row(
                       children: [
-                        Text('Cédula: ${p.cedula}', style: const TextStyle(color: Colors.white38, fontSize: 10)),
+                        Text('Cédula: ${p.cedula}',
+                            style:
+                                const TextStyle(color: Colors.white38, fontSize: 10)),
                         const SizedBox(width: 6),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                          padding:
+                              const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                           decoration: BoxDecoration(
                             color: AppColors.primary.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(4),
                           ),
-                          child: Text(p.posicionLabel, style: const TextStyle(color: AppColors.primary, fontSize: 9, fontWeight: FontWeight.w500)),
+                          child: Text(p.posicionLabel,
+                              style: const TextStyle(
+                                  color: AppColors.primary,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w500)),
                         ),
                       ],
                     ),
@@ -494,7 +887,11 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
               Checkbox(
                 value: selected,
                 onChanged: (_) => setState(() {
-                  if (selected) { _selectedIds.remove(p.id); } else { _selectedIds.add(p.id); }
+                  if (selected) {
+                    _selectedIds.remove(p.id);
+                  } else {
+                    _selectedIds.add(p.id);
+                  }
                 }),
                 activeColor: AppColors.accent,
                 checkColor: Colors.white,

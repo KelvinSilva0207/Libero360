@@ -31,6 +31,8 @@ class MatchEvent {
   EventType eventType = EventType.regularPoint;
   String tipoPartido = '';
   String? competenciaNombre;
+  String? profileId;
+  String? clubId;
   int rotacion = 0;
 
   MatchEvent();
@@ -43,6 +45,8 @@ class MatchEvent {
     required String tipoPartido,
     String? competenciaNombre,
     int rotacion = 0,
+    String? profileId,
+    String? clubId,
   }) {
     return MatchEvent()
       ..athleteId = athleteId
@@ -52,7 +56,9 @@ class MatchEvent {
       ..eventType = eventType
       ..tipoPartido = tipoPartido
       ..competenciaNombre = competenciaNombre
-      ..rotacion = rotacion;
+      ..rotacion = rotacion
+      ..profileId = profileId
+      ..clubId = clubId;
   }
 
   @override

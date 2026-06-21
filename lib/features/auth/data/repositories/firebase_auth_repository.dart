@@ -13,19 +13,23 @@ class FirebaseAuthRepository extends AbstractAuthService {
 
   @override
   Future<AppUser?> login(String email, String password) async {
+    print("🔵 LOGIN EMAIL: Iniciando sesión con correo: $email");
     try {
       final cred = await fb.FirebaseAuth.instance.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
+      print("🟢 LOGIN EMAIL: Login exitoso para: ${cred.user?.email}");
       return _fromFirebaseUser(cred.user);
-    } on fb.FirebaseAuthException {
+    } on fb.FirebaseAuthException catch (e) {
+      print("🔴 LOGIN EMAIL: Login fallido — código: ${e.code}, mensaje: ${e.message}");
       return null;
     }
   }
 
   @override
   Future<String?> register(String nombre, String email, String password) async {
+    print("🔵 REGISTRO: Creando usuario: $nombre <$email>");
     try {
       final cred = await fb.FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: email,
@@ -43,8 +47,10 @@ class FirebaseAuthRepository extends AbstractAuthService {
         email: email,
         password: '',
       );
+      print("🟢 REGISTRO: Usuario creado exitosamente: ${cred.user?.uid}");
       return null;
     } on fb.FirebaseAuthException catch (e) {
+      print("🔴 REGISTRO: Error — código: ${e.code}, mensaje: ${e.message}");
       return _mapAuthError(e);
     }
   }
@@ -71,6 +77,7 @@ class FirebaseAuthRepository extends AbstractAuthService {
   bool get isLoggedIn => _currentUser != null;
 
   Future<AppUser?> signInWithGoogle() async {
+    print("🔵 GOOGLE SIGN-IN: Iniciando flujo de Google Sign-In...");
     try {
       final googleUser = await _googleSignIn.signIn();
       if (googleUser == null) {
@@ -83,6 +90,7 @@ class FirebaseAuthRepository extends AbstractAuthService {
 
       if (googleAuth.idToken == null) {
         print("🔴 GOOGLE SIGN-IN: idToken es NULL — Firebase requiere idToken. ¿Falta serverClientId?");
+        return null;
       }
 
       final credential = fb.GoogleAuthProvider.credential(
@@ -92,7 +100,10 @@ class FirebaseAuthRepository extends AbstractAuthService {
 
       final result = await fb.FirebaseAuth.instance.signInWithCredential(credential);
       final fbUser = result.user;
-      if (fbUser == null) return null;
+      if (fbUser == null) {
+        print("🔴 GOOGLE SIGN-IN: signInWithCredential retornó null");
+        return null;
+      }
 
       final doc = await _firestore.collection('users').doc(fbUser.uid).get();
       if (!doc.exists) {
@@ -104,14 +115,12 @@ class FirebaseAuthRepository extends AbstractAuthService {
       }
 
       _currentUser = _fromFirebaseUser(fbUser);
+      print("🟢 GOOGLE SIGN-IN: Inicio exitoso para: ${fbUser.email}");
       return _currentUser;
     } catch (e) {
-      print("🔴 ERROR CRUCIAL DE GOOGLE SIGN-IN:");
-      print("   Tipo de excepción: ${e.runtimeType}");
-      print("   Detalle completo: $e");
+      print("🔴 GOOGLE SIGN-IN: Falló — Tipo: ${e.runtimeType}, Detalle: $e");
       if (e is fb.FirebaseAuthException) {
-        print("   Código Firebase: ${e.code}");
-        print("   Mensaje Firebase: ${e.message}");
+        print("   Código Firebase: ${e.code}, Mensaje: ${e.message}");
       }
       return null;
     }

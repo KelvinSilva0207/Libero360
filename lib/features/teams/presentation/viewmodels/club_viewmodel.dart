@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../core/services/club_data_service.dart';
+import '../../../estadisticas/data/local_db/database_service.dart';
 import '../../../estadisticas/data/models/player.dart';
 import '../../../estadisticas/data/models/match.dart';
 import '../../../estadisticas/data/models/season.dart';
@@ -31,6 +32,7 @@ class ClubViewModel extends ChangeNotifier {
   List<Season> _seasons = [];
   bool _loading = true;
   String? _error;
+  String? _profileId;
   StreamSubscription? _clubSub;
   StreamSubscription? _membersSub;
   StreamSubscription? _myClubsSub;
@@ -119,25 +121,36 @@ class ClubViewModel extends ChangeNotifier {
     });
   }
 
+  Future<void> setProfileFilter(String? profileId) async {
+    if (_profileId == profileId) return;
+    _profileId = profileId;
+    final db = DatabaseService.instance;
+    _athletes = await db.getPlayersByProfile(profileId);
+    _clubMatches = await db.getMatchesByProfile(profileId);
+    _statEvents = await db.getStatsByProfile(profileId);
+    _attendanceRecords = await db.getAttendanceByProfile(profileId);
+    notifyListeners();
+  }
+
   void _initDataStreams() {
     _athletesSub = _dataService.streamPlayers().listen((list) {
-      _athletes = list;
+      _athletes = _profileId != null ? list.where((p) => p.profileId == _profileId).toList() : list;
       notifyListeners();
     });
     _matchesSub = _dataService.streamMatches().listen((list) {
-      _clubMatches = list;
+      _clubMatches = _profileId != null ? list.where((m) => m.profileId == _profileId).toList() : list;
       notifyListeners();
     });
     _statEventsSub = _dataService.streamStatEvents().listen((list) {
-      _statEvents = list;
+      _statEvents = _profileId != null ? list.where((e) => e.profileId == _profileId).toList() : list;
       notifyListeners();
     });
     _matchEventsSub = _dataService.streamMatchEvents().listen((list) {
-      _matchEvents = list;
+      _matchEvents = _profileId != null ? list.where((e) => e.profileId == _profileId).toList() : list;
       notifyListeners();
     });
     _attendanceSub = _dataService.streamAttendance().listen((list) {
-      _attendanceRecords = list;
+      _attendanceRecords = _profileId != null ? list.where((r) => r.profileId == _profileId).toList() : list;
       notifyListeners();
     });
     _seasonsSub = _dataService.streamSeasons().listen((list) {

@@ -6,6 +6,7 @@ import '../models/models.dart';
 import '../../../auth/data/models/user_model.dart';
 import '../../../partido/data/match_event.dart';
 import 'package:intl/intl.dart';
+import '../../../profiles/data/profile_model.dart';
 
 class DatabaseService extends AbstractDataService {
   static final DatabaseService _instance = DatabaseService._internal();
@@ -24,6 +25,8 @@ class DatabaseService extends AbstractDataService {
   final _sessionStore = intMapStoreFactory.store('_session');
   final _seasonStore = intMapStoreFactory.store('seasons');
   final _matchEventStore = intMapStoreFactory.store('match_events');
+  final _profileStore = intMapStoreFactory.store('profiles');
+  final _profileMetaStore = intMapStoreFactory.store('profiles_meta');
 
   Future<void> initialize() async {
     if (_isInitialized) return;
@@ -427,6 +430,125 @@ class DatabaseService extends AbstractDataService {
     }
   }
 
+  // ==================== PROFILES ====================
+
+  Future<List<ProfileModel>> getAllProfiles() async {
+    final snapshots = await _profileStore.find(_database);
+    return snapshots.map((e) => ProfileModel.fromJson(e.value)).toList();
+  }
+
+  Future<void> addProfile(ProfileModel profile) async {
+    await _profileStore.add(_database, profile.toJson());
+  }
+
+  Future<void> updateProfile(ProfileModel profile) async {
+    final records = await _profileStore.find(
+      _database,
+      finder: Finder(filter: Filter.equals('id', profile.id)),
+    );
+    for (final r in records) {
+      await _profileStore.record(r.key).update(_database, profile.toJson());
+    }
+  }
+
+  Future<void> deleteProfile(String id) async {
+    await _profileStore.delete(
+      _database,
+      finder: Finder(filter: Filter.equals('id', id)),
+    );
+  }
+
+  Future<String?> getActiveProfileId() async {
+    final records = await _profileMetaStore.find(
+      _database,
+      finder: Finder(filter: Filter.equals('key', 'activeProfileId')),
+    );
+    if (records.isEmpty) return null;
+    return records.first.value['value'] as String?;
+  }
+
+  Future<void> setActiveProfileId(String? id) async {
+    await _profileMetaStore.delete(
+      _database,
+      finder: Finder(filter: Filter.equals('key', 'activeProfileId')),
+    );
+    if (id != null) {
+      await _profileMetaStore.add(_database, {'key': 'activeProfileId', 'value': id});
+    }
+  }
+
+  // ==================== MULTI-PROFILE QUERIES ====================
+
+  Future<List<Player>> getPlayersByProfile(String? profileId) async {
+    if (profileId == null) return getAllPlayers();
+    final snapshots = await _playerStore.find(
+      _database,
+      finder: Finder(
+        filter: Filter.equals('profileId', profileId),
+        sortOrders: [SortOrder('numero')],
+      ),
+    );
+    return snapshots.map((e) => _playerFromMap(e.value)..id = e.key).toList();
+  }
+
+  Future<List<Match>> getMatchesByProfile(String? profileId) async {
+    if (profileId == null) return getAllMatches();
+    final snapshots = await _matchStore.find(
+      _database,
+      finder: Finder(
+        filter: Filter.equals('profileId', profileId),
+        sortOrders: [SortOrder('createdAt', false)],
+      ),
+    );
+    return snapshots.map((e) => _matchFromMap(e.value)..id = e.key).toList();
+  }
+
+  Future<List<AttendanceRecord>> getAttendanceByProfile(String? profileId) async {
+    if (profileId == null) return getAllAttendanceRecords();
+    final snapshots = await _attendanceStore.find(
+      _database,
+      finder: Finder(filter: Filter.equals('profileId', profileId)),
+    );
+    return snapshots.map((e) => _attendanceFromMap(e.value)..id = e.key).toList();
+  }
+
+  Future<List<StatEvent>> getStatsByProfile(String? profileId) async {
+    if (profileId == null) return getAllEvents();
+    final snapshots = await _eventStore.find(
+      _database,
+      finder: Finder(filter: Filter.equals('profileId', profileId)),
+    );
+    return snapshots.map((e) => _eventFromMap(e.value)..id = e.key).toList();
+  }
+
+  // ==================== ORPHAN HELPERS ====================
+
+  Future<Map<String, int>> countOrphanRecords() async {
+    final orphans = <String, int>{};
+    orphans['players'] = await _playerStore.count(_database, filter: Filter.equals('profileId', null));
+    orphans['matches'] = await _matchStore.count(_database, filter: Filter.equals('profileId', null));
+    orphans['attendance'] = await _attendanceStore.count(_database, filter: Filter.equals('profileId', null));
+    orphans['events'] = await _eventStore.count(_database, filter: Filter.equals('profileId', null));
+    orphans['matchEvents'] = await _matchEventStore.count(_database, filter: Filter.equals('profileId', null));
+    return orphans;
+  }
+
+  Future<void> assignOrphansToProfile(String profileId, String clubId) async {
+    for (final store in [_playerStore, _matchStore, _attendanceStore, _eventStore, _matchEventStore]) {
+      final records = await store.find(
+        _database,
+        finder: Finder(filter: Filter.equals('profileId', null)),
+      );
+      for (final r in records) {
+        await store.record(r.key).put(_database, {
+          ...r.value,
+          'profileId': profileId,
+          'clubId': clubId,
+        });
+      }
+    }
+  }
+
   // ==================== ATTENDANCE ALIAS ====================
 
   Future<List<AttendanceRecord>> getAttendanceRecords() async {
@@ -498,6 +620,8 @@ class DatabaseService extends AbstractDataService {
       'events': (await getAllEvents()).map(_eventToMap).toList(),
       'attendance': (await getAllAttendanceRecords()).map(_attendanceToMap).toList(),
       'matchEvents': (await getAllMatchEvents()).map(_matchEventToMap).toList(),
+      'profiles': (await getAllProfiles()).map((p) => p.toJson()).toList(),
+      'profilesMeta': {'activeProfileId': await getActiveProfileId()},
       'users': (await getAllUsers()).map(_userToMap).toList(),
       'seasons': (await getAllSeasons()).map(_seasonToMap).toList(),
     };
@@ -520,6 +644,13 @@ class DatabaseService extends AbstractDataService {
       }
       for (final a in (data['attendance'] as List? ?? [])) {
         await _attendanceStore.add(_database, a as Map<String, dynamic>);
+      }
+      for (final p in (data['profiles'] as List? ?? [])) {
+        await _profileStore.add(_database, p as Map<String, dynamic>);
+      }
+      final meta = data['profilesMeta'] as Map<String, dynamic>?;
+      if (meta != null && meta['activeProfileId'] != null) {
+        await setActiveProfileId(meta['activeProfileId'] as String);
       }
       for (final u in (data['users'] as List? ?? [])) {
         await _userStore.add(_database, u as Map<String, dynamic>);
@@ -580,6 +711,8 @@ class DatabaseService extends AbstractDataService {
     await _sessionStore.delete(_database);
     await _seasonStore.delete(_database);
     await _matchEventStore.delete(_database);
+    await _profileStore.delete(_database);
+    await _profileMetaStore.delete(_database);
   }
 
   // ==================== SERIALIZATION ====================
@@ -597,6 +730,8 @@ class DatabaseService extends AbstractDataService {
     'fotoUrl': p.fotoUrl ?? '',
     'estadoSalud': p.estadoSalud.index,
     'condicionFisica': p.condicionFisica,
+    'profileId': p.profileId,
+    'clubId': p.clubId,
     'createdAt': p.createdAt.millisecondsSinceEpoch,
   };
 
@@ -613,6 +748,8 @@ class DatabaseService extends AbstractDataService {
     ..fotoUrl = (map['fotoUrl'] as String?)?.isNotEmpty == true ? map['fotoUrl'] as String? : null
     ..estadoSalud = EstadoSalud.values[map['estadoSalud'] as int? ?? 0]
     ..condicionFisica = map['condicionFisica'] as String? ?? 'Excelente'
+    ..profileId = map['profileId'] as String?
+    ..clubId = map['clubId'] as String?
     ..createdAt = DateTime.fromMillisecondsSinceEpoch(map['createdAt'] as int? ?? DateTime.now().millisecondsSinceEpoch);
 
   Map<String, dynamic> _matchToMap(Match m) => {
@@ -636,6 +773,8 @@ class DatabaseService extends AbstractDataService {
     'resultadoFinal': m.resultadoFinal ?? '',
     'lugar': m.lugar ?? '',
     'seasonId': m.seasonId ?? 0,
+    'profileId': m.profileId,
+    'clubId': m.clubId,
     'duracionSegundos': m.duracionSegundos,
   };
 
@@ -660,10 +799,14 @@ class DatabaseService extends AbstractDataService {
     ..resultadoFinal = (map['resultadoFinal'] as String?)?.isNotEmpty == true ? map['resultadoFinal'] as String? : null
     ..lugar = (map['lugar'] as String?)?.isNotEmpty == true ? map['lugar'] as String? : null
     ..seasonId = map['seasonId'] as int? ?? 0
+    ..profileId = map['profileId'] as String?
+    ..clubId = map['clubId'] as String?
     ..duracionSegundos = map['duracionSegundos'] as int? ?? 0;
 
   Map<String, dynamic> _attendanceToMap(AttendanceRecord r) => {
     'playerId': r.playerId,
+    'profileId': r.profileId,
+    'clubId': r.clubId,
     'fecha': r.fecha.millisecondsSinceEpoch,
     'asistio': r.asistio ? 1 : 0,
     'observaciones': r.observaciones,
@@ -671,6 +814,8 @@ class DatabaseService extends AbstractDataService {
 
   AttendanceRecord _attendanceFromMap(Map<String, dynamic> map) => AttendanceRecord()
     ..playerId = map['playerId'] as int? ?? 0
+    ..profileId = map['profileId'] as String?
+    ..clubId = map['clubId'] as String?
     ..fecha = DateTime.fromMillisecondsSinceEpoch(map['fecha'] as int? ?? DateTime.now().millisecondsSinceEpoch)
     ..asistio = (map['asistio'] as int? ?? 0) == 1
     ..observaciones = map['observaciones'] as String? ?? '';
@@ -687,6 +832,8 @@ class DatabaseService extends AbstractDataService {
     'descripcion': e.descripcion ?? '',
     'playerId': e.playerId,
     'matchId': e.matchId,
+    'profileId': e.profileId,
+    'clubId': e.clubId,
     'createdAt': e.createdAt.millisecondsSinceEpoch,
   };
 
@@ -702,6 +849,8 @@ class DatabaseService extends AbstractDataService {
     ..descripcion = map['descripcion'] as String?
     ..playerId = map['playerId'] as int? ?? 0
     ..matchId = map['matchId'] as int? ?? 0
+    ..profileId = map['profileId'] as String?
+    ..clubId = map['clubId'] as String?
     ..createdAt = DateTime.fromMillisecondsSinceEpoch(map['createdAt'] as int? ?? DateTime.now().millisecondsSinceEpoch);
 
   Map<String, dynamic> _userToMap(AppUser u) => {
@@ -730,6 +879,8 @@ class DatabaseService extends AbstractDataService {
   Map<String, dynamic> _matchEventToMap(MatchEvent e) => {
     'athleteId': e.athleteId,
     'matchId': e.matchId,
+    'profileId': e.profileId,
+    'clubId': e.clubId,
     'fecha': e.fecha.millisecondsSinceEpoch,
     'setNumero': e.setNumero,
     'eventType': e.eventType.index,
@@ -741,6 +892,8 @@ class DatabaseService extends AbstractDataService {
   MatchEvent _matchEventFromMap(Map<String, dynamic> map) => MatchEvent()
     ..athleteId = map['athleteId'] as int? ?? 0
     ..matchId = map['matchId'] as int? ?? 0
+    ..profileId = map['profileId'] as String?
+    ..clubId = map['clubId'] as String?
     ..fecha = DateTime.fromMillisecondsSinceEpoch(map['fecha'] as int? ?? DateTime.now().millisecondsSinceEpoch)
     ..setNumero = map['setNumero'] as int? ?? 1
     ..eventType = EventType.values[map['eventType'] as int? ?? 1]

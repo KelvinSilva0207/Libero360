@@ -53,7 +53,7 @@ class _FullCourtWidgetState extends State<FullCourtWidget> {
             AspectRatio(
               aspectRatio: 16 / 12,
               child: CustomPaint(
-                painter: _FullCourtPainter(),
+                painter: _MatchCourtPainter(),
                 child: LayoutBuilder(
                   builder: (context, constraints) {
                     return Stack(
@@ -314,21 +314,21 @@ class _MiniAvatar extends StatelessWidget {
   }
 }
 
-class _FullCourtPainter extends CustomPainter {
+class _MatchCourtPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final w = size.width;
     final h = size.height;
 
-    canvas.drawRect(Rect.fromLTWH(0, 0, w, h), Paint()..color = AppColors.background);
+    canvas.drawRect(Rect.fromLTWH(0, 0, w, h), Paint()..color = const Color(0xFF1A1A2E));
 
     final linePaint = Paint()
-      ..color = Colors.white24
+      ..color = const Color(0x3DFFFFFF)
       ..strokeWidth = 1.5
       ..style = PaintingStyle.stroke;
 
     final faintPaint = Paint()
-      ..color = Colors.white10
+      ..color = const Color(0x1AFFFFFF)
       ..strokeWidth = 1;
 
     canvas.drawRect(Rect.fromLTWH(1, 1, w - 2, h - 2), linePaint);
@@ -343,15 +343,20 @@ class _FullCourtPainter extends CustomPainter {
     canvas.drawLine(Offset(w / 2, h * 0.5), Offset(w / 2, h), faintPaint);
 
     final netPaint = Paint()
-      ..color = Colors.white38
+      ..color = const Color(0x61FFFFFF)
       ..strokeWidth = 3;
     canvas.drawLine(Offset(0, netY), Offset(w, netY), netPaint);
 
     for (double x = 8; x < w - 8; x += 14) {
-      canvas.drawLine(Offset(x, netY - 5), Offset(x + 7, netY - 5), Paint()..color = Colors.white10);
+      canvas.drawLine(
+        Offset(x, netY - 5),
+        Offset(x + 7, netY - 5),
+        Paint()..color = const Color(0x1AFFFFFF),
+      );
     }
   }
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
+

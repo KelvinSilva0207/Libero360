@@ -22,18 +22,21 @@ class AuthViewModel extends ChangeNotifier {
   String? get error => _error;
 
   Future<bool> login(String email, String password) async {
+    print("🔵 AUTHVM: login iniciado para $email");
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     final user = await _repository.login(email, password);
     if (user != null) {
+      print("🟢 AUTHVM: login exitoso para $email");
       _user = user;
       _status = AuthStatus.authenticated;
       _isLoading = false;
       notifyListeners();
       return true;
     }
+    print("🔴 AUTHVM: login fallido para $email");
     _error = 'Correo o contraseña incorrectos';
     _isLoading = false;
     notifyListeners();
@@ -41,6 +44,7 @@ class AuthViewModel extends ChangeNotifier {
   }
 
   Future<AppUser?> loginWithGoogle() async {
+    print("🔵 AUTHVM: loginWithGoogle iniciado");
     _isLoading = true;
     _error = null;
     notifyListeners();
@@ -53,12 +57,14 @@ class AuthViewModel extends ChangeNotifier {
     }
 
     if (user != null) {
+      print("🟢 AUTHVM: loginWithGoogle exitoso para ${user.email}");
       _user = user;
       _status = AuthStatus.authenticated;
       _isLoading = false;
       notifyListeners();
       return user;
     }
+    print("🔴 AUTHVM: loginWithGoogle falló");
     _error = 'Error al iniciar con Google';
     _isLoading = false;
     notifyListeners();
@@ -66,18 +72,21 @@ class AuthViewModel extends ChangeNotifier {
   }
 
   Future<String?> register(String nombre, String email, String password) async {
+    print("🔵 AUTHVM: register iniciado para $nombre <$email>");
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     final error = await _repository.register(nombre, email, password);
     if (error == null) {
+      print("🟢 AUTHVM: register exitoso para $email");
       _user = _repository.currentUser;
       _status = AuthStatus.authenticated;
       _isLoading = false;
       notifyListeners();
       return null;
     }
+    print("🔴 AUTHVM: register falló: $error");
     _error = error;
     _isLoading = false;
     notifyListeners();

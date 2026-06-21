@@ -30,9 +30,7 @@ export 'presentation/viewmodels/play_by_play_viewmodel.dart';
 
 // Screens
 export 'presentation/views/play_by_play_screen.dart';
-export 'presentation/views/live_stats_dashboard_screen.dart';
 
 // Widgets
 export 'presentation/widgets/stat_recorder_widget.dart';
 export 'presentation/widgets/live_stats_widget.dart';
-export 'presentation/widgets/stats_charts_widget.dart';

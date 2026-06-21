@@ -13,6 +13,8 @@ class NotificationService {
   String? get _uid => FirebaseAuth.instance.currentUser?.uid;
   String? _currentClubId;
 
+  String? get currentClubId => _currentClubId;
+
   void setCurrentClub(String? clubId) {
     _currentClubId = clubId;
   }

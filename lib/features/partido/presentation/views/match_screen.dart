@@ -5,6 +5,7 @@ import '../../../estadisticas/data/models/models.dart';
 import '../../data/court_state.dart';
 import '../../data/match_config.dart';
 import '../../data/rotation_data.dart';
+import '../widgets/rotation_history_widget.dart';
 import '../controllers/match_controller.dart';
 import '../viewmodels/partido_viewmodel.dart';
 import '../widgets/court_widget.dart';
@@ -13,7 +14,7 @@ import '../widgets/match_scoreboard.dart';
 import '../widgets/players_drawer.dart';
 import '../widgets/quick_stats_widget.dart';
 import '../widgets/rotation_tab.dart';
-import '../widgets/service_history_widget.dart';
+import '../widgets/service_history_sheet.dart';
 import '../widgets/service_widget.dart';
 import '../widgets/set_start_dialog.dart';
 import '../widgets/substitution_dialog.dart';
@@ -34,6 +35,8 @@ class _MatchScreenState extends State<MatchScreen>
   late final TabController _tabController;
   late final RotationManager _rotationManager;
   int _previousSet = 1;
+  int _prevLocalPoints = 0;
+  int _prevVisitorPoints = 0;
   CourtPerspective _perspective = CourtPerspective.right;
 
   @override
@@ -48,6 +51,20 @@ class _MatchScreenState extends State<MatchScreen>
     _tabController.dispose();
     _rotationManager.dispose();
     super.dispose();
+  }
+
+  void _trackPoints(PartidoViewModel vm) {
+    final localPoints = vm.puntosLocal;
+    final visitorPoints = vm.puntosVisitante;
+
+    if (localPoints > _prevLocalPoints) {
+      _rotationManager.recordPointForCurrentRotation(localScored: true);
+    } else if (visitorPoints > _prevVisitorPoints) {
+      _rotationManager.recordPointForCurrentRotation(localScored: false);
+    }
+
+    _prevLocalPoints = localPoints;
+    _prevVisitorPoints = visitorPoints;
   }
 
   void _checkSetChange(PartidoViewModel vm) {
@@ -182,6 +199,7 @@ class _MatchScreenState extends State<MatchScreen>
           }
 
           _checkSetChange(vm);
+          _trackPoints(vm);
 
           return Stack(
             children: [
@@ -302,13 +320,15 @@ class _MatchScreenState extends State<MatchScreen>
             onZoneTap: _onZoneTap,
             onTogglePerspective: _togglePerspective,
           ),
+          _buildRotationInfoRow(context, vm),
           _buildServerioRow(),
           ServiceWidget(
             serverNumber: _rotationManager.currentServerNumber,
+            serverName: _serverName(vm, _rotationManager.currentServerNumber),
             consecutivePoints: _rotationManager.consecutivePoints,
             rotationCount: _rotationManager.rotationIndex,
           ),
-          ServiceHistoryWidget(),
+          _buildServiceHistoryButton(context, vm),
           QuickStatsWidget(),
           const SizedBox(height: 24),
         ],
@@ -356,6 +376,147 @@ class _MatchScreenState extends State<MatchScreen>
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _openRotationHistory(PartidoViewModel vm) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => RotationHistoryWidget(
+        sets: _rotationManager.allSets,
+      ),
+    );
+  }
+
+  String? _serverName(PartidoViewModel vm, int? number) {
+    if (number == null) return null;
+    try {
+      final player = vm.jugadores.firstWhere((p) => p.numero == number);
+      return player.displayName.isNotEmpty
+          ? player.displayName
+          : '${player.firstNames} ${player.lastNames}'.trim();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  void _openServiceHistory(PartidoViewModel vm) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => ServiceHistorySheet(
+        history: _rotationManager.serviceHistory,
+        allPlayers: vm.jugadores,
+        totalServices: _rotationManager.totalServices,
+        bestStreak: _rotationManager.bestStreak,
+        averagePointsPerServe: _rotationManager.averagePointsPerServe,
+      ),
+    );
+  }
+
+  Widget _buildRotationInfoRow(BuildContext context, PartidoViewModel vm) {
+    final currentRot = _rotationManager.rotationIndex + 1;
+    final totalRot = _rotationManager.history.length;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: AppColors.accent.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.rotate_right, size: 12, color: AppColors.accent),
+                const SizedBox(width: 4),
+                Text(
+                  'R$currentRot',
+                  style: const TextStyle(
+                    color: AppColors.accent,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '$totalRot rotac.',
+            style: const TextStyle(color: Colors.white24, fontSize: 11),
+          ),
+          const Spacer(),
+          GestureDetector(
+            onTap: () => _openRotationHistory(vm),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.history, size: 12, color: Colors.white38),
+                  SizedBox(width: 4),
+                  Text(
+                    'Historial',
+                    style: TextStyle(
+                      color: Colors.white38,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildServiceHistoryButton(BuildContext context, PartidoViewModel vm) {
+    final count = _rotationManager.serviceHistory.length;
+    return GestureDetector(
+      onTap: () => _openServiceHistory(vm),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.swap_vert, size: 14, color: Colors.white38),
+            const SizedBox(width: 8),
+            const Text(
+              'Historial de servicio',
+              style: TextStyle(
+                color: Colors.white54,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const Spacer(),
+            Text(
+              '$count servicio${count == 1 ? '' : 's'}',
+              style: const TextStyle(color: Colors.white24, fontSize: 11),
+            ),
+            const SizedBox(width: 6),
+            const Icon(Icons.chevron_right, size: 16, color: Colors.white24),
+          ],
+        ),
       ),
     );
   }

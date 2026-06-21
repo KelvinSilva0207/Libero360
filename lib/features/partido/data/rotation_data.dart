@@ -61,6 +61,19 @@ class RotationManager extends ChangeNotifier {
 
   int? get currentServerNumber => currentSet.currentSlots[5];
 
+  int get totalServices => serviceHistory.length;
+  int get bestStreak =>
+      serviceHistory.isEmpty
+          ? 0
+          : serviceHistory.map((r) => r.consecutivePoints).reduce(
+              (a, b) => a > b ? a : b,
+            );
+  double get averagePointsPerServe =>
+      serviceHistory.isEmpty
+          ? 0
+          : serviceHistory.fold(0, (sum, r) => sum + r.consecutivePoints) /
+              serviceHistory.length;
+
   void rotate() {
     _closeCurrentService();
     final newSlots = RotationEngine.rotate(slots);
@@ -71,8 +84,22 @@ class RotationManager extends ChangeNotifier {
     currentSet.history.add(RotationSnapshot(
       rotationIndex: currentSet.rotationIndex,
       slots: List.from(newSlots),
+      serverNumber: currentSet.currentSlots[5],
       fromInitialRotation: currentSet.rotationIndex,
     ));
+  }
+
+  void recordPointForCurrentRotation({required bool localScored}) {
+    final hist = currentSet.history;
+    if (hist.isNotEmpty) {
+      final snap = hist.last;
+      if (localScored) {
+        snap.pointsWon++;
+      } else {
+        snap.pointsLost++;
+      }
+    }
+    recordPoint(localScored: localScored, wasServing: true);
   }
 
   void recordPoint({required bool localScored, required bool wasServing}) {
@@ -141,6 +168,14 @@ class RotationManager extends ChangeNotifier {
     }
     currentSet.currentSlots = List.from(newSlots);
     currentSet.rotationIndex = 0;
+    if (newSlots.any((s) => s != null)) {
+      currentSet.history.add(RotationSnapshot(
+        rotationIndex: 0,
+        slots: List.from(newSlots),
+        serverNumber: newSlots[5],
+        fromInitialRotation: 0,
+      ));
+    }
     notifyListeners();
   }
 }
@@ -196,14 +231,24 @@ class RotationSnapshot {
   final int rotationIndex;
   final int fromInitialRotation;
   final List<int?> slots;
+  final int? serverNumber;
   final DateTime timestamp;
+  int pointsWon;
+  int pointsLost;
 
   RotationSnapshot({
     required this.rotationIndex,
     required this.slots,
+    this.serverNumber,
     this.fromInitialRotation = 0,
     DateTime? timestamp,
+    this.pointsWon = 0,
+    this.pointsLost = 0,
   }) : timestamp = timestamp ?? DateTime.now();
+
+  int get totalPoints => pointsWon + pointsLost;
+  double get effectiveness =>
+      totalPoints > 0 ? (pointsWon / totalPoints) * 100 : 0;
 }
 
 class RotationStats {

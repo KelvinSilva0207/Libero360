@@ -6,18 +6,27 @@ class Club {
   final String id;
   final String name;
   final String ownerId;
+  final String description;
+  final String? photoUrl;
+  final int memberCount;
   final DateTime createdAt;
 
   const Club({
     required this.id,
     required this.name,
     required this.ownerId,
+    this.description = '',
+    this.photoUrl,
+    this.memberCount = 0,
     required this.createdAt,
   });
 
   Map<String, dynamic> toMap() => {
         'name': name,
         'ownerId': ownerId,
+        'description': description,
+        'photoUrl': photoUrl ?? '',
+        'memberCount': memberCount,
         'createdAt': createdAt.toIso8601String(),
       };
 
@@ -25,6 +34,9 @@ class Club {
         id: id,
         name: map['name'] as String? ?? '',
         ownerId: map['ownerId'] as String? ?? '',
+        description: map['description'] as String? ?? '',
+        photoUrl: (map['photoUrl'] as String?)?.isNotEmpty == true ? map['photoUrl'] as String? : null,
+        memberCount: map['memberCount'] as int? ?? 0,
         createdAt: map['createdAt'] != null
             ? DateTime.parse(map['createdAt'] as String)
             : DateTime.now(),
@@ -38,15 +50,17 @@ class ClubMember {
   final String displayName;
   final ClubRole role;
   final MembershipStatus status;
+  final DateTime joinedAt;
 
-  const ClubMember({
+  ClubMember({
     required this.id,
     required this.userId,
     required this.email,
     required this.displayName,
     required this.role,
     required this.status,
-  });
+    DateTime? joinedAt,
+  }) : joinedAt = joinedAt ?? DateTime.now();
 
   bool get isOwner => role == ClubRole.owner;
   bool get isActive => status == MembershipStatus.active;
@@ -57,6 +71,7 @@ class ClubMember {
         'displayName': displayName,
         'role': role.name,
         'status': status.name,
+        'joinedAt': joinedAt.toIso8601String(),
       };
 
   factory ClubMember.fromMap(String id, Map<String, dynamic> map) => ClubMember(
@@ -72,6 +87,9 @@ class ClubMember {
           (s) => s.name == map['status'],
           orElse: () => MembershipStatus.pending,
         ),
+        joinedAt: map['joinedAt'] != null
+            ? DateTime.parse(map['joinedAt'] as String)
+            : DateTime.now(),
       );
 
   ClubMember copyWith({
@@ -81,6 +99,7 @@ class ClubMember {
     String? displayName,
     ClubRole? role,
     MembershipStatus? status,
+    DateTime? joinedAt,
   }) =>
       ClubMember(
         id: id ?? this.id,
@@ -89,6 +108,7 @@ class ClubMember {
         displayName: displayName ?? this.displayName,
         role: role ?? this.role,
         status: status ?? this.status,
+        joinedAt: joinedAt ?? this.joinedAt,
       );
 }
 

@@ -8,7 +8,7 @@ class DashboardRepository {
   final DatabaseService _db = DatabaseService.instance;
   final AthleteRankingService _rankingService = AthleteRankingService();
 
-  Future<DashboardData> load({String? profileId}) async {
+  Future<DashboardData> load({String? profileId, String? clubName, int clubMemberCount = 0}) async {
     await _db.initialize();
 
     final players = profileId != null
@@ -18,7 +18,7 @@ class DashboardRepository {
     final attendance = await _db.getAllAttendanceRecords();
     final rankings = await _rankingService.loadRankings();
 
-    final teamInfo = _buildTeamInfo();
+    final teamInfo = _buildTeamInfo(clubName: clubName, clubMemberCount: clubMemberCount);
     final nextTraining = _findNextTraining(attendance);
     final nextMatch = _findNextMatch(matches);
     final athleteOfMonth = _buildAthleteOfMonth(players, rankings);
@@ -39,11 +39,12 @@ class DashboardRepository {
     );
   }
 
-  TeamInfo _buildTeamInfo() {
-    return const TeamInfo(
-      name: 'Club Águilas',
+  TeamInfo _buildTeamInfo({String? clubName, int clubMemberCount = 0}) {
+    return TeamInfo(
+      name: clubName ?? 'Club Águilas',
       category: 'Masculino',
       ageGroup: 'U17',
+      memberCount: clubMemberCount,
     );
   }
 

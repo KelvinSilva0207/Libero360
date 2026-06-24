@@ -80,6 +80,16 @@ class HeaderSection extends StatelessWidget {
                           color: isDark ? AppColors.textSecondary : AppColors.textTertiary,
                         ),
                       ),
+                      if (teamInfo.memberCount > 0) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          '${teamInfo.memberCount} entrenadores',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: isDark ? AppColors.textTertiary : AppColors.lightTextTertiary,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),

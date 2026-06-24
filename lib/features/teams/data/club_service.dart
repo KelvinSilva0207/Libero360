@@ -14,13 +14,16 @@ class ClubService {
   CollectionReference get _clubs => _firestore.collection('clubs');
 
   /// Create a new club and add creator as owner member.
-  Future<String> createClub(String name) async {
+  Future<String> createClub(String name, {String description = '', String? photoUrl}) async {
     final uid = _uid;
     if (uid == null) throw Exception('Not authenticated');
 
     final doc = await _clubs.add({
       'name': name,
+      'description': description,
+      'photoUrl': photoUrl ?? '',
       'ownerId': uid,
+      'memberCount': 1,
       'createdAt': DateTime.now().toIso8601String(),
     });
 
@@ -34,9 +37,21 @@ class ClubService {
       'displayName': displayName,
       'role': ClubRole.owner.name,
       'status': MembershipStatus.active.name,
+      'joinedAt': DateTime.now().toIso8601String(),
     });
 
     return doc.id;
+  }
+
+  /// Update club metadata.
+  Future<void> updateClub(String clubId, {String? name, String? description, String? photoUrl}) async {
+    final data = <String, dynamic>{};
+    if (name != null) data['name'] = name;
+    if (description != null) data['description'] = description;
+    if (photoUrl != null) data['photoUrl'] = photoUrl;
+    if (data.isNotEmpty) {
+      await _clubs.doc(clubId).update(data);
+    }
   }
 
   /// Get a single club.

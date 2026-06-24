@@ -12,6 +12,8 @@ class DashboardViewModel extends ChangeNotifier {
   DashboardData? _data;
   bool _loading = true;
   String? _error;
+  String? _clubName;
+  int _clubMemberCount = 0;
   StreamSubscription<List<Player>>? _playerSub;
   StreamSubscription<List<Match>>? _matchSub;
   Timer? _debounce;
@@ -20,14 +22,16 @@ class DashboardViewModel extends ChangeNotifier {
   bool get loading => _loading;
   String? get error => _error;
 
-  Future<void> load({String? profileId}) async {
+  Future<void> load({String? profileId, String? clubName, int clubMemberCount = 0}) async {
+    _clubName = clubName;
+    _clubMemberCount = clubMemberCount;
     _loading = true;
     _error = null;
     notifyListeners();
 
     try {
       await _db.initialize();
-      _data = await _repository.load(profileId: profileId);
+      _data = await _repository.load(profileId: profileId, clubName: _clubName, clubMemberCount: _clubMemberCount);
       _loading = false;
       _subscribeToChanges(profileId);
     } catch (e) {
@@ -51,7 +55,7 @@ class DashboardViewModel extends ChangeNotifier {
 
   Future<void> _silentRefresh(String? profileId) async {
     try {
-      _data = await _repository.load(profileId: profileId);
+      _data = await _repository.load(profileId: profileId, clubName: _clubName, clubMemberCount: _clubMemberCount);
       notifyListeners();
     } catch (_) {}
   }
@@ -59,7 +63,7 @@ class DashboardViewModel extends ChangeNotifier {
   Future<void> refresh({String? profileId}) async {
     _error = null;
     try {
-      _data = await _repository.load(profileId: profileId);
+      _data = await _repository.load(profileId: profileId, clubName: _clubName, clubMemberCount: _clubMemberCount);
     } catch (e) {
       _error = e.toString();
     }
@@ -69,7 +73,7 @@ class DashboardViewModel extends ChangeNotifier {
   void setProfile(String? profileId) {
     _playerSub?.cancel();
     _matchSub?.cancel();
-    load(profileId: profileId);
+    load(profileId: profileId, clubName: _clubName, clubMemberCount: _clubMemberCount);
   }
 
   @override

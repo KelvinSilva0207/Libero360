@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/themes/app_colors.dart';
+import '../../../teams/presentation/viewmodels/club_viewmodel.dart';
+import '../../../teams/data/team_models.dart' show ClubMember, ClubRole;
 import '../../data/staff_tecnico_models.dart';
 import '../viewmodels/staff_tecnico_viewmodel.dart';
 import '../widgets/invite_member_sheet.dart';
 import '../widgets/staff_activity_timeline.dart';
-import '../widgets/staff_list_tile.dart';
 import '../widgets/staff_summary_card.dart';
 
 class StaffScreen extends StatefulWidget {
@@ -39,25 +40,27 @@ class _StaffScreenState extends State<StaffScreen> {
         ],
       ),
       body: SafeArea(
-        child: Consumer<StaffTecnicoViewModel>(
-          builder: (_, vm, __) {
+        child: Consumer2<StaffTecnicoViewModel, ClubViewModel>(
+          builder: (_, vm, clubVm, __) {
             if (vm.loading) {
               return const Center(child: CircularProgressIndicator());
             }
+            final clubMembers = clubVm.members.where((m) => m.isActive).toList();
+            final pendingInvitations = vm.invitations.where((i) => i.isPending).toList();
             return SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _header(context, cs),
+                  _header(context, cs, clubVm.currentClub?.name),
                   const SizedBox(height: 20),
                   StaffSummaryCard(
-                    activeCount: vm.activeCount,
-                    pendingInvitationCount: vm.pendingInvitationCount,
+                    activeCount: clubMembers.length,
+                    pendingInvitationCount: clubVm.invitations.length,
                     lastSync: 'Hace 5 minutos',
                   ),
                   const SizedBox(height: 24),
-                  _sectionHeader(context, Icons.people_rounded, 'Miembros del Staff', cs,
+                  _sectionHeader(context, Icons.people_rounded, 'Miembros del Club', cs,
                     trailing: TextButton.icon(
                       onPressed: () => _showInviteSheet(context),
                       icon: const Icon(Icons.add_rounded, size: 18),
@@ -65,18 +68,15 @@ class _StaffScreenState extends State<StaffScreen> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  if (vm.members.isEmpty)
-                    _emptyState(context, cs, 'No hay miembros en el staff')
+                  if (clubMembers.isEmpty)
+                    _emptyState(context, cs, 'No hay miembros en el club')
                   else
-                    ...vm.members.map((m) => StaffListTile(
-                      member: m,
-                      onDelete: () => _confirmDelete(context, m),
-                    )),
-                  if (vm.invitations.where((i) => i.isPending).isNotEmpty) ...[
+                    ...clubMembers.map((m) => _clubMemberTile(context, m, cs, clubVm)),
+                  if (pendingInvitations.isNotEmpty) ...[
                     const SizedBox(height: 24),
                     _sectionHeader(context, Icons.mail_rounded, 'Invitaciones Pendientes', cs),
                     const SizedBox(height: 8),
-                    ...vm.invitations.where((i) => i.isPending).map((inv) => _invitationTile(context, inv, cs, vm)),
+                    ...pendingInvitations.map((inv) => _invitationTile(context, inv, cs, vm)),
                   ],
                   const SizedBox(height: 24),
                   _sectionHeader(context, Icons.history_rounded, 'Actividad Reciente', cs),
@@ -92,7 +92,7 @@ class _StaffScreenState extends State<StaffScreen> {
     );
   }
 
-  Widget _header(BuildContext context, ColorScheme cs) {
+  Widget _header(BuildContext context, ColorScheme cs, String? clubName) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -109,7 +109,7 @@ class _StaffScreenState extends State<StaffScreen> {
             ),
             const SizedBox(width: 12),
             Text(
-              'Staff Técnico',
+              clubName ?? 'Staff Técnico',
               style: TextStyle(color: cs.onSurface, fontSize: 22, fontWeight: FontWeight.bold),
             ),
           ],
@@ -186,6 +186,49 @@ class _StaffScreenState extends State<StaffScreen> {
     );
   }
 
+  Widget _clubMemberTile(BuildContext context, ClubMember member, ColorScheme cs, ClubViewModel clubVm) {
+    final roleLabel = switch (member.role) {
+      ClubRole.owner => 'Administrador',
+      ClubRole.entrenador => 'Entrenador',
+      ClubRole.asistente => 'Asistente',
+    };
+    final isOwner = member.role == ClubRole.owner;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: cs.surface.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.5)),
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        leading: CircleAvatar(
+          radius: 18,
+          backgroundColor: AppColors.accent.withValues(alpha: 0.2),
+          child: Text(
+            member.displayName.isNotEmpty ? member.displayName[0].toUpperCase() : '?',
+            style: const TextStyle(color: AppColors.accent, fontWeight: FontWeight.w600),
+          ),
+        ),
+        title: Text(member.displayName, style: TextStyle(color: cs.onSurface, fontSize: 14)),
+        subtitle: Text(
+          '$roleLabel · ${member.email}',
+          style: TextStyle(color: cs.onSurface.withValues(alpha: 0.5), fontSize: 12),
+        ),
+        trailing: isOwner
+            ? Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppColors.accent.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Text('Dueño', style: TextStyle(color: AppColors.accent, fontSize: 10, fontWeight: FontWeight.w600)),
+              )
+            : null,
+      ),
+    );
+  }
+
   void _showInviteSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -200,34 +243,4 @@ class _StaffScreenState extends State<StaffScreen> {
     );
   }
 
-  void _confirmDelete(BuildContext context, StaffMember member) {
-    showDialog(
-      context: context,
-      builder: (ctx) {
-        final cs = Theme.of(ctx).colorScheme;
-        return AlertDialog(
-          backgroundColor: cs.surface,
-          title: Text('Eliminar miembro', style: TextStyle(color: cs.onSurface)),
-          content: Text(
-            '¿Eliminar a ${member.nombre} del staff?',
-            style: TextStyle(color: cs.onSurface.withValues(alpha: 0.8)),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancelar'),
-            ),
-            FilledButton(
-              onPressed: () {
-                Navigator.pop(ctx);
-                context.read<StaffTecnicoViewModel>().removeMember(member);
-              },
-              style: FilledButton.styleFrom(backgroundColor: AppColors.error),
-              child: const Text('Eliminar', style: TextStyle(color: Colors.white)),
-            ),
-          ],
-        );
-      },
-    );
-  }
 }

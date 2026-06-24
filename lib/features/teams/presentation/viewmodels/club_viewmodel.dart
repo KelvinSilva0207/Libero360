@@ -11,6 +11,7 @@ import '../../../estadisticas/data/models/attendance_record.dart';
 import '../../../partido/data/match_event.dart';
 import '../../data/team_models.dart';
 import '../../data/club_service.dart';
+import '../../data/club_sync_service.dart';
 import '../../data/invitation_service.dart';
 import '../../data/permission_service.dart';
 
@@ -57,6 +58,7 @@ class ClubViewModel extends ChangeNotifier {
   bool get loading => _loading;
   String? get error => _error;
 
+  int get memberCount => _members.where((m) => m.isActive).length;
   String? get uid => FirebaseAuth.instance.currentUser?.uid;
 
   ClubRole? get myRole {
@@ -168,10 +170,11 @@ class ClubViewModel extends ChangeNotifier {
     _seasonsSub?.cancel();
   }
 
-  Future<String?> createClub(String name) async {
+  Future<String?> createClub(String name, {String description = '', String? photoUrl}) async {
     try {
-      final id = await _clubService.createClub(name);
+      final id = await _clubService.createClub(name, description: description, photoUrl: photoUrl);
       setCurrentClub(id);
+      ClubSyncService.instance.logClubCreated(name, clubId: id);
       return null;
     } catch (e) {
       return 'Error al crear el club';

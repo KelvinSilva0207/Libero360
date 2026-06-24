@@ -5,6 +5,7 @@ import '../../../../core/theme_provider/theme_notifier.dart';
 import '../../../../core/widgets_globales/route_transitions.dart';
 import '../../../auth/presentation/viewmodels/auth_viewmodel.dart';
 import '../../../profiles/presentation/viewmodels/profile_viewmodel.dart';
+import '../../../teams/presentation/viewmodels/club_viewmodel.dart';
 import '../../../settings/presentation/widgets/settings_drawer.dart';
 import '../../../asistencia/asistencia.dart';
 import '../../../estadisticas/presentation/views/play_by_play_screen.dart';
@@ -42,7 +43,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   void _load() {
     final profileVm = context.read<ProfileViewModel>();
-    context.read<DashboardViewModel>().load(profileId: profileVm.currentProfile?.id);
+    final clubVm = context.read<ClubViewModel>();
+    context.read<DashboardViewModel>().load(
+      profileId: profileVm.currentProfile?.id,
+      clubName: clubVm.currentClub?.name,
+      clubMemberCount: clubVm.memberCount,
+    );
   }
 
   @override

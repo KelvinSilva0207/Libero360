@@ -25,12 +25,14 @@ class TeamInfo {
   final String category;
   final String ageGroup;
   final String? photoUrl;
+  final int memberCount;
 
   const TeamInfo({
     required this.name,
     required this.category,
     required this.ageGroup,
     this.photoUrl,
+    this.memberCount = 0,
   });
 }
 

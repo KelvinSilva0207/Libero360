@@ -1,390 +1,221 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../../core/themes/app_colors.dart';
 import '../../../../core/theme_provider/theme_notifier.dart';
-import '../../../estadisticas/data/local_db/database_service.dart';
-import '../../data/statistics_service.dart';
-import '../../data/statistics_models.dart';
-import 'athlete_statistics_screen.dart';
+import '../viewmodels/stats_dashboard_viewmodel.dart';
+import '../widgets/dashboard/athlete_of_month_section.dart';
+import '../widgets/dashboard/season_summary_section.dart';
+import '../widgets/dashboard/charts_section.dart';
+import '../widgets/dashboard/hall_of_fame_section.dart';
+import '../widgets/dashboard/recent_matches_section.dart';
+import '../widgets/dashboard/recent_activity_section.dart';
+import '../views/player_stats_screen.dart';
+import '../../../estadisticas/data/models/models.dart';
 
-class StatisticsScreen extends StatefulWidget {
+class StatisticsScreen extends StatelessWidget {
   const StatisticsScreen({super.key});
 
   @override
-  State<StatisticsScreen> createState() => _StatisticsScreenState();
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider(
+      create: (_) => StatsDashboardViewModel()..load(),
+      child: const _StatsDashboardShell(),
+    );
+  }
 }
 
-class _StatisticsScreenState extends State<StatisticsScreen> {
-  final StatisticsService _service = StatisticsService();
-  SeasonSummary? _summary;
-  List<AthleteStats>? _athleteStats;
-  AttendanceStats? _attendanceStats;
-  bool _loading = true;
-  String? _error;
+class _StatsDashboardShell extends StatefulWidget {
+  const _StatsDashboardShell();
 
   @override
-  void initState() {
-    super.initState();
-    _load();
-  }
+  State<_StatsDashboardShell> createState() => _StatsDashboardShellState();
+}
 
-  Future<void> _load() async {
-    setState(() => _loading = true);
-    try {
-      await DatabaseService.instance.initialize();
-      final results = await Future.wait([
-        _service.loadSeasonSummary(),
-        _service.loadAthleteStats(),
-        _service.loadAttendanceStats(),
-      ]);
-      if (!mounted) return;
-      setState(() {
-        _summary = results[0] as SeasonSummary;
-        _athleteStats = results[1] as List<AthleteStats>;
-        _attendanceStats = results[2] as AttendanceStats;
-        _loading = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _error = e.toString();
-        _loading = false;
-      });
-    }
-  }
-
+class _StatsDashboardShellState extends State<_StatsDashboardShell> {
   @override
   Widget build(BuildContext context) {
     final isDark = context.watch<ThemeNotifier>().isDark;
-    final bg = isDark ? const Color(0xFF071126) : const Color(0xFFF8FAFC);
-    final cardBg = isDark ? const Color(0xFF101B3A) : Colors.white;
-    final textPrimary = isDark ? Colors.white : const Color(0xFF1E293B);
-    final textSecondary = isDark ? const Color(0xFFA6B1D0) : const Color(0xFF64748B);
-    const accent = Color(0xFFFF8C00);
-    const primary = Color(0xFF0081CF);
-    const success = Color(0xFF22C55E);
-    final border = isDark ? const Color(0xFF1E2D5A) : const Color(0xFFE2E8F0);
+    final vm = context.watch<StatsDashboardViewModel>();
+    final bg = isDark ? AppColors.background : AppColors.lightBackground;
 
     return Scaffold(
       backgroundColor: bg,
-      appBar: AppBar(
-        backgroundColor: cardBg,
-        title: const Text('Estadísticas', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-      ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFFFF8C00)))
-          : _error != null
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.error_outline, color: Color(0xFFEF4444), size: 48),
-                        const SizedBox(height: 16),
-                        Text(_error!, textAlign: TextAlign.center,
-                            style: TextStyle(color: textSecondary, fontSize: 14)),
-                        const SizedBox(height: 16),
-                        FilledButton.icon(
-                          onPressed: _load,
-                          icon: const Icon(Icons.refresh, size: 18),
-                          label: const Text('Reintentar'),
-                        ),
-                      ],
-                    ),
-                  ),
-                )
-              : RefreshIndicator(
-                  onRefresh: _load,
-                  child: ListView(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
-                    children: [
-                      _SeasonCard(summary: _summary!, textPrimary: textPrimary, textSecondary: textSecondary,
-                          accent: accent, cardBg: cardBg, border: border),
-                      const SizedBox(height: 16),
-                      _CompetitionsCard(summary: _summary!, textPrimary: textPrimary, textSecondary: textSecondary,
-                          accent: accent, cardBg: cardBg, border: border, primary: primary),
-                      const SizedBox(height: 16),
-                      _AttendanceOverviewCard(stats: _attendanceStats!, textPrimary: textPrimary,
-                          textSecondary: textSecondary, accent: accent, cardBg: cardBg, border: border, success: success),
-                      const SizedBox(height: 16),
-                      _TopAthletesCard(athletes: _athleteStats!, textPrimary: textPrimary,
-                          textSecondary: textSecondary, accent: accent, cardBg: cardBg, border: border,
-                          onTapAthlete: _openAthleteStats),
-                    ],
-                  ),
-                ),
+      body: _buildBody(vm, isDark),
     );
   }
 
-  void _openAthleteStats(AthleteStats stats) {
-    Navigator.push(context, MaterialPageRoute(
-      builder: (_) => AthleteStatisticsScreen(athleteStats: stats),
-    ));
-  }
-}
+  Widget _buildBody(StatsDashboardViewModel vm, bool isDark) {
+    if (vm.loading) {
+      return _loadingState(isDark);
+    }
 
-class _SeasonCard extends StatelessWidget {
-  final SeasonSummary summary;
-  final Color textPrimary, textSecondary, accent, cardBg, border;
+    if (vm.error != null) {
+      return _errorState(vm, isDark);
+    }
 
-  const _SeasonCard({required this.summary, required this.textPrimary, required this.textSecondary,
-    required this.accent, required this.cardBg, required this.border});
+    final data = vm.data;
+    if (data == null) {
+      return _loadingState(isDark);
+    }
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: border, width: 0.5),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.emoji_events, color: Color(0xFFFF8C00), size: 22),
-              const SizedBox(width: 8),
-              Text('TEMPORADA', style: TextStyle(color: textSecondary, fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 1.5)),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              _StatBox(label: 'Partidos', value: '${summary.totalMatches}', color: textPrimary, subColor: textSecondary),
-              _StatBox(label: 'Victorias', value: '${summary.wins}', color: const Color(0xFF22C55E), subColor: textSecondary),
-              _StatBox(label: 'Derrotas', value: '${summary.losses}', color: const Color(0xFFEF4444), subColor: textSecondary),
-            ],
-          ),
-          if (summary.mvpName != null) ...[
-            const Divider(height: 24),
-            Row(
-              children: [
-                const Icon(Icons.star, color: Color(0xFFFF8C00), size: 18),
-                const SizedBox(width: 6),
-                Text('MVP temporada: ', style: TextStyle(color: textSecondary, fontSize: 13)),
-                Text(summary.mvpName!, style: TextStyle(color: accent, fontSize: 13, fontWeight: FontWeight.bold)),
-                Text('  (${summary.mvpPoints} pts)', style: TextStyle(color: textSecondary, fontSize: 12)),
-              ],
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _StatBox extends StatelessWidget {
-  final String label, value;
-  final Color color, subColor;
-
-  const _StatBox({required this.label, required this.value, required this.color, required this.subColor});
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Column(
-        children: [
-          Text(value, style: TextStyle(color: color, fontSize: 28, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 4),
-          Text(label, style: TextStyle(color: subColor, fontSize: 12, fontWeight: FontWeight.w500)),
-        ],
-      ),
-    );
-  }
-}
-
-class _CompetitionsCard extends StatelessWidget {
-  final SeasonSummary summary;
-  final Color textPrimary, textSecondary, accent, cardBg, border, primary;
-
-  const _CompetitionsCard({required this.summary, required this.textPrimary, required this.textSecondary,
-    required this.accent, required this.cardBg, required this.border, required this.primary});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: border, width: 0.5),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.emoji_events, color: Color(0xFFFF8C00), size: 22),
-              const SizedBox(width: 8),
-              Text('COMPETICIONES', style: TextStyle(color: textSecondary, fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 1.5)),
-            ],
-          ),
-          const SizedBox(height: 16),
-          _CompRow(label: 'Amistosos', value: summary.amistosos, color: primary, icon: Icons.fitness_center),
-          _CompRow(label: 'Ligas', value: summary.ligas, color: accent, icon: Icons.emoji_events),
-          _CompRow(label: 'Torneos', value: summary.torneos, color: const Color(0xFF8B5CF6), icon: Icons.military_tech),
-          _CompRow(label: 'Prácticas', value: summary.practicas, color: const Color(0xFF22C55E), icon: Icons.school),
-        ],
-      ),
-    );
-  }
-}
-
-class _CompRow extends StatelessWidget {
-  final String label;
-  final int value;
-  final Color color;
-  final IconData icon;
-
-  const _CompRow({required this.label, required this.value, required this.color, required this.icon});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        children: [
-          Icon(icon, color: color, size: 18),
-          const SizedBox(width: 10),
-          Text(label, style: TextStyle(color: color, fontSize: 14, fontWeight: FontWeight.w500)),
-          const Spacer(),
-          Text('$value', style: TextStyle(color: color, fontSize: 16, fontWeight: FontWeight.bold)),
-        ],
-      ),
-    );
-  }
-}
-
-class _AttendanceOverviewCard extends StatelessWidget {
-  final AttendanceStats? stats;
-  final Color textPrimary, textSecondary, accent, cardBg, border, success;
-
-  const _AttendanceOverviewCard({required this.stats, required this.textPrimary, required this.textSecondary,
-    required this.accent, required this.cardBg, required this.border, required this.success});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: border, width: 0.5),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.calendar_today, color: Color(0xFF22C55E), size: 22),
-              const SizedBox(width: 8),
-              Text('ASISTENCIA', style: TextStyle(color: textSecondary, fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 1.5)),
-            ],
-          ),
-          const SizedBox(height: 16),
-          if (stats != null) ...[
-            Row(
-              children: [
-                Text('${stats!.promedioGlobal.toStringAsFixed(0)}%', style: TextStyle(color: success, fontSize: 32, fontWeight: FontWeight.bold)),
-                const SizedBox(width: 12),
-                Text('Promedio', style: TextStyle(color: textSecondary, fontSize: 13)),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text('${stats!.totalEntrenamientos} entrenamientos', style: TextStyle(color: textSecondary, fontSize: 13)),
-            const SizedBox(height: 16),
-            Text('TOP ASISTENCIA', style: TextStyle(color: textSecondary, fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 1)),
-            const SizedBox(height: 8),
-            ...stats!.topAttendance.map((p) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: 3),
-              child: Row(
+    return RefreshIndicator(
+      onRefresh: () => vm.load(),
+      child: CustomScrollView(
+        physics: const BouncingScrollPhysics(),
+        slivers: [
+          _header(isDark),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(p.name, style: TextStyle(color: textPrimary, fontSize: 13)),
-                  const Spacer(),
-                  Text('${p.pct.toStringAsFixed(0)}%', style: TextStyle(color: success, fontSize: 13, fontWeight: FontWeight.w600)),
+                  _sectionLabel('ATLETA DEL MES', isDark),
+                  const SizedBox(height: 12),
+                  AthleteOfMonthSection(
+                    athlete: data.athleteOfMonth,
+                    isDark: isDark,
+                    alreadyAnimated: vm.athleteOfMonthAnimated,
+                    onAnimated: vm.markAthleteOfMonthAnimated,
+                    onViewProfile: () => _openPlayerProfile(
+                        context, data.athleteOfMonth?.player),
+                  ),
+                  const SizedBox(height: 28),
+                  SeasonSummarySection(
+                      summary: data.seasonSummary, isDark: isDark),
+                  const SizedBox(height: 28),
+                  ChartsSection(charts: data.charts, isDark: isDark),
+                  const SizedBox(height: 28),
+                  HallOfFameSection(
+                      entries: data.hallOfFame, isDark: isDark),
+                  const SizedBox(height: 28),
+                  RecentMatchesSection(
+                    matches: data.recentMatches,
+                    isDark: isDark,
+                    onMatchTap: (matchId) =>
+                        _openMatchSummary(context, matchId),
+                  ),
+                  const SizedBox(height: 28),
+                  RecentActivitySection(
+                      activities: data.recentActivity, isDark: isDark),
+                  const SizedBox(height: 24),
                 ],
               ),
-            )),
-          ] else
-            Text('Sin datos', style: TextStyle(color: textSecondary, fontSize: 13)),
+            ),
+          ),
         ],
       ),
     );
   }
-}
 
-class _TopAthletesCard extends StatelessWidget {
-  final List<AthleteStats>? athletes;
-  final Color textPrimary, textSecondary, accent, cardBg, border;
-  final void Function(AthleteStats) onTapAthlete;
-
-  const _TopAthletesCard({required this.athletes, required this.textPrimary, required this.textSecondary,
-    required this.accent, required this.cardBg, required this.border, required this.onTapAthlete});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: border, width: 0.5),
+  Widget _header(bool isDark) {
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+            20, MediaQuery.of(context).padding.top + 12, 20, 16),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: AppColors.accent.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.bar_chart_rounded,
+                  color: AppColors.accent, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Text('Estadísticas',
+                style: TextStyle(
+                  color: isDark
+                      ? AppColors.textPrimary
+                      : AppColors.lightTextPrimary,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                )),
+          ],
+        ),
       ),
+    );
+  }
+
+  Widget _sectionLabel(String text, bool isDark) {
+    return Row(
+      children: [
+        Text(text,
+            style: TextStyle(
+              color: isDark
+                  ? AppColors.textSecondary
+                  : AppColors.lightTextSecondary,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 1.5,
+            )),
+      ],
+    );
+  }
+
+  Widget _loadingState(bool isDark) {
+    return Center(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
-            children: [
-              const Icon(Icons.people, color: Color(0xFF0081CF), size: 22),
-              const SizedBox(width: 8),
-              Text('TOP ATLETAS', style: TextStyle(color: textSecondary, fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 1.5)),
-            ],
-          ),
+          const CircularProgressIndicator(color: AppColors.accent),
           const SizedBox(height: 16),
-          if (athletes != null && athletes!.isNotEmpty)
-            ...athletes!.take(5).toList().asMap().entries.map((entry) {
-              final i = entry.key;
-              final s = entry.value;
-              return InkWell(
-                onTap: () => onTapAthlete(s),
-                borderRadius: BorderRadius.circular(8),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: Row(
-                    children: [
-                      SizedBox(
-                        width: 24,
-                        child: Text('${i + 1}', style: TextStyle(color: i < 3 ? accent : textSecondary, fontSize: 14, fontWeight: FontWeight.bold)),
-                      ),
-                      CircleAvatar(
-                        radius: 16,
-                        backgroundColor: accent.withValues(alpha: 0.15),
-                        child: Text(
-                          s.player.nombre.isNotEmpty ? s.player.nombre[0].toUpperCase() : '?',
-                          style: TextStyle(color: accent, fontSize: 13, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(s.player.nombre, style: TextStyle(color: textPrimary, fontSize: 14, fontWeight: FontWeight.w600)),
-                            Text('${s.totalPuntos} pts  •  ${s.eficiencia.toStringAsFixed(0)}% ef.', style: TextStyle(color: textSecondary, fontSize: 12)),
-                          ],
-                        ),
-                      ),
-                      Text('${s.puntosGanadores}', style: TextStyle(color: accent, fontSize: 16, fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                ),
-              );
-            })
-          else
-            Text('Sin datos', style: TextStyle(color: textSecondary, fontSize: 13)),
+          Text('Cargando estadísticas...',
+              style: TextStyle(
+                  color: isDark
+                      ? AppColors.textSecondary
+                      : AppColors.lightTextSecondary,
+                  fontSize: 14)),
         ],
+      ),
+    );
+  }
+
+  Widget _errorState(StatsDashboardViewModel vm, bool isDark) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.error_outline, color: AppColors.error, size: 48),
+            const SizedBox(height: 16),
+            Text(vm.error!, textAlign: TextAlign.center,
+                style: TextStyle(
+                    color: isDark
+                        ? AppColors.textSecondary
+                        : AppColors.lightTextSecondary,
+                    fontSize: 14)),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: () => vm.load(),
+              icon: const Icon(Icons.refresh, size: 18),
+              label: const Text('Reintentar'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _openPlayerProfile(BuildContext context, Player? player) {
+    if (player == null) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PlayerStatsScreen(player: player),
+      ),
+    );
+  }
+
+  void _openMatchSummary(BuildContext context, int matchId) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Resumen del partido #$matchId (próximamente)'),
+        behavior: SnackBarBehavior.floating,
       ),
     );
   }

@@ -33,6 +33,7 @@ dependencies:
   # Exportación / Importación
   share_plus: ^9.0.0
   file_picker: ^8.0.0
+  image_picker: ^1.0.7
 
   # Firebase
   firebase_core: ^3.4.0

@@ -56,15 +56,15 @@ class PlayByPlayViewModel extends ChangeNotifier {
     required String equipoVisitante,
   }) async {
     _clearError();
-    final success = await _controller.init(MatchConfig(
-      localName: equipoLocal,
-      visitorName: equipoVisitante,
-    ));
-    if (!success) {
-      _setError(_controller.error ?? 'No se pudo iniciar el partido');
-      return;
+    try {
+      await _controller.init(MatchConfig(
+        localName: equipoLocal,
+        visitorName: equipoVisitante,
+      ));
+      _eventos = [];
+    } catch (e) {
+      _setError(_controller.error ?? 'Error al iniciar partido');
     }
-    _eventos = [];
   }
 
   Future<void> cargarPartido(int matchId) async {

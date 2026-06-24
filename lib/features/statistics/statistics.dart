@@ -1,4 +1,15 @@
 export 'data/statistics_models.dart';
 export 'data/statistics_service.dart';
+export 'data/stats_summary_model.dart';
+export 'data/stats_repository.dart';
+export 'data/rotation_stats_model.dart';
+export 'data/rotation_stats_repository.dart';
+export 'data/athlete_ranking_service.dart';
+export 'presentation/viewmodels/stats_summary_viewmodel.dart';
+export 'presentation/viewmodels/rotation_stats_viewmodel.dart';
+export 'presentation/viewmodels/athlete_of_month_viewmodel.dart';
 export 'presentation/views/statistics_screen.dart';
 export 'presentation/views/athlete_statistics_screen.dart';
+export 'presentation/widgets/competitions_tab.dart';
+export 'presentation/widgets/athlete_of_month_card.dart';
+export 'presentation/widgets/hall_of_fame_section.dart';

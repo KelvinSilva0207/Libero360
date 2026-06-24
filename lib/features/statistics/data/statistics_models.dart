@@ -65,6 +65,58 @@ class AthleteStats {
   double get eficiencia => totalPuntos == 0 ? 0 : (puntosGanadores / totalPuntos) * 100;
 }
 
+class AthleteRankingScore {
+  final Player player;
+  final int ataques;
+  final int bloqueos;
+  final int servicios;
+  final int defensas;
+  final int recepciones;
+  final int mvpCount;
+  final double attendancePct;
+  final int errores;
+  final double score;
+
+  AthleteRankingScore({
+    required this.player,
+    this.ataques = 0,
+    this.bloqueos = 0,
+    this.servicios = 0,
+    this.defensas = 0,
+    this.recepciones = 0,
+    this.mvpCount = 0,
+    this.attendancePct = 0,
+    this.errores = 0,
+    this.score = 0,
+  });
+
+  int get totalPositive => ataques + bloqueos + servicios + defensas + recepciones;
+}
+
+class AthleteMonthlyAward {
+  int id = 0;
+  int playerId;
+  int year;
+  int month;
+  double score;
+  int rank;
+  DateTime awardedAt;
+  String? profileId;
+  String? clubId;
+
+  AthleteMonthlyAward({
+    this.id = 0,
+    required this.playerId,
+    required this.year,
+    required this.month,
+    this.score = 0,
+    this.rank = 1,
+    DateTime? awardedAt,
+    this.profileId,
+    this.clubId,
+  }) : awardedAt = awardedAt ?? DateTime.now();
+}
+
 class AttendanceStats {
   final int totalEntrenamientos;
   final double promedioGlobal;

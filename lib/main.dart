@@ -13,7 +13,8 @@ import 'features/notifications/notifications.dart';
 import 'features/partido/presentation/controllers/match_controller.dart';
 import 'features/profiles/profiles.dart';
 import 'ui/app_shell.dart';
-import 'ui/dashboard_viewmodel.dart';
+import 'features/dashboard/dashboard.dart';
+import 'features/atleta/atleta.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,6 +35,7 @@ void main() async {
         }),
         ChangeNotifierProvider(create: (_) => NotificationViewModel()),
         ChangeNotifierProvider(create: (_) => MatchController()),
+        ChangeNotifierProvider(create: (_) => AthleteViewModel()),
       ],
       child: const Libero360App(),
     ),

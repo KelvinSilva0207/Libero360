@@ -1,17 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/themes/app_colors.dart';
+import '../../../estadisticas/data/local_db/database_service.dart';
 import '../../../estadisticas/data/models/models.dart';
+import '../../../statistics/data/rotation_stats_model.dart';
 import '../../data/court_state.dart';
 import '../../data/match_config.dart';
+import '../../data/libero_config.dart';
+import '../../data/match_end_record.dart';
+import '../../data/player_action.dart';
 import '../../data/rotation_data.dart';
+import '../../data/set_end_record.dart';
+import '../../data/timeline_event.dart';
+import '../controllers/libero_manager.dart';
 import '../widgets/rotation_history_widget.dart';
 import '../controllers/match_controller.dart';
 import '../viewmodels/partido_viewmodel.dart';
 import '../widgets/court_widget.dart';
+import '../widgets/match_end_dialog.dart';
 import '../widgets/match_header.dart';
+import '../widgets/match_timeline_sheet.dart';
+import '../widgets/set_end_dialog.dart';
 import '../widgets/match_scoreboard.dart';
 import '../widgets/players_drawer.dart';
+import '../widgets/libero_sheet.dart';
+import '../widgets/player_action_anim.dart';
+import '../widgets/player_action_sheet.dart';
+import '../widgets/player_stats_card.dart';
 import '../widgets/quick_stats_widget.dart';
 import '../widgets/rotation_tab.dart';
 import '../widgets/service_history_sheet.dart';
@@ -39,17 +54,35 @@ class _MatchScreenState extends State<MatchScreen>
   int _prevVisitorPoints = 0;
   CourtPerspective _perspective = CourtPerspective.right;
 
+  final List<PlayerActionEvent> _actionEvents = [];
+  int _actionAnimCounter = 0;
+  ActionType? _lastActionType;
+  String? _lastActionPlayer;
+  int _lastActionKey = 0;
+
+  LiberoManager? _liberoManager;
+  final DateTime _matchStartTime = DateTime.now();
+  final Map<int, DateTime> _setStartTimes = {1: DateTime.now()};
+  final List<TimelineEvent> _setEndEntries = [];
+  int _eventIdCounter = 0;
+  bool _matchEndShown = false;
+  MatchEndRecord? _matchEndRecord;
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     _rotationManager = RotationManager();
+    if (widget.config?.liberoConfig.hasLiberos == true) {
+      _liberoManager = LiberoManager(config: widget.config!.liberoConfig);
+    }
   }
 
   @override
   void dispose() {
     _tabController.dispose();
     _rotationManager.dispose();
+    _liberoManager?.dispose();
     super.dispose();
   }
 
@@ -67,12 +100,248 @@ class _MatchScreenState extends State<MatchScreen>
     _prevVisitorPoints = visitorPoints;
   }
 
+  String? _findPlayerName(int? number, PartidoViewModel vm) {
+    if (number == null) return null;
+    try {
+      final p = vm.jugadores.firstWhere((p) => p.numero == number);
+      return p.displayName.isNotEmpty
+          ? p.displayName
+          : '${p.firstNames} ${p.lastNames}'.trim();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  SetEndRecord _computeSetEndInfo(int setNumber, int finalLocal, int finalVisitor, PartidoViewModel vm) {
+    // Duration
+    final setStart = _setStartTimes[setNumber] ?? DateTime.now();
+    final duration = DateTime.now().difference(setStart).inSeconds;
+
+    // Winner
+    final winnerName = finalLocal > finalVisitor ? vm.nombreLocal : vm.nombreVisitante;
+
+    // MVP: top scorer by action point values
+    String? mvpName;
+    int? mvpPts;
+    if (_actionEvents.isNotEmpty) {
+      final pointsByPlayer = <int, int>{};
+      for (final a in _actionEvents.where((a) => a.setNumber == setNumber)) {
+        pointsByPlayer.update(a.playerNumber, (v) => v + a.type.value, ifAbsent: () => a.type.value);
+      }
+      if (pointsByPlayer.isNotEmpty) {
+        final best = pointsByPlayer.entries.reduce((a, b) => a.value > b.value ? a : b);
+        mvpName = _findPlayerName(best.key, vm) ?? '#${best.key}';
+        mvpPts = best.value;
+      }
+    }
+
+    // Best service: max consecutive points
+    String? bestServer;
+    int? bestStreak;
+    final setServices = _rotationManager.serviceHistory.where((s) => s.setNumber == setNumber).toList();
+    if (setServices.isNotEmpty) {
+      final best = setServices.reduce((a, b) => a.consecutivePoints > b.consecutivePoints ? a : b);
+      bestServer = _findPlayerName(best.playerNumber, vm) ?? '#${best.playerNumber}';
+      bestStreak = best.consecutivePoints;
+    }
+
+    // Best rotation: max pointsWon - pointsLost
+    int? bestRotIdx;
+    int? bestRotDiff;
+    final setRotations = vm.setActual == setNumber
+        ? _rotationManager.history
+        : _rotationManager.allSets
+            .where((s) => s.setNumber == setNumber)
+            .expand((s) => s.history)
+            .toList();
+    if (setRotations.isNotEmpty) {
+      final diffs = <int, int>{};
+      for (final r in setRotations) {
+        diffs.update(r.rotationIndex, (v) => v + r.pointsWon - r.pointsLost,
+            ifAbsent: () => r.pointsWon - r.pointsLost);
+      }
+      if (diffs.isNotEmpty) {
+        final best = diffs.entries.reduce((a, b) => a.value > b.value ? a : b);
+        bestRotIdx = best.key + 1;
+        bestRotDiff = best.value;
+      }
+    }
+
+    return SetEndRecord(
+      setNumber: setNumber,
+      localScore: finalLocal,
+      visitorScore: finalVisitor,
+      durationSeconds: duration,
+      winnerName: winnerName,
+      mvpPlayerName: mvpName,
+      mvpPoints: mvpPts,
+      bestServerName: bestServer,
+      bestServerStreak: bestStreak,
+      bestRotationIndex: bestRotIdx,
+      bestRotationDiff: bestRotDiff,
+    );
+  }
+
+  Future<void> _persistRotationStats(int matchId) async {
+    final records = <RotationStatsRecord>[];
+    for (final setState in _rotationManager.allSets) {
+      for (final snap in setState.history) {
+        records.add(RotationStatsRecord(
+          matchId: matchId,
+          setNumber: setState.setNumber,
+          rotationIndex: snap.rotationIndex % 6,
+          pointsWon: snap.pointsWon,
+          pointsLost: snap.pointsLost,
+          serverPlayerNumber: snap.serverNumber ?? 0,
+          playerSlots: snap.slots.where((s) => s != null).cast<int>().toList(),
+        ));
+      }
+    }
+    if (records.isNotEmpty) {
+      await DatabaseService.instance.saveRotationStatsRecords(records);
+    }
+  }
+
+  MatchEndRecord _computeMatchEndInfo(PartidoViewModel vm) {
+    final allActions = _actionEvents;
+    // MVP across entire match
+    String? mvpName;
+    int? mvpPts;
+    if (allActions.isNotEmpty) {
+      final pointsByPlayer = <int, int>{};
+      for (final a in allActions) {
+        pointsByPlayer.update(a.playerNumber, (v) => v + a.type.value, ifAbsent: () => a.type.value);
+      }
+      final best = pointsByPlayer.entries.reduce((a, b) => a.value > b.value ? a : b);
+      mvpName = _findPlayerName(best.key, vm) ?? '#${best.key}';
+      mvpPts = best.value;
+    }
+
+    // Best service across entire match
+    String? bestServer;
+    int? bestStreak;
+    if (_rotationManager.serviceHistory.isNotEmpty) {
+      final best = _rotationManager.serviceHistory
+          .reduce((a, b) => a.consecutivePoints > b.consecutivePoints ? a : b);
+      bestServer = _findPlayerName(best.playerNumber, vm) ?? '#${best.playerNumber}';
+      bestStreak = best.consecutivePoints;
+    }
+
+    // Best rotation across entire match
+    int? bestRotIdx;
+    int? bestRotDiff;
+    {
+      final diffs = <int, int>{};
+      for (final setState in _rotationManager.allSets) {
+        for (final r in setState.history) {
+          diffs.update(
+            r.rotationIndex,
+            (v) => v + r.pointsWon - r.pointsLost,
+            ifAbsent: () => r.pointsWon - r.pointsLost,
+          );
+        }
+      }
+      if (diffs.isNotEmpty) {
+        final best = diffs.entries.reduce((a, b) => a.value > b.value ? a : b);
+        bestRotIdx = best.key + 1;
+        bestRotDiff = best.value;
+      }
+    }
+
+    return MatchEndRecord(
+      matchId: vm.match?.id,
+      localName: vm.nombreLocal,
+      visitorName: vm.nombreVisitante,
+      localSets: vm.setsLocal,
+      visitorSets: vm.setsVisitante,
+      durationSeconds: vm.duracionSegundos,
+      winnerName: vm.setsLocal > vm.setsVisitante ? vm.nombreLocal : vm.nombreVisitante,
+      mvpPlayerName: mvpName,
+      mvpPoints: mvpPts,
+      bestServerName: bestServer,
+      bestServerStreak: bestStreak,
+      bestRotationIndex: bestRotIdx,
+      bestRotationDiff: bestRotDiff,
+      startTime: _matchStartTime,
+      endTime: DateTime.now(),
+    );
+  }
+
+  Future<void> _showMatchEndDialog(PartidoViewModel vm) async {
+    final result = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => MatchEndDialog(record: _matchEndRecord!),
+    );
+
+    if (!mounted) return;
+
+    _liberoManager?.logs.add(LiberoLogEntry(
+      message: 'MATCH: finalizado — ${_matchEndRecord!.winnerName} (${_matchEndRecord!.localSets}-${_matchEndRecord!.visitorSets})',
+      level: LogLevel.success,
+    ));
+
+    switch (result) {
+      case 'stats':
+        // TODO: navigate to match stats screen
+        break;
+      case 'finalize':
+        Navigator.of(context).pop();
+        break;
+    }
+  }
+
   void _checkSetChange(PartidoViewModel vm) {
     final currentSet = vm.setActual;
-    if (currentSet != _previousSet && currentSet > 1) {
+    if (currentSet != _previousSet) {
+      if (currentSet > 1) {
+        final endedSet = _previousSet;
+        // Capture final scores from setScores
+        final scoreEntry = vm.setScores.length >= endedSet ? vm.setScores[endedSet - 1] : null;
+        final finalLocal = scoreEntry?.key ?? 0;
+        final finalVisitor = scoreEntry?.value ?? 0;
+
+        _setEndEntries.add(TimelineEvent(
+          id: _nextId(),
+          time: DateTime.now(),
+          type: TimelineEvent.typeSetEnd,
+          set: endedSet,
+          rotation: _rotationManager.rotationIndex,
+          title: 'Fin SET $endedSet',
+          metadata: {'score': '$finalLocal - $finalVisitor'},
+        ));
+
+        // Compute stats and show SetEndDialog before SetStartDialog
+        final info = _computeSetEndInfo(endedSet, finalLocal, finalVisitor, vm);
+        _showSetEndDialog(info, vm);
+      }
       _previousSet = currentSet;
-      _showSetStartDialog(currentSet, vm);
     }
+  }
+
+  Future<void> _showSetEndDialog(SetEndRecord info, PartidoViewModel vm) async {
+    final shouldContinue = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => SetEndDialog(record: info),
+    );
+
+    if (!mounted) return;
+
+    // Log
+    _liberoManager?.logs.add(LiberoLogEntry(
+      message: 'SET: finalizado — SET ${info.setNumber} (${info.localScore}-${info.visitorScore})',
+      level: LogLevel.success,
+    ));
+    _liberoManager?.logs.add(LiberoLogEntry(
+      message: 'SET: resumen generado',
+      level: LogLevel.info,
+    ));
+
+    if (shouldContinue == true) {
+      _showSetStartDialog(info.setNumber + 1, vm);
+    }
+    // If false, "Ver resumen" — close dialog but stay on screen
   }
 
   Future<void> _showSetStartDialog(int setNumber, PartidoViewModel vm) async {
@@ -94,22 +363,175 @@ class _MatchScreenState extends State<MatchScreen>
       final slots = result['slots'] as List<int?>;
       _rotationManager.setSlots(slots);
     }
+    _setStartTimes[setNumber] = DateTime.now();
   }
 
   void _onRotate() {
     _rotationManager.rotate();
+    _checkLiberoAutoZone();
   }
 
-  void _onZoneTap(int zoneNumber) {
-    showDialog(
+  void _checkLiberoAutoZone() {
+    if (_liberoManager == null) return;
+    final vm = context.read<PartidoViewModel>();
+    _liberoManager!.checkAutoZone(
+      currentSlots: _rotationManager.slots,
+      setNumber: vm.setActual,
+      rotationIndex: _rotationManager.rotationIndex,
+      onSuggested: (outNum, inNum) {
+        // Find player names
+        String outName = '#$outNum';
+        String inName = '#$inNum';
+        try {
+          final outP = vm.jugadores.firstWhere((p) => p.numero == outNum);
+          outName = outP.displayName.isNotEmpty
+              ? outP.displayName
+              : '${outP.firstNames} ${outP.lastNames}'.trim();
+        } catch (_) {}
+        try {
+          final inP = vm.jugadores.firstWhere((p) => p.numero == inNum);
+          inName = inP.displayName.isNotEmpty
+              ? inP.displayName
+              : '${inP.firstNames} ${inP.lastNames}'.trim();
+        } catch (_) {}
+
+        _liberoManager?.performSwap(
+          playerOutNumber: outNum,
+          playerOutName: outName,
+          playerInNumber: inNum,
+          playerInName: inName,
+          setNumber: vm.setActual,
+          rotationIndex: _rotationManager.rotationIndex,
+          isManual: false,
+        );
+      },
+    );
+  }
+
+  Player? _playerForZone(int zoneNumber, PartidoViewModel vm) {
+    final num = _rotationManager.courtState.zone(zoneNumber).athleteNumber;
+    if (num == null) return null;
+    try {
+      return vm.jugadores.firstWhere((p) => p.numero == num);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  void _showPlayerActions(Player player, PartidoViewModel vm) {
+    final name = player.displayName.isNotEmpty
+        ? player.displayName
+        : '${player.firstNames} ${player.lastNames}'.trim();
+
+    // If player is a libero, show swap sheet
+    if (_liberoManager?.config.isLibero(player) == true) {
+      _showLiberoSwap(player, vm);
+      return;
+    }
+
+    showModalBottomSheet(
       context: context,
-      builder: (ctx) => _PlayerNumberPicker(
-        onSelected: (number) {
-          _rotationManager.assignPlayerByZone(zoneNumber, number);
-          Navigator.of(ctx).pop();
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => PlayerActionSheet(
+        player: player,
+        onAction: (action) {
+          _actionEvents.add(PlayerActionEvent(
+            playerNumber: player.numero ?? 0,
+            playerName: name,
+            type: action,
+            setNumber: vm.setActual,
+            rotationIndex: _rotationManager.rotationIndex,
+          ));
+          _lastActionType = action;
+          _lastActionPlayer = name;
+          _lastActionKey = ++_actionAnimCounter;
         },
       ),
     );
+  }
+
+  void _showLiberoSwap(Player libero, PartidoViewModel vm) {
+    final courtPlayers = _courtPlayers(vm);
+    final libName = libero.displayName.isNotEmpty
+        ? libero.displayName
+        : '${libero.firstNames} ${libero.lastNames}'.trim();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => LiberoSheet(
+        libero: libero,
+        courtPlayers: courtPlayers,
+        onSwapIn: (playerOut) {
+          _liberoManager?.performSwap(
+            playerOutNumber: playerOut.numero ?? 0,
+            playerOutName: playerOut.displayName.isNotEmpty
+                ? playerOut.displayName
+                : '${playerOut.firstNames} ${playerOut.lastNames}'.trim(),
+            playerInNumber: libero.numero ?? 0,
+            playerInName: libName,
+            setNumber: vm.setActual,
+            rotationIndex: _rotationManager.rotationIndex,
+            isManual: true,
+          );
+        },
+        onCancel: () {
+          _liberoManager?.cancelSwap(
+            setNumber: vm.setActual,
+            rotationIndex: _rotationManager.rotationIndex,
+          );
+        },
+      ),
+    );
+  }
+
+  void _onZoneTap(int zoneNumber, PartidoViewModel vm) {
+    final player = _playerForZone(zoneNumber, vm);
+    if (player != null) {
+      _showPlayerActions(player, vm);
+    } else {
+      showDialog(
+        context: context,
+        builder: (ctx) => _PlayerNumberPicker(
+          onSelected: (number) {
+            _rotationManager.assignPlayerByZone(zoneNumber, number);
+            Navigator.of(ctx).pop();
+          },
+        ),
+      );
+    }
+  }
+
+  void _showPlayerStats(Player player) {
+    final playerActions = _actionEvents
+        .where((a) => a.playerNumber == player.numero)
+        .toList();
+    final allPlayers = context.read<PartidoViewModel>().jugadores;
+    final rankings = _computeRankings(allPlayers);
+
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: PlayerStatsCard(
+          player: player,
+          actions: playerActions,
+          rank: rankings.indexOf(player.numero ?? 0) + 1,
+        ),
+      ),
+    );
+  }
+
+  List<int> _computeRankings(List<Player> allPlayers) {
+    final scores = <int, int>{};
+    for (final action in _actionEvents) {
+      scores[action.playerNumber] =
+          (scores[action.playerNumber] ?? 0) + action.type.value;
+    }
+    final sorted = scores.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    return sorted.map((e) => e.key).toList();
   }
 
   void _togglePerspective() {
@@ -201,12 +623,27 @@ class _MatchScreenState extends State<MatchScreen>
           _checkSetChange(vm);
           _trackPoints(vm);
 
+          if (vm.isFinalizado && !_matchEndShown && vm.match != null) {
+            _matchEndShown = true;
+            _matchEndRecord = _computeMatchEndInfo(vm);
+            _persistRotationStats(vm.match!.id);
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) _showMatchEndDialog(vm);
+            });
+          }
+
           return Stack(
             children: [
               ListenableBuilder(
-                listenable: _rotationManager,
+                listenable: Listenable.merge([
+                  _rotationManager,
+                  if (_liberoManager != null) _liberoManager!,
+                ]),
                 builder: (context, _) {
-                  final courtState = _rotationManager.courtState
+                  final courtState = (_liberoManager != null
+                          ? _rotationManager.courtStateWithLiberos(
+                              (n) => _liberoManager!.isLibero(n))
+                          : _rotationManager.courtState)
                       .withPerspective(_perspective);
 
                   return Scaffold(
@@ -290,11 +727,141 @@ class _MatchScreenState extends State<MatchScreen>
                   onDismiss: vm.dismissTimeoutResult,
                   state: vm.timeoutState,
                 ),
+              if (_lastActionType != null)
+                Positioned(
+                  top: MediaQuery.of(context).size.height * 0.35,
+                  left: 0,
+                  right: 0,
+                  child: IgnorePointer(
+                    child: PlayerActionAnim(
+                      key: ValueKey('action_$_lastActionKey'),
+                      action: _lastActionType!,
+                      playerName: _lastActionPlayer ?? '',
+                      child: const SizedBox.shrink(),
+                    ),
+                  ),
+                ),
             ],
           );
         },
       ),
     );
+  }
+
+  String _nextId() => 'evt_${DateTime.now().microsecondsSinceEpoch}_${++_eventIdCounter}';
+
+  List<TimelineEvent> _buildTimelineEvents(PartidoViewModel vm) {
+    final list = <TimelineEvent>[];
+
+    list.add(TimelineEvent(
+      id: _nextId(),
+      time: _matchStartTime,
+      type: TimelineEvent.typeMatchStarted,
+      set: 1,
+      rotation: 0,
+      title: 'Partido iniciado',
+      metadata: {'vs': '${vm.nombreLocal} vs ${vm.nombreVisitante}'},
+    ));
+
+    for (final s in _rotationManager.serviceHistory) {
+      list.add(TimelineEvent(
+        id: _nextId(),
+        time: s.startTime,
+        type: TimelineEvent.typeService,
+        set: s.setNumber,
+        rotation: _rotationManager.rotationIndex,
+        playerId: s.playerNumber.toString(),
+        title: '${s.consecutivePoints} puntos',
+        metadata: {
+          'playerNumber': '#${s.playerNumber}',
+          'streak': '${s.consecutivePoints} puntos seguidos',
+        },
+      ));
+    }
+
+    for (final a in _actionEvents) {
+      list.add(TimelineEvent(
+        id: _nextId(),
+        time: a.timestamp,
+        type: TimelineEvent.typePlayerAction,
+        set: a.setNumber,
+        rotation: a.rotationIndex,
+        playerId: a.playerNumber.toString(),
+        playerName: a.playerName,
+        title: '${a.type.icon} ${a.type.label}',
+        metadata: {
+          'value': a.type.value > 0 ? '+${a.type.value}' : '${a.type.value}',
+        },
+      ));
+    }
+
+    for (final setState in _rotationManager.allSets) {
+      for (final snap in setState.history) {
+        list.add(TimelineEvent(
+          id: _nextId(),
+          time: snap.timestamp,
+          type: TimelineEvent.typeRotation,
+          set: setState.setNumber,
+          rotation: snap.rotationIndex,
+          title: 'Rotación R${snap.rotationIndex + 1}',
+          metadata: snap.serverNumber != null
+              ? {'serving': '#${snap.serverNumber} al servicio'}
+              : null,
+        ));
+      }
+    }
+
+    for (final sub in vm.substitutionHistory) {
+      list.add(TimelineEvent(
+        id: _nextId(),
+        time: sub.timestamp,
+        type: TimelineEvent.typeSubstitution,
+        set: sub.setNumber,
+        rotation: sub.rotationIndex,
+        title: 'Sustitución',
+        metadata: {
+          'out': '${sub.playerOutName} (#${sub.playerOutNumber}) ↓',
+          'in': '${sub.playerInName} (#${sub.playerInNumber}) ↑',
+        },
+      ));
+    }
+
+    if (_liberoManager != null) {
+      for (final swap in _liberoManager!.history) {
+        list.add(TimelineEvent(
+          id: _nextId(),
+          time: swap.timestamp,
+          type: TimelineEvent.typeLiberoSwap,
+          set: swap.setNumber,
+          rotation: swap.rotationIndex,
+          title: 'Cambio Líbero',
+          playerName: swap.liberoName,
+          playerId: swap.liberoPlayerNumber.toString(),
+          metadata: {
+            'swap': swap.associatedPlayerName != null
+                ? '${swap.liberoName} ↔ ${swap.associatedPlayerName}'
+                : '${swap.liberoName} (#${swap.liberoPlayerNumber})',
+          },
+        ));
+      }
+    }
+
+    for (final t in vm.timeoutHistory) {
+      list.add(TimelineEvent(
+        id: _nextId(),
+        time: t.inicio,
+        type: TimelineEvent.typeTimeout,
+        set: t.setNumero,
+        rotation: 0,
+        title: 'Tiempo muerto',
+        metadata: {'team': t.esLocal ? vm.nombreLocal : vm.nombreVisitante},
+      ));
+    }
+
+    list.addAll(_setEndEntries);
+
+    list.sort((a, b) => a.time.compareTo(b.time));
+    return list;
   }
 
   Widget _buildJuegoTab(PartidoViewModel vm, CourtState courtState) {
@@ -317,7 +884,11 @@ class _MatchScreenState extends State<MatchScreen>
           _buildTimeoutRow(vm),
           CourtWidget(
             state: courtState,
-            onZoneTap: _onZoneTap,
+            onZoneTap: (z) => _onZoneTap(z, vm),
+            onZoneLongPress: (z) {
+              final player = _playerForZone(z, vm);
+              if (player != null) _showPlayerStats(player);
+            },
             onTogglePerspective: _togglePerspective,
           ),
           _buildRotationInfoRow(context, vm),
@@ -329,6 +900,7 @@ class _MatchScreenState extends State<MatchScreen>
             rotationCount: _rotationManager.rotationIndex,
           ),
           _buildServiceHistoryButton(context, vm),
+          _buildTimelineButton(context, vm),
           QuickStatsWidget(),
           const SizedBox(height: 24),
         ],
@@ -484,6 +1056,47 @@ class _MatchScreenState extends State<MatchScreen>
     );
   }
 
+  Widget _buildTimelineButton(BuildContext context, PartidoViewModel vm) {
+    return GestureDetector(
+      onTap: () => _openTimelineSheet(vm),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: AppColors.accent.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.accent.withValues(alpha: 0.25)),
+        ),
+        child: const Row(
+          children: [
+            Icon(Icons.timeline, size: 14, color: AppColors.accent),
+            SizedBox(width: 8),
+            Text(
+              'Crónica completa',
+              style: TextStyle(
+                color: AppColors.accent,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            Spacer(),
+            Icon(Icons.chevron_right, size: 16, color: AppColors.accent),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _openTimelineSheet(PartidoViewModel vm) {
+    final events = _buildTimelineEvents(vm);
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => MatchTimelineSheet(events: events),
+    );
+  }
+
   Widget _buildServiceHistoryButton(BuildContext context, PartidoViewModel vm) {
     final count = _rotationManager.serviceHistory.length;
     return GestureDetector(
@@ -572,7 +1185,7 @@ class _MatchScreenState extends State<MatchScreen>
       currentSet: vm.setActual,
       onRotate: _onRotate,
       onSlotTap: (slot) =>
-          _onZoneTap(RotationManager.visualToZone[slot]),
+          _onZoneTap(RotationManager.visualToZone[slot], vm),
     );
   }
 

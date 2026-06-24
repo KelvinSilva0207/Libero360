@@ -1,4 +1,5 @@
 import '../../estadisticas/data/models/models.dart';
+import 'libero_config.dart';
 
 enum MatchFormat { bestOf3, bestOf5 }
 
@@ -51,6 +52,7 @@ class MatchConfig {
   List<bool> serviceOrderPerSet;
   int timeoutsPerSet;
   int timeoutDurationSeconds;
+  LiberoConfig liberoConfig;
 
   MatchConfig({
     this.localName = 'Local',
@@ -65,7 +67,9 @@ class MatchConfig {
     List<bool>? serviceOrderPerSet,
     int? timeoutsPerSet,
     int? timeoutDurationSeconds,
-  })  : serviceOrderPerSet =
+    LiberoConfig? liberoConfig,
+  })  : liberoConfig = liberoConfig ?? LiberoConfig(),
+        serviceOrderPerSet =
             serviceOrderPerSet ?? defaultServiceOrder(setsTotales),
         timeoutsPerSet = timeoutsPerSet ?? Categoria.libre.timeoutsPerSet,
         timeoutDurationSeconds =

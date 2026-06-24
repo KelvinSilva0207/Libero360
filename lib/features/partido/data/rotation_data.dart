@@ -25,17 +25,22 @@ class RotationManager extends ChangeNotifier {
   static const visualToZone = [4, 3, 2, 5, 6, 1];
   static const zoneToVisual = [null, 5, 2, 1, 0, 3, 4];
 
-  CourtState get courtState {
+  CourtState courtStateWithLiberos(bool Function(int) isLibero) {
     final zones = List.generate(6, (i) {
       final zoneNum = visualToZone[i];
       final athleteNum = currentSet.currentSlots[i];
       return CourtZone(
         zoneNumber: zoneNum,
         athleteNumber: athleteNum,
+        isLibero: athleteNum != null && isLibero(athleteNum),
         isServing: zoneNum == 1,
       );
     });
     return CourtState(zones: zones);
+  }
+
+  CourtState get courtState {
+    return courtStateWithLiberos((_) => false);
   }
 
   void assignPlayerByZone(int zoneNumber, int playerNumber) {

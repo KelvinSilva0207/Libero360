@@ -6,12 +6,14 @@ import 'court_painter.dart';
 class CourtWidget extends StatelessWidget {
   final CourtState state;
   final ValueChanged<int>? onZoneTap;
+  final ValueChanged<int>? onZoneLongPress;
   final VoidCallback? onTogglePerspective;
 
   const CourtWidget({
     super.key,
     required this.state,
     this.onZoneTap,
+    this.onZoneLongPress,
     this.onTogglePerspective,
   });
 
@@ -134,10 +136,13 @@ class CourtWidget extends StatelessWidget {
       top: pos.top,
       width: pos.width,
       height: pos.height,
-      child: Material(
+        child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: () => onZoneTap?.call(zone.zoneNumber),
+          onLongPress: zone.hasAthlete
+              ? () => onZoneLongPress?.call(zone.zoneNumber)
+              : null,
           borderRadius: BorderRadius.circular(10),
           splashColor: Colors.white.withValues(alpha: 0.06),
           highlightColor: Colors.white.withValues(alpha: 0.03),

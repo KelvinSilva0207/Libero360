@@ -4,7 +4,8 @@ import 'package:provider/provider.dart';
 import '../core/themes/app_colors.dart';
 import '../core/widgets_globales/route_transitions.dart';
 import '../features/auth/presentation/viewmodels/auth_viewmodel.dart';
-import '../features/asistencia/asistencia.dart';
+import '../features/atleta/atleta.dart';
+import '../features/asistencia/asistencia.dart' show AttendanceScreen;
 import '../features/partido/presentation/views/match_start_dialog.dart';
 import '../features/partido/presentation/views/coach_mode_screen.dart';
 import '../features/statistics/presentation/views/statistics_screen.dart';
@@ -13,8 +14,7 @@ import '../features/teams/teams.dart';
 import '../features/notifications/notifications.dart';
 import '../features/cancha/presentation/views/court_screen.dart';
 import '../features/profiles/profiles.dart';
-import 'dashboard_screen.dart';
-import 'dashboard_viewmodel.dart';
+import '../features/dashboard/dashboard.dart';
 
 enum NavItem { dashboard, athletes, matches, stats, attendance, settings }
 

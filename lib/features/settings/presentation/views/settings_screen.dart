@@ -10,6 +10,7 @@ import 'account_section.dart';
 import 'appearance_section.dart';
 import 'club_section.dart';
 import 'database_section.dart';
+import 'staff_section.dart';
 import 'notifications_section.dart';
 import 'profiles_section.dart';
 import 'sync_section.dart';
@@ -69,6 +70,11 @@ class _SettingsBody extends StatelessWidget {
                           context, Icons.groups_2_rounded, 'Club'),
                       const SizedBox(height: 8),
                       const ClubSection(),
+                      const SizedBox(height: 8),
+                      _sectionHeader(context,
+                          Icons.groups_2_rounded, 'Staff Técnico'),
+                      const SizedBox(height: 8),
+                      const StaffSection(),
                       const SizedBox(height: 8),
                       _sectionHeader(context,
                           Icons.swap_horiz_rounded, 'Perfiles'),

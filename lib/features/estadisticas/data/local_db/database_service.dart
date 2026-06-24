@@ -9,6 +9,7 @@ import 'package:intl/intl.dart';
 import '../../../profiles/data/profile_model.dart';
 import '../../../statistics/data/rotation_stats_model.dart';
 import '../../../statistics/data/statistics_models.dart';
+import '../../../staff_tecnico/data/staff_tecnico_models.dart';
 
 class DatabaseService extends AbstractDataService {
   static final DatabaseService _instance = DatabaseService._internal();
@@ -31,6 +32,9 @@ class DatabaseService extends AbstractDataService {
   final _profileMetaStore = intMapStoreFactory.store('profiles_meta');
   final _rotationStatsStore = intMapStoreFactory.store('rotation_stats');
   final _monthlyAwardStore = intMapStoreFactory.store('monthly_awards');
+  final _staffStore = intMapStoreFactory.store('staff_members');
+  final _staffInvitationStore = intMapStoreFactory.store('staff_invitations');
+  final _staffActivityStore = intMapStoreFactory.store('staff_activities');
 
   Future<void> initialize() async {
     if (_isInitialized) return;
@@ -553,6 +557,178 @@ class DatabaseService extends AbstractDataService {
     score: (map['score'] as num?)?.toDouble() ?? 0,
     rank: map['rank'] as int? ?? 1,
     awardedAt: DateTime.fromMillisecondsSinceEpoch(map['awardedAt'] as int? ?? DateTime.now().millisecondsSinceEpoch),
+    profileId: map['profileId'] as String?,
+    clubId: map['clubId'] as String?,
+  );
+
+  // ==================== STAFF ====================
+
+  Future<List<StaffMember>> getAllStaffMembers() async {
+    final snapshots = await _staffStore.find(
+      _database,
+      finder: Finder(sortOrders: [SortOrder('createdAt', false)]),
+    );
+    return snapshots.map((e) => _staffFromMap(e.value)..id = e.key).toList();
+  }
+
+  Future<int> saveStaffMember(StaffMember member) async {
+    final map = _staffToMap(member);
+    if (member.id == 0) {
+      return await _staffStore.add(_database, map);
+    } else {
+      await _staffStore.record(member.id).put(_database, map);
+      return member.id;
+    }
+  }
+
+  Future<bool> deleteStaffMember(int id) async {
+    await _staffStore.record(id).delete(_database);
+    return true;
+  }
+
+  Future<int> countActiveStaff() async {
+    final all = await getAllStaffMembers();
+    return all.where((m) => m.isActive).length;
+  }
+
+  Future<List<StaffMember>> getStaffByProfile(String profileId) async {
+    final snapshots = await _staffStore.find(
+      _database,
+      finder: Finder(
+        filter: Filter.equals('profileId', profileId),
+        sortOrders: [SortOrder('createdAt', false)],
+      ),
+    );
+    return snapshots.map((e) => _staffFromMap(e.value)..id = e.key).toList();
+  }
+
+  Future<int> countStaffByProfile(String profileId) async {
+    final all = await getStaffByProfile(profileId);
+    return all.where((m) => m.isActive).length;
+  }
+
+  Future<List<StaffInvitation>> getAllStaffInvitations() async {
+    final snapshots = await _staffInvitationStore.find(
+      _database,
+      finder: Finder(sortOrders: [SortOrder('createdAt', false)]),
+    );
+    return snapshots.map((e) => _invitationFromMap(e.value)..id = e.key).toList();
+  }
+
+  Future<int> saveStaffInvitation(StaffInvitation invitation) async {
+    final map = _invitationToMap(invitation);
+    if (invitation.id == 0) {
+      return await _staffInvitationStore.add(_database, map);
+    } else {
+      await _staffInvitationStore.record(invitation.id).put(_database, map);
+      return invitation.id;
+    }
+  }
+
+  Future<bool> deleteStaffInvitation(int id) async {
+    await _staffInvitationStore.record(id).delete(_database);
+    return true;
+  }
+
+  Future<List<StaffInvitation>> getInvitationsByProfile(String profileId) async {
+    final snapshots = await _staffInvitationStore.find(
+      _database,
+      finder: Finder(
+        filter: Filter.equals('profileId', profileId),
+        sortOrders: [SortOrder('createdAt', false)],
+      ),
+    );
+    return snapshots.map((e) => _invitationFromMap(e.value)..id = e.key).toList();
+  }
+
+  Future<List<StaffActivity>> getAllStaffActivity({int limit = 20}) async {
+    final snapshots = await _staffActivityStore.find(
+      _database,
+      finder: Finder(sortOrders: [SortOrder('createdAt', false)], limit: limit),
+    );
+    return snapshots.map((e) => _activityFromMap(e.value)..id = e.key).toList();
+  }
+
+  Future<int> saveStaffActivity(StaffActivity activity) async {
+    final map = _activityToMap(activity);
+    if (activity.id == 0) {
+      return await _staffActivityStore.add(_database, map);
+    } else {
+      await _staffActivityStore.record(activity.id).put(_database, map);
+      return activity.id;
+    }
+  }
+
+  Future<List<StaffActivity>> getActivityByProfile(String profileId, {int limit = 20}) async {
+    final snapshots = await _staffActivityStore.find(
+      _database,
+      finder: Finder(
+        filter: Filter.equals('profileId', profileId),
+        sortOrders: [SortOrder('createdAt', false)],
+        limit: limit,
+      ),
+    );
+    return snapshots.map((e) => _activityFromMap(e.value)..id = e.key).toList();
+  }
+
+  Map<String, dynamic> _staffToMap(StaffMember m) => {
+    'nombre': m.nombre,
+    'correo': m.correo,
+    'fotoUrl': m.fotoUrl ?? '',
+    'role': m.role.index,
+    'status': m.status.index,
+    'profileId': m.profileId,
+    'clubId': m.clubId,
+    'createdAt': m.createdAt.millisecondsSinceEpoch,
+    'createdBy': m.createdBy ?? '',
+  };
+
+  StaffMember _staffFromMap(Map<String, dynamic> map) => StaffMember(
+    nombre: map['nombre'] as String? ?? '',
+    correo: map['correo'] as String? ?? '',
+    fotoUrl: (map['fotoUrl'] as String?)?.isNotEmpty == true ? map['fotoUrl'] as String? : null,
+    role: StaffRole.values[map['role'] as int? ?? 1],
+    status: StaffStatus.values[map['status'] as int? ?? 0],
+    profileId: map['profileId'] as String?,
+    clubId: map['clubId'] as String?,
+    createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt'] as int? ?? DateTime.now().millisecondsSinceEpoch),
+    createdBy: (map['createdBy'] as String?)?.isNotEmpty == true ? map['createdBy'] as String? : null,
+  );
+
+  Map<String, dynamic> _invitationToMap(StaffInvitation i) => {
+    'email': i.email,
+    'role': i.role.index,
+    'status': i.status,
+    'createdAt': i.createdAt.millisecondsSinceEpoch,
+    'createdBy': i.createdBy ?? '',
+    'profileId': i.profileId,
+    'clubId': i.clubId,
+  };
+
+  StaffInvitation _invitationFromMap(Map<String, dynamic> map) => StaffInvitation(
+    email: map['email'] as String? ?? '',
+    role: StaffRole.values[map['role'] as int? ?? 1],
+    status: map['status'] as String? ?? 'pending',
+    createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt'] as int? ?? DateTime.now().millisecondsSinceEpoch),
+    createdBy: (map['createdBy'] as String?)?.isNotEmpty == true ? map['createdBy'] as String? : null,
+    profileId: map['profileId'] as String?,
+    clubId: map['clubId'] as String?,
+  );
+
+  Map<String, dynamic> _activityToMap(StaffActivity a) => {
+    'type': a.type.index,
+    'message': a.message,
+    'createdBy': a.createdBy,
+    'createdAt': a.createdAt.millisecondsSinceEpoch,
+    'profileId': a.profileId,
+    'clubId': a.clubId,
+  };
+
+  StaffActivity _activityFromMap(Map<String, dynamic> map) => StaffActivity(
+    type: ActivityType.values[map['type'] as int? ?? 0],
+    message: map['message'] as String? ?? '',
+    createdBy: map['createdBy'] as String? ?? '',
+    createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt'] as int? ?? DateTime.now().millisecondsSinceEpoch),
     profileId: map['profileId'] as String?,
     clubId: map['clubId'] as String?,
   );

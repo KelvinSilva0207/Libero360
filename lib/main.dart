@@ -15,6 +15,7 @@ import 'features/profiles/profiles.dart';
 import 'ui/app_shell.dart';
 import 'features/dashboard/dashboard.dart';
 import 'features/atleta/atleta.dart';
+import 'features/staff_tecnico/staff_tecnico.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,6 +37,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => NotificationViewModel()),
         ChangeNotifierProvider(create: (_) => MatchController()),
         ChangeNotifierProvider(create: (_) => AthleteViewModel()),
+        ChangeNotifierProvider(create: (_) => StaffTecnicoViewModel()),
       ],
       child: const Libero360App(),
     ),

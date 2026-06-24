@@ -29,6 +29,7 @@ class AppShell extends StatefulWidget {
 class _AppShellState extends State<AppShell> {
   int _selectedIndex = 0;
   final List<Widget> _screens = [];
+  bool _checkedInvitations = false;
 
   @override
   void initState() {
@@ -54,6 +55,10 @@ class _AppShellState extends State<AppShell> {
     final notifVm = context.watch<NotificationViewModel>();
     if (clubVm.currentClub != null) {
       notifVm.init(clubVm.currentClub!.id);
+    }
+    if (user != null && !_checkedInvitations) {
+      _checkedInvitations = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _checkInvitations(context));
     }
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -390,6 +395,76 @@ class _AppShellState extends State<AppShell> {
       if (v == 'team') setState(() => _selectedIndex = 1);
       if (v == 'settings') setState(() => _selectedIndex = 5);
     });
+  }
+
+  Future<void> _checkInvitations(BuildContext context) async {
+    final clubVm = context.read<ClubViewModel>();
+    final pending = await clubVm.checkPendingInvitations();
+    if (pending.isEmpty || !context.mounted) return;
+    _showInvitationDialog(context, clubVm, pending.first);
+  }
+
+  void _showInvitationDialog(
+      BuildContext context, ClubViewModel clubVm, ClubInvitation inv) {
+    final colors = Theme.of(context).colorScheme;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: colors.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Icon(Icons.mail_rounded, color: AppColors.accent, size: 22),
+            const SizedBox(width: 10),
+            Text('Invitación', style: TextStyle(color: colors.onSurface)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Club: ${inv.clubName}',
+                style: TextStyle(color: colors.onSurface, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 4),
+            Text('${inv.inviterDisplayName} te ha invitado a unirte.',
+                style: TextStyle(color: colors.onSurface.withValues(alpha: 0.7))),
+            const SizedBox(height: 4),
+            Text('Rol: ${_roleLabel(inv.role)}',
+                style: TextStyle(color: AppColors.accent, fontSize: 13)),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              clubVm.rejectInvitation(inv);
+            },
+            child: Text('Rechazar',
+                style: TextStyle(color: colors.onSurface.withValues(alpha: 0.6))),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              clubVm.acceptInvitation(inv);
+            },
+            style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
+            child: const Text('Aceptar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _roleLabel(ClubRole role) {
+    switch (role) {
+      case ClubRole.owner:
+        return 'Propietario';
+      case ClubRole.entrenador:
+        return 'Entrenador';
+      case ClubRole.asistente:
+        return 'Asistente';
+    }
   }
 }
 

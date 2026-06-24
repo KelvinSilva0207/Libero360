@@ -6,6 +6,7 @@ import '../../../../core/widgets_globales/route_transitions.dart';
 import '../../../auth/presentation/viewmodels/auth_viewmodel.dart';
 import '../../../profiles/presentation/viewmodels/profile_viewmodel.dart';
 import '../../../teams/presentation/viewmodels/club_viewmodel.dart';
+import '../../../teams/data/team_models.dart' show ClubRole;
 import '../../../settings/presentation/widgets/settings_drawer.dart';
 import '../../../asistencia/asistencia.dart';
 import '../../../estadisticas/presentation/views/play_by_play_screen.dart';
@@ -82,6 +83,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             teamInfo: vm.data!.teamInfo,
                             isDark: isDark,
                             onSettings: () => _scaffoldKey.currentState?.openEndDrawer(),
+                            roleLabel: _roleLabel(context.read<ClubViewModel>().myRole),
                           ),
                         )),
                         SliverToBoxAdapter(child: AnimatedCard(
@@ -162,6 +164,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
       ),
     );
+  }
+
+  String? _roleLabel(ClubRole? role) {
+    return switch (role) {
+      ClubRole.owner => 'Administrador',
+      ClubRole.entrenador => 'Entrenador',
+      ClubRole.asistente => 'Asistente',
+      null => null,
+    };
   }
 
   Widget _errorState(DashboardViewModel vm, bool isDark) {

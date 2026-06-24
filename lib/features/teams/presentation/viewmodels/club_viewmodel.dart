@@ -49,6 +49,12 @@ class ClubViewModel extends ChangeNotifier {
   List<Club> get myClubs => _myClubs;
   List<ClubMember> get members => _members;
   List<ClubInvitation> get invitations => _invitations;
+  List<ClubInvitation> get pendingInvitations =>
+      _invitations.where((i) => i.status == ClubInvitationStatus.pending).toList();
+  List<ClubInvitation> get acceptedInvitations =>
+      _invitations.where((i) => i.status == ClubInvitationStatus.accepted).toList();
+  List<ClubInvitation> get rejectedInvitations =>
+      _invitations.where((i) => i.status == ClubInvitationStatus.rejected).toList();
   List<Player> get athletes => _athletes;
   List<Match> get clubMatches => _clubMatches;
   List<StatEvent> get statEvents => _statEvents;
@@ -195,21 +201,29 @@ class ClubViewModel extends ChangeNotifier {
   }
 
   Future<String?> acceptInvitation(ClubInvitation invitation) async {
-    try {
-      await _invitationService.acceptInvitation(invitation);
-      return null;
-    } catch (e) {
-      return 'Error al aceptar invitación';
+    final err = await _invitationService.acceptInvitation(invitation);
+    if (err == null) {
+      ClubSyncService.instance.logInvitationAccepted(
+        invitation.inviteeEmail,
+        clubId: invitation.clubId,
+      );
     }
+    return err;
   }
 
   Future<String?> rejectInvitation(ClubInvitation invitation) async {
-    try {
-      await _invitationService.rejectInvitation(invitation);
-      return null;
-    } catch (e) {
-      return 'Error al rechazar invitación';
+    final err = await _invitationService.rejectInvitation(invitation);
+    if (err == null) {
+      ClubSyncService.instance.logInvitationRejected(
+        invitation.inviteeEmail,
+        clubId: invitation.clubId,
+      );
     }
+    return err;
+  }
+
+  Future<List<ClubInvitation>> checkPendingInvitations() async {
+    return _invitationService.getPendingInvitations();
   }
 
   Future<String?> removeMember(String memberId) async {

@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../../../teams/presentation/viewmodels/club_viewmodel.dart';
-import '../../../teams/data/team_models.dart' show ClubMember, ClubRole;
-import '../../data/staff_tecnico_models.dart';
+import '../../../teams/data/team_models.dart' show ClubMember, ClubRole, ClubInvitation, ClubInvitationStatus;
 import '../viewmodels/staff_tecnico_viewmodel.dart';
 import '../widgets/invite_member_sheet.dart';
 import '../widgets/staff_activity_timeline.dart';
@@ -46,17 +45,19 @@ class _StaffScreenState extends State<StaffScreen> {
               return const Center(child: CircularProgressIndicator());
             }
             final clubMembers = clubVm.members.where((m) => m.isActive).toList();
-            final pendingInvitations = vm.invitations.where((i) => i.isPending).toList();
+            final pendingInv = clubVm.pendingInvitations;
+            final acceptedInv = clubVm.acceptedInvitations;
+            final rejectedInv = clubVm.rejectedInvitations;
             return SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _header(context, cs, clubVm.currentClub?.name),
+                  _header(context, cs, clubVm.currentClub?.name, clubVm.myRole),
                   const SizedBox(height: 20),
                   StaffSummaryCard(
                     activeCount: clubMembers.length,
-                    pendingInvitationCount: clubVm.invitations.length,
+                    pendingInvitationCount: pendingInv.length,
                     lastSync: 'Hace 5 minutos',
                   ),
                   const SizedBox(height: 24),
@@ -71,12 +72,24 @@ class _StaffScreenState extends State<StaffScreen> {
                   if (clubMembers.isEmpty)
                     _emptyState(context, cs, 'No hay miembros en el club')
                   else
-                    ...clubMembers.map((m) => _clubMemberTile(context, m, cs, clubVm)),
-                  if (pendingInvitations.isNotEmpty) ...[
+                    ...clubMembers.map((m) => _clubMemberTile(context, m, cs)),
+                  if (pendingInv.isNotEmpty) ...[
                     const SizedBox(height: 24),
                     _sectionHeader(context, Icons.mail_rounded, 'Invitaciones Pendientes', cs),
                     const SizedBox(height: 8),
-                    ...pendingInvitations.map((inv) => _invitationTile(context, inv, cs, vm)),
+                    ...pendingInv.map((inv) => _clubInvitationTile(context, inv, cs, clubVm, ClubInvitationStatus.pending)),
+                  ],
+                  if (acceptedInv.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    _sectionHeader(context, Icons.check_circle_rounded, 'Invitaciones Aceptadas', cs),
+                    const SizedBox(height: 8),
+                    ...acceptedInv.map((inv) => _clubInvitationTile(context, inv, cs, clubVm, ClubInvitationStatus.accepted)),
+                  ],
+                  if (rejectedInv.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    _sectionHeader(context, Icons.cancel_rounded, 'Invitaciones Rechazadas', cs),
+                    const SizedBox(height: 8),
+                    ...rejectedInv.map((inv) => _clubInvitationTile(context, inv, cs, clubVm, ClubInvitationStatus.rejected)),
                   ],
                   const SizedBox(height: 24),
                   _sectionHeader(context, Icons.history_rounded, 'Actividad Reciente', cs),
@@ -92,7 +105,13 @@ class _StaffScreenState extends State<StaffScreen> {
     );
   }
 
-  Widget _header(BuildContext context, ColorScheme cs, String? clubName) {
+  Widget _header(BuildContext context, ColorScheme cs, String? clubName, ClubRole? myRole) {
+    final roleLabel = switch (myRole) {
+      ClubRole.owner => 'Administrador',
+      ClubRole.entrenador => 'Entrenador',
+      ClubRole.asistente => 'Asistente',
+      null => 'Invitado',
+    };
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -108,9 +127,21 @@ class _StaffScreenState extends State<StaffScreen> {
               child: const Icon(Icons.groups_2_rounded, color: AppColors.accent, size: 22),
             ),
             const SizedBox(width: 12),
-            Text(
-              clubName ?? 'Staff Técnico',
-              style: TextStyle(color: cs.onSurface, fontSize: 22, fontWeight: FontWeight.bold),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    clubName ?? 'Staff Técnico',
+                    style: TextStyle(color: cs.onSurface, fontSize: 22, fontWeight: FontWeight.bold),
+                  ),
+                  if (myRole != null)
+                    Text(
+                      'Tu rol: $roleLabel',
+                      style: TextStyle(color: AppColors.accent, fontSize: 12),
+                    ),
+                ],
+              ),
             ),
           ],
         ),
@@ -161,32 +192,66 @@ class _StaffScreenState extends State<StaffScreen> {
     );
   }
 
-  Widget _invitationTile(BuildContext context, StaffInvitation inv, ColorScheme cs, StaffTecnicoViewModel vm) {
+  Widget _clubInvitationTile(BuildContext context, ClubInvitation inv, ColorScheme cs, ClubViewModel clubVm, ClubInvitationStatus status) {
+    final icon = switch (status) {
+      ClubInvitationStatus.pending => Icons.hourglass_empty_rounded,
+      ClubInvitationStatus.accepted => Icons.check_circle_rounded,
+      ClubInvitationStatus.rejected => Icons.cancel_rounded,
+      ClubInvitationStatus.expired => Icons.timer_off_rounded,
+    };
+    final color = switch (status) {
+      ClubInvitationStatus.pending => AppColors.info,
+      ClubInvitationStatus.accepted => const Color(0xFF4CAF50),
+      ClubInvitationStatus.rejected => AppColors.error,
+      ClubInvitationStatus.expired => Colors.grey,
+    };
+    final label = switch (status) {
+      ClubInvitationStatus.pending => 'Pendiente',
+      ClubInvitationStatus.accepted => 'Aceptada',
+      ClubInvitationStatus.rejected => 'Rechazada',
+      ClubInvitationStatus.expired => 'Expirada',
+    };
+    final roleLabel = switch (inv.role) {
+      ClubRole.owner => 'Administrador',
+      ClubRole.entrenador => 'Entrenador',
+      ClubRole.asistente => 'Asistente',
+    };
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         color: cs.surface.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.info.withValues(alpha: 0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
         leading: CircleAvatar(
           radius: 18,
-          backgroundColor: AppColors.info.withValues(alpha: 0.2),
-          child: const Icon(Icons.email_rounded, color: AppColors.info, size: 18),
+          backgroundColor: color.withValues(alpha: 0.2),
+          child: Icon(icon, color: color, size: 18),
         ),
-        title: Text(inv.email, style: TextStyle(color: cs.onSurface, fontSize: 14)),
-        subtitle: Text('${inv.role.displayName} · Pendiente', style: TextStyle(color: cs.onSurface.withValues(alpha: 0.5), fontSize: 12)),
-        trailing: IconButton(
-          icon: Icon(Icons.close_rounded, color: AppColors.error.withValues(alpha: 0.7), size: 18),
-          onPressed: () => vm.cancelInvitation(inv),
-        ),
+        title: Text(inv.clubName, style: TextStyle(color: cs.onSurface, fontSize: 14)),
+        subtitle: Text('$roleLabel · $label', style: TextStyle(color: cs.onSurface.withValues(alpha: 0.5), fontSize: 12)),
+        trailing: status == ClubInvitationStatus.pending
+            ? Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.check_circle, color: Color(0xFF4CAF50), size: 20),
+                    onPressed: () => clubVm.acceptInvitation(inv),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.cancel, color: Color(0xFFEF4444), size: 20),
+                    onPressed: () => clubVm.rejectInvitation(inv),
+                  ),
+                ],
+              )
+            : null,
       ),
     );
   }
 
-  Widget _clubMemberTile(BuildContext context, ClubMember member, ColorScheme cs, ClubViewModel clubVm) {
+  Widget _clubMemberTile(BuildContext context, ClubMember member, ColorScheme cs) {
     final roleLabel = switch (member.role) {
       ClubRole.owner => 'Administrador',
       ClubRole.entrenador => 'Entrenador',
@@ -242,5 +307,4 @@ class _StaffScreenState extends State<StaffScreen> {
       ),
     );
   }
-
 }

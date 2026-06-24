@@ -9,6 +9,7 @@ class HeaderSection extends StatelessWidget {
   final TeamInfo teamInfo;
   final bool isDark;
   final VoidCallback onSettings;
+  final String? roleLabel;
 
   const HeaderSection({
     super.key,
@@ -16,6 +17,7 @@ class HeaderSection extends StatelessWidget {
     required this.teamInfo,
     required this.isDark,
     required this.onSettings,
+    this.roleLabel,
   });
 
   String _greeting() {
@@ -83,7 +85,7 @@ class HeaderSection extends StatelessWidget {
                       if (teamInfo.memberCount > 0) ...[
                         const SizedBox(height: 2),
                         Text(
-                          '${teamInfo.memberCount} entrenadores',
+                          '${teamInfo.memberCount} entrenadores${roleLabel != null ? ' · $roleLabel' : ''}',
                           style: TextStyle(
                             fontSize: 11,
                             color: isDark ? AppColors.textTertiary : AppColors.lightTextTertiary,

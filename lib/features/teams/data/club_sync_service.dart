@@ -59,6 +59,14 @@ class ClubSyncService {
     _log(SyncEvent.invitationSent, 'INVITACIÓN enviada a $email', clubId: clubId);
   }
 
+  void logInvitationAccepted(String displayName, {String? clubId}) {
+    _log(SyncEvent.clubSynced, 'INVITACIÓN aceptada: $displayName', clubId: clubId);
+  }
+
+  void logInvitationRejected(String displayName, {String? clubId}) {
+    _log(SyncEvent.syncError, 'INVITACIÓN rechazada: $displayName', clubId: clubId);
+  }
+
   void logSyncError(String error, {String? clubId}) {
     _log(SyncEvent.syncError, 'Error sincronización: $error', clubId: clubId);
   }

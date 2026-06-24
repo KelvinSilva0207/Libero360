@@ -2,6 +2,8 @@ enum ClubRole { owner, entrenador, asistente }
 
 enum MembershipStatus { active, pending }
 
+enum ClubInvitationStatus { pending, accepted, rejected, expired }
+
 class Club {
   final String id;
   final String name;
@@ -119,19 +121,25 @@ class ClubInvitation {
   final String inviterUserId;
   final String inviterDisplayName;
   final String inviteeEmail;
+  final String inviteeUserId;
   final ClubRole role;
+  final ClubInvitationStatus status;
   final DateTime createdAt;
 
-  const ClubInvitation({
+  ClubInvitation({
     required this.id,
     required this.clubId,
     required this.clubName,
     required this.inviterUserId,
     required this.inviterDisplayName,
     required this.inviteeEmail,
+    this.inviteeUserId = '',
     required this.role,
+    this.status = ClubInvitationStatus.pending,
     required this.createdAt,
   });
+
+  bool get isPending => status == ClubInvitationStatus.pending;
 
   Map<String, dynamic> toMap() => {
         'clubId': clubId,
@@ -139,7 +147,9 @@ class ClubInvitation {
         'inviterUserId': inviterUserId,
         'inviterDisplayName': inviterDisplayName,
         'inviteeEmail': inviteeEmail,
+        'inviteeUserId': inviteeUserId,
         'role': role.name,
+        'status': status.name,
         'createdAt': createdAt.toIso8601String(),
       };
 
@@ -151,9 +161,14 @@ class ClubInvitation {
         inviterUserId: map['inviterUserId'] as String? ?? '',
         inviterDisplayName: map['inviterDisplayName'] as String? ?? '',
         inviteeEmail: map['inviteeEmail'] as String? ?? '',
+        inviteeUserId: map['inviteeUserId'] as String? ?? '',
         role: ClubRole.values.firstWhere(
           (r) => r.name == map['role'],
           orElse: () => ClubRole.asistente,
+        ),
+        status: ClubInvitationStatus.values.firstWhere(
+          (s) => s.name == map['status'],
+          orElse: () => ClubInvitationStatus.pending,
         ),
         createdAt: map['createdAt'] != null
             ? DateTime.parse(map['createdAt'] as String)

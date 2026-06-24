@@ -9,7 +9,7 @@ class InvitationBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<ClubViewModel>();
-    final pending = vm.invitations;
+    final pending = vm.pendingInvitations;
 
     if (pending.isEmpty) return const SizedBox.shrink();
 

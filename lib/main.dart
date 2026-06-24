@@ -16,6 +16,7 @@ import 'ui/app_shell.dart';
 import 'features/dashboard/dashboard.dart';
 import 'features/atleta/atleta.dart';
 import 'features/staff_tecnico/staff_tecnico.dart';
+import 'features/asistencia/asistencia.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,6 +30,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => ThemeNotifier()),
         ChangeNotifierProvider(create: (_) => ProfileViewModel()..loadProfiles()),
         ChangeNotifierProvider(create: (_) => DashboardViewModel()),
+        ChangeNotifierProvider(create: (_) => AttendanceHistoryViewModel()),
         ChangeNotifierProvider(create: (_) {
           final vm = ClubViewModel();
           vm.init();

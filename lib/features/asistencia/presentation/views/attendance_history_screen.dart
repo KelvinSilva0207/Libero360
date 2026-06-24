@@ -1,229 +1,289 @@
 import 'package:flutter/material.dart';
-import '../../../estadisticas/data/local_db/database_service.dart';
-import '../../../estadisticas/data/models/models.dart';
-import 'attendance_history_detail_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:libero360/core/themes/app_colors.dart';
+import 'package:libero360/features/asistencia/data/attendance_history_model.dart';
+import 'package:libero360/features/asistencia/presentation/viewmodels/attendance_history_viewmodel.dart';
+import 'package:libero360/features/asistencia/presentation/views/attendance_history_detail_screen.dart';
 
 class AttendanceHistoryScreen extends StatefulWidget {
   const AttendanceHistoryScreen({super.key});
 
   @override
-  State<AttendanceHistoryScreen> createState() =>
-      _AttendanceHistoryScreenState();
+  State<AttendanceHistoryScreen> createState() => _AttendanceHistoryScreenState();
 }
 
 class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
-  DateTime _selectedMonth =
-      DateTime(DateTime.now().year, DateTime.now().month);
-  List<Map<String, dynamic>> _trainings = [];
-  bool _loading = true;
-
   @override
   void initState() {
     super.initState();
-    _loadTrainings();
-  }
-
-  Future<void> _loadTrainings() async {
-    setState(() => _loading = true);
-    try {
-      await DatabaseService.instance.initialize();
-      final records = await DatabaseService.instance.getAttendanceRecords();
-      final playerIds = records.map((r) => r.playerId).toSet();
-      final players = <int, String>{};
-      for (final id in playerIds) {
-        try {
-          final p = await DatabaseService.instance.getPlayer(id);
-          if (p != null) players[id] = p.nombre;
-        } catch (_) {}
-      }
-
-      final monthStart =
-          DateTime(_selectedMonth.year, _selectedMonth.month, 1);
-      final monthEnd =
-          DateTime(_selectedMonth.year, _selectedMonth.month + 1, 0);
-
-      final monthRecords = records.where((r) =>
-          r.fecha.isAfter(monthStart.subtract(const Duration(days: 1))) &&
-          r.fecha.isBefore(monthEnd.add(const Duration(days: 1))));
-
-      final grouped = <String, List<AttendanceRecord>>{};
-      for (final r in monthRecords) {
-        final key =
-            '${r.fecha.year}-${r.fecha.month.toString().padLeft(2, '0')}-${r.fecha.day.toString().padLeft(2, '0')}';
-        grouped.putIfAbsent(key, () => []);
-        grouped[key]!.add(r);
-      }
-
-      final sortedKeys = grouped.keys.toList()..sort((a, b) => b.compareTo(a));
-      _trainings = sortedKeys.map((key) {
-        final records = grouped[key]!;
-        final present = records.where((r) => r.asistio).length;
-        return {
-          'date': key,
-          'total': records.length,
-          'present': present,
-          'records': records,
-        };
-      }).toList();
-    } catch (_) {}
-    setState(() => _loading = false);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AttendanceHistoryViewModel>().load();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-
     return Scaffold(
       backgroundColor: cs.surface,
       appBar: AppBar(
         title: const Text('Historial de Asistencia'),
       ),
-      body: Column(
-        children: [
-          _buildMonthSelector(cs),
-          Expanded(
-            child: _loading
-                ? Center(child: CircularProgressIndicator(color: cs.primary))
-                : _trainings.isEmpty
-                    ? _buildEmptyState(cs)
-                    : ListView.builder(
-                        padding: const EdgeInsets.all(12),
-                        itemCount: _trainings.length,
-                        itemBuilder: (_, i) =>
-                            _buildTrainingCard(_trainings[i], cs),
-                      ),
-          ),
-        ],
+      body: Consumer<AttendanceHistoryViewModel>(
+        builder: (_, vm, __) => Column(
+          children: [
+            _buildFilterBar(cs, vm),
+            _buildSearchBar(cs, vm),
+            Expanded(
+              child: vm.loading
+                  ? Center(child: CircularProgressIndicator(color: cs.primary))
+                  : _buildContent(cs, vm),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildMonthSelector(ColorScheme cs) {
+  Widget _buildFilterBar(ColorScheme cs, AttendanceHistoryViewModel vm) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       color: cs.surfaceContainerHighest,
       child: Row(
         children: [
           IconButton(
             icon: Icon(Icons.chevron_left, color: cs.onSurface),
-            onPressed: () {
-              setState(() {
-                _selectedMonth =
-                    DateTime(_selectedMonth.year, _selectedMonth.month - 1);
-              });
-              _loadTrainings();
-            },
+            onPressed: vm.previousMonth,
           ),
           Expanded(
-            child: Text(
-              '${_monthName(_selectedMonth.month)} ${_selectedMonth.year}',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                  color: cs.onSurface,
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold),
+            child: GestureDetector(
+              onTap: () => _showMonthYearPicker(context, vm),
+              child: Text(
+                vm.currentMonthLabel,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    color: cs.onSurface,
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold),
+              ),
             ),
           ),
           IconButton(
             icon: Icon(Icons.chevron_right, color: cs.onSurface),
-            onPressed: () {
-              setState(() {
-                _selectedMonth =
-                    DateTime(_selectedMonth.year, _selectedMonth.month + 1);
-              });
-              _loadTrainings();
-            },
+            onPressed: vm.nextMonth,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildEmptyState(ColorScheme cs) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.calendar_today_rounded,
-              size: 48, color: cs.onSurface.withValues(alpha: 0.1)),
-          const SizedBox(height: 16),
-          Text('Sin entrenamientos registrados',
-              style: TextStyle(
-                  color: cs.onSurface.withValues(alpha: 0.4), fontSize: 14)),
-          const SizedBox(height: 8),
-          Text('Selecciona otro mes o registra asistencia',
-              style: TextStyle(
-                  color: cs.onSurface.withValues(alpha: 0.2), fontSize: 12)),
-        ],
+  Widget _buildSearchBar(ColorScheme cs, AttendanceHistoryViewModel vm) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      child: TextField(
+        onChanged: vm.setSearchQuery,
+        decoration: InputDecoration(
+          hintText: 'Buscar atleta...',
+          hintStyle: TextStyle(color: cs.onSurface.withValues(alpha: 0.4), fontSize: 13),
+          prefixIcon: Icon(Icons.search_rounded, size: 18, color: cs.onSurface.withValues(alpha: 0.4)),
+          filled: true,
+          fillColor: cs.surfaceContainerHighest,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          contentPadding: const EdgeInsets.symmetric(vertical: 10),
+        ),
       ),
     );
   }
 
-  Widget _buildTrainingCard(Map<String, dynamic> training, ColorScheme cs) {
-    final date = training['date'] as String;
-    final total = training['total'] as int;
-    final present = training['present'] as int;
-    final records = training['records'] as List<AttendanceRecord>;
-    final parts = date.split('-');
-    final day = int.parse(parts[2]);
-    final month = int.parse(parts[1]);
-    final year = int.parse(parts[0]);
-    final dateObj = DateTime(year, month, day);
-    final dayName = _dayName(dateObj.weekday);
+  Widget _buildContent(ColorScheme cs, AttendanceHistoryViewModel vm) {
+    final summaries = vm.summaries;
+    if (summaries.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.calendar_today_rounded,
+                size: 48, color: cs.onSurface.withValues(alpha: 0.1)),
+            const SizedBox(height: 16),
+            Text('Sin registros en este mes',
+                style: TextStyle(
+                    color: cs.onSurface.withValues(alpha: 0.4), fontSize: 14)),
+            const SizedBox(height: 8),
+            Text('Selecciona otro mes o registra asistencia',
+                style: TextStyle(
+                    color: cs.onSurface.withValues(alpha: 0.2), fontSize: 12)),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(12),
+      itemCount: summaries.length,
+      itemBuilder: (_, i) => _buildSummaryCard(summaries[i], cs, vm),
+    );
+  }
+
+  Widget _buildSummaryCard(DailyAttendanceSummary summary, ColorScheme cs, AttendanceHistoryViewModel vm) {
+    final day = summary.date.day;
+    final dayName = _dayName(summary.date.weekday);
 
     return Card(
       color: cs.surfaceContainerHighest,
       margin: const EdgeInsets.only(bottom: 8),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        leading: Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: cs.surfaceContainerHigh,
-            borderRadius: BorderRadius.circular(10),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => AttendanceHistoryDetailScreen(
+              date: summary.date,
+              searchQuery: vm.searchQuery,
+            ),
           ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
             children: [
-              Text('$day',
-                  style: TextStyle(
-                      color: cs.onSurface,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold)),
-              Text(dayName.toUpperCase(),
-                  style: TextStyle(
-                      color: cs.onSurface.withValues(alpha: 0.6), fontSize: 8)),
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: cs.surfaceContainerHigh,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text('$day',
+                        style: TextStyle(
+                            color: cs.onSurface,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold)),
+                    Text(dayName.toUpperCase(),
+                        style: TextStyle(
+                            color: cs.onSurface.withValues(alpha: 0.6),
+                            fontSize: 8)),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('${summary.presentCount} asistentes',
+                        style: TextStyle(color: cs.onSurface, fontSize: 14, fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        _statChip(cs, '${summary.absentCount} ausentes', Colors.redAccent.withValues(alpha: 0.2), Colors.redAccent),
+                        const SizedBox(width: 6),
+                        if (summary.medicalRestCount > 0)
+                          _statChip(cs, '${summary.medicalRestCount} reposo', Colors.orange.withValues(alpha: 0.2), Colors.orange),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, color: cs.onSurface.withValues(alpha: 0.4)),
             ],
           ),
         ),
-        title: Text('Asistieron: $present de $total',
-            style: TextStyle(color: cs.onSurface, fontSize: 14)),
-        subtitle: Text('Entrenamiento - $present/$total',
-            style: TextStyle(
-                color: cs.onSurface.withValues(alpha: 0.6), fontSize: 11)),
-        trailing: Icon(Icons.chevron_right,
-            color: cs.onSurface.withValues(alpha: 0.4)),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => AttendanceHistoryDetailScreen(
-                  records: records, date: dateObj),
-            ),
-          );
-        },
       ),
     );
   }
 
-  String _monthName(int m) {
-    const names = [
-      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-    ];
-    return names[m - 1];
+  Widget _statChip(ColorScheme cs, String label, Color bg, Color fg) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(label,
+          style: TextStyle(color: fg, fontSize: 10, fontWeight: FontWeight.w600)),
+    );
+  }
+
+  void _showMonthYearPicker(BuildContext context, AttendanceHistoryViewModel vm) {
+    final now = DateTime.now();
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        int selectedMonth = vm.filterMonth ?? now.month;
+        int selectedYear = vm.filterYear ?? now.year;
+        return StatefulBuilder(
+          builder: (ctx, setDialogState) => AlertDialog(
+            title: const Text('Seleccionar mes'),
+            content: SizedBox(
+              width: 280,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.chevron_left),
+                        onPressed: () => setDialogState(() => selectedYear--),
+                      ),
+                      Text('$selectedYear',
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      IconButton(
+                        icon: const Icon(Icons.chevron_right),
+                        onPressed: () => setDialogState(() => selectedYear++),
+                      ),
+                    ],
+                    mainAxisAlignment: MainAxisAlignment.center,
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: List.generate(12, (i) {
+                      final m = i + 1;
+                      final isSelected = m == selectedMonth;
+                      return GestureDetector(
+                        onTap: () {
+                          selectedMonth = m;
+                          Navigator.pop(ctx);
+                          vm.setFilterYear(selectedYear);
+                          vm.setFilterMonth(selectedMonth);
+                        },
+                        child: Container(
+                          width: 72,
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          decoration: BoxDecoration(
+                            color: isSelected ? AppColors.accent : Colors.transparent,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: isSelected ? AppColors.accent : Colors.grey.withValues(alpha: 0.3)),
+                          ),
+                          child: Text(
+                            ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
+                             'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'][i],
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: isSelected ? Colors.white : null,
+                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      );
+                    }),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   String _dayName(int d) {

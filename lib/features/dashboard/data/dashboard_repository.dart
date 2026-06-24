@@ -185,10 +185,11 @@ class DashboardRepository {
       final lastAtt = attendance.reduce((a, b) => a.fecha.isAfter(b.fecha) ? a : b);
       items.add(ActivityItem(
         icon: '📅',
-        description: lastAtt.asistio
-            ? 'Entrenamiento registrado'
-            : 'Falta registrada',
+        description: 'Asistencia registrada',
         timestamp: lastAtt.fecha,
+        subtitle: lastAtt.asistio
+            ? '${_countPresent(attendance, lastAtt.fecha)} presentes'
+            : '${_countAbsent(attendance, lastAtt.fecha)} ausentes',
         type: ActivityType.training,
       ));
     }
@@ -205,6 +206,14 @@ class DashboardRepository {
 
     items.sort((a, b) => b.timestamp.compareTo(a.timestamp));
     return items.take(5).toList();
+  }
+
+  int _countPresent(List<AttendanceRecord> attendance, DateTime date) {
+    return attendance.where((a) => _dateKey(a.fecha) == _dateKey(date) && a.asistio).length;
+  }
+
+  int _countAbsent(List<AttendanceRecord> attendance, DateTime date) {
+    return attendance.where((a) => _dateKey(a.fecha) == _dateKey(date) && !a.asistio).length;
   }
 
   String _dateKey(DateTime d) => '${d.year}-${d.month}-${d.day}';

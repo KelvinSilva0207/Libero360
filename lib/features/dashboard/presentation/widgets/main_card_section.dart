@@ -21,15 +21,21 @@ class MainCardSection extends StatelessWidget {
     final textPri = isDark ? Colors.white : AppColors.textPrimary;
     final textSec = isDark ? AppColors.textSecondary : AppColors.textTertiary;
 
-    return SliverToBoxAdapter(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: bg,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: borderClr),
+            boxShadow: [
+              BoxShadow(
+                color: isDark ? Colors.black.withValues(alpha: 0.3) : Colors.black.withValues(alpha: 0.06),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -67,7 +73,7 @@ class MainCardSection extends StatelessWidget {
               ),
               if (nextTraining != null && nextMatch != null)
                 const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 12),
+                  padding: EdgeInsets.symmetric(vertical: 16),
                   child: Divider(height: 1),
                 ),
               if (nextMatch != null) _eventTile(
@@ -114,8 +120,7 @@ class MainCardSection extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
+      );
   }
 
   Widget _eventTile({
@@ -158,18 +163,26 @@ class MainCardSection extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark ? AppColors.surfaceLight : AppColors.lightSurface,
         borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
       ),
       child: Column(
         children: [
-          Text('Faltan', style: TextStyle(color: textSec, fontSize: 12, fontWeight: FontWeight.w600)),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.timer_outlined, size: 14, color: AppColors.primary),
+              const SizedBox(width: 6),
+              Text('Faltan', style: TextStyle(color: textSec, fontSize: 12, fontWeight: FontWeight.w600)),
+            ],
+          ),
           const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               _countUnit('$days', 'días', textPri, textSec),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: const Text(':', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700, color: AppColors.primary)),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 8),
+                child: Text(':', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700, color: AppColors.primary)),
               ),
               _countUnit('$hours', 'horas', textPri, textSec),
             ],

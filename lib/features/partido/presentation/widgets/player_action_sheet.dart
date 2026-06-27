@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/themes/app_colors.dart';
+import '../../../../core/utils/name_formatter.dart';
 import '../../../estadisticas/data/models/models.dart';
 import '../../data/player_action.dart';
 
@@ -15,9 +16,7 @@ class PlayerActionSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name = player.displayName.isNotEmpty
-        ? player.displayName
-        : '${player.firstNames} ${player.lastNames}'.trim();
+    final name = NameFormatter.playerMatchName(player);
 
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),

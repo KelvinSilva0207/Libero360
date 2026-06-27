@@ -13,21 +13,21 @@ class AnimatedSection extends StatefulWidget {
 class _AnimatedSectionState extends State<AnimatedSection>
     with SingleTickerProviderStateMixin {
   late AnimationController _ctrl;
-  late Animation<double> _fade;
   late Animation<Offset> _slide;
+  late Animation<double> _fade;
 
   @override
   void initState() {
     super.initState();
     _ctrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 350),
+      duration: const Duration(milliseconds: 400),
     );
-    _fade = CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic);
     _slide = Tween<Offset>(
       begin: Offset(0, 0.08 * (widget.index + 1)),
       end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutQuint));
+    _fade = CurvedAnimation(parent: _ctrl, curve: Curves.easeOutQuint);
     _ctrl.forward();
   }
 
@@ -68,7 +68,7 @@ class _AnimatedStaggeredSectionState extends State<AnimatedStaggeredSection>
         vsync: this,
         duration: const Duration(milliseconds: 300),
       );
-      Future.delayed(Duration(milliseconds: 80 * i), ctrl.forward);
+      Future.delayed(Duration(milliseconds: 60 * i), ctrl.forward);
       return ctrl;
     });
   }
@@ -87,7 +87,7 @@ class _AnimatedStaggeredSectionState extends State<AnimatedStaggeredSection>
       children: List.generate(widget.items.length, (i) {
         final fade = CurvedAnimation(
           parent: _ctrls[i],
-          curve: Curves.easeOut,
+          curve: Curves.easeOutQuint,
         );
         return FadeTransition(
           opacity: fade,
@@ -110,7 +110,6 @@ class AnimatedCard extends StatefulWidget {
 class _AnimatedCardState extends State<AnimatedCard>
     with SingleTickerProviderStateMixin {
   late AnimationController _ctrl;
-  late Animation<double> _fade;
   late Animation<double> _scale;
 
   @override
@@ -118,11 +117,10 @@ class _AnimatedCardState extends State<AnimatedCard>
     super.initState();
     _ctrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 350),
     );
-    _fade = CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
     _scale = Tween<double>(begin: 0.92, end: 1.0).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic),
+      CurvedAnimation(parent: _ctrl, curve: Curves.easeOutQuint),
     );
     _ctrl.forward();
   }
@@ -135,9 +133,6 @@ class _AnimatedCardState extends State<AnimatedCard>
 
   @override
   Widget build(BuildContext context) {
-    return FadeTransition(
-      opacity: _fade,
-      child: ScaleTransition(scale: _scale, child: widget.child),
-    );
+    return ScaleTransition(scale: _scale, child: widget.child);
   }
 }

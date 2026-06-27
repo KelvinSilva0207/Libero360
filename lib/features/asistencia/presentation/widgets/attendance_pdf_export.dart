@@ -5,6 +5,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:path_provider/path_provider.dart';
 import '../../../estadisticas/data/local_db/database_service.dart';
 import '../../../estadisticas/data/models/models.dart';
+import '../../../../core/utils/name_formatter.dart';
 
 class AttendancePdfExport {
   static Future<void> exportMonthly(BuildContext context, DateTime month) async {
@@ -186,7 +187,7 @@ class AttendancePdfExport {
 
     final rows = <List<String>>[];
     for (final p in players) {
-      final row = <String>['${p.numero ?? "-"}', p.nombre];
+      final row = <String>['${p.numero ?? "-"}', NameFormatter.playerDisplayName(p)];
       int asistencias = 0;
       int faltas = 0;
 
@@ -243,7 +244,7 @@ class AttendancePdfExport {
         final lastDate = pRecords.isNotEmpty
             ? '${pRecords.last.fecha.day}/${pRecords.last.fecha.month}'
             : '-';
-        return ['${p.numero ?? "-"}', p.nombre, '${pRecords.length}', lastDate];
+        return ['${p.numero ?? "-"}', NameFormatter.playerDisplayName(p), '${pRecords.length}', lastDate];
       }).toList()
         ..sort((a, b) => int.parse(b[2]).compareTo(int.parse(a[2]))),
       headerStyle: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: PdfColors.white),
@@ -265,7 +266,7 @@ class AttendancePdfExport {
         final reason = p.statusReason?.isNotEmpty == true ? p.statusReason! : '';
         return [
           '${p.numero ?? "-"}',
-          p.nombre,
+          NameFormatter.playerDisplayName(p),
           p.atletaStatus.label,
           reason,
         ];

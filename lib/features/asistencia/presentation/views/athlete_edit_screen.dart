@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../../../estadisticas/data/models/models.dart';
 import '../../../estadisticas/data/local_db/database_service.dart';
+import '../../../../core/utils/name_formatter.dart';
 
 class AthleteEditScreen extends StatefulWidget {
   final Player player;
@@ -61,7 +62,7 @@ class _AthleteEditScreenState extends State<AthleteEditScreen> {
       final p = widget.player;
       p.firstNames = _firstNamesCtrl.text.trim();
       p.lastNames = _lastNamesCtrl.text.trim();
-      p.displayName = '${_firstNamesCtrl.text.trim()} ${_lastNamesCtrl.text.trim()}'.trim();
+      p.displayName = NameFormatter.displayName(firstNames: _firstNamesCtrl.text.trim(), lastNames: _lastNamesCtrl.text.trim());
       p.nombre = p.displayName;
       p.cedula = _cedulaCtrl.text.trim();
       p.numero = int.tryParse(_numeroCtrl.text.trim());

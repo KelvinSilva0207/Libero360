@@ -14,9 +14,8 @@ class QuickSummaryGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SliverToBoxAdapter(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -26,8 +25,8 @@ class QuickSummaryGrid extends StatelessWidget {
               crossAxisCount: 2,
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              mainAxisSpacing: 10,
-              crossAxisSpacing: 10,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
               childAspectRatio: 1.4,
               children: [
                 _summaryTile(
@@ -58,8 +57,7 @@ class QuickSummaryGrid extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
+      );
   }
 
   Widget _summaryTile({
@@ -79,12 +77,19 @@ class QuickSummaryGrid extends StatelessWidget {
         color: bg,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: borderClr),
+        boxShadow: [
+          BoxShadow(
+            color: isDark ? Colors.black.withValues(alpha: 0.2) : Colors.black.withValues(alpha: 0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(icon, style: const TextStyle(fontSize: 22)),
+          Text(icon, style: const TextStyle(fontSize: 24)),
           const Spacer(),
           Text(
             value,

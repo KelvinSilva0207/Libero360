@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/themes/app_colors.dart';
+import '../../../../core/utils/name_formatter.dart';
 import '../../data/statistics_models.dart';
 
 class AthleteOfMonthCard extends StatefulWidget {
@@ -138,9 +139,7 @@ class _PlayerRow extends StatelessWidget {
           backgroundImage: p.fotoUrl != null ? NetworkImage(p.fotoUrl!) : null,
           child: p.fotoUrl == null
               ? Text(
-                  p.nombre.isNotEmpty
-                      ? p.nombre[0].toUpperCase()
-                      : '?',
+                  NameFormatter.avatarInitial(p),
                   style: const TextStyle(
                     color: AppColors.accent,
                     fontSize: 22,
@@ -154,7 +153,7 @@ class _PlayerRow extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(p.displayName.isNotEmpty ? p.displayName : p.nombre,
+              Text(NameFormatter.playerDisplayName(p),
                   style: TextStyle(
                     color: isDark ? AppColors.textPrimary : AppColors.lightTextPrimary,
                     fontSize: 18,

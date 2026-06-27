@@ -14,14 +14,13 @@ class RecentActivityTimeline extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (activities.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
+    if (activities.isEmpty) return const SizedBox.shrink();
 
     final textPri = isDark ? Colors.white : AppColors.textPrimary;
     final textSec = isDark ? AppColors.textSecondary : AppColors.textTertiary;
 
-    return SliverToBoxAdapter(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -34,8 +33,7 @@ class RecentActivityTimeline extends StatelessWidget {
             }),
           ],
         ),
-      ),
-    );
+      );
   }
 
   Widget _activityRow(ActivityItem item, bool isLast, Color textPri, Color textSec) {
@@ -44,17 +42,17 @@ class RecentActivityTimeline extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 36,
+            width: 40,
             child: Column(
               children: [
                 Container(
-                  width: 36,
-                  height: 36,
+                  width: 40,
+                  height: 40,
                   decoration: BoxDecoration(
                     color: isDark ? AppColors.surfaceLight : AppColors.lightSurface,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                   ),
-                  child: Center(child: Text(item.icon, style: const TextStyle(fontSize: 16))),
+                  child: Center(child: Text(item.icon, style: const TextStyle(fontSize: 18))),
                 ),
                 if (!isLast)
                   Expanded(
@@ -69,7 +67,7 @@ class RecentActivityTimeline extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Padding(
-              padding: EdgeInsets.only(bottom: isLast ? 0 : 20),
+              padding: EdgeInsets.only(bottom: isLast ? 0 : 24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

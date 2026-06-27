@@ -18,15 +18,21 @@ class TeamStatusSection extends StatelessWidget {
     final borderClr = isDark ? AppColors.border : AppColors.lightBorder;
     final textPri = isDark ? Colors.white : AppColors.textPrimary;
 
-    return SliverToBoxAdapter(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: bg,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: borderClr),
+            boxShadow: [
+              BoxShadow(
+                color: isDark ? Colors.black.withValues(alpha: 0.3) : Colors.black.withValues(alpha: 0.06),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -71,12 +77,11 @@ class TeamStatusSection extends StatelessWidget {
                     textPri: textPri,
                   )),
                 ],
-              ),
-            ],
+                ),
+              ],
+            ),
           ),
-        ),
-      ),
-    );
+      );
   }
 
   Widget _statusTile({
@@ -96,8 +101,8 @@ class TeamStatusSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(icon, style: const TextStyle(fontSize: 20)),
-          const SizedBox(height: 8),
+          Text(icon, style: const TextStyle(fontSize: 24)),
+          const SizedBox(height: 10),
           Text(value,
               style: TextStyle(
                 fontWeight: FontWeight.w700,

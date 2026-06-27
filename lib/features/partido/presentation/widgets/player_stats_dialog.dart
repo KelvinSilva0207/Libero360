@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/themes/app_colors.dart';
+import '../../../../core/utils/name_formatter.dart';
 import '../../../estadisticas/data/models/models.dart';
 
 class PlayerStatsDialog extends StatefulWidget {
@@ -54,7 +55,7 @@ class _PlayerStatsDialogState extends State<PlayerStatsDialog> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    widget.player.nombre,
+                    NameFormatter.playerDisplayName(widget.player),
                     style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
                     overflow: TextOverflow.ellipsis,
                   ),

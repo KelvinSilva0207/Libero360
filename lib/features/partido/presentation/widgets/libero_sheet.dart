@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/themes/app_colors.dart';
+import '../../../../core/utils/name_formatter.dart';
 import '../../../estadisticas/data/models/models.dart';
 
 class LiberoSheet extends StatelessWidget {
@@ -18,9 +19,7 @@ class LiberoSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name = libero.displayName.isNotEmpty
-        ? libero.displayName
-        : '${libero.firstNames} ${libero.lastNames}'.trim();
+    final name = NameFormatter.playerMatchName(libero);
 
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
@@ -85,9 +84,7 @@ class LiberoSheet extends StatelessWidget {
   }
 
   Widget _courtPlayerTile(Player p, BuildContext context) {
-    final pName = p.displayName.isNotEmpty
-        ? p.displayName
-        : '${p.firstNames} ${p.lastNames}'.trim();
+    final pName = NameFormatter.playerMatchName(p);
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
       child: Material(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/themes/app_colors.dart';
+import '../../../../core/utils/name_formatter.dart';
 import '../../../estadisticas/data/local_db/database_service.dart';
 import '../../../estadisticas/data/models/models.dart';
 import '../../../statistics/data/rotation_stats_model.dart';
@@ -104,9 +105,7 @@ class _MatchScreenState extends State<MatchScreen>
     if (number == null) return null;
     try {
       final p = vm.jugadores.firstWhere((p) => p.numero == number);
-      return p.displayName.isNotEmpty
-          ? p.displayName
-          : '${p.firstNames} ${p.lastNames}'.trim();
+      return NameFormatter.playerMatchName(p);
     } catch (_) {
       return null;
     }
@@ -384,15 +383,11 @@ class _MatchScreenState extends State<MatchScreen>
         String inName = '#$inNum';
         try {
           final outP = vm.jugadores.firstWhere((p) => p.numero == outNum);
-          outName = outP.displayName.isNotEmpty
-              ? outP.displayName
-              : '${outP.firstNames} ${outP.lastNames}'.trim();
+          outName = NameFormatter.playerMatchName(outP);
         } catch (_) {}
         try {
           final inP = vm.jugadores.firstWhere((p) => p.numero == inNum);
-          inName = inP.displayName.isNotEmpty
-              ? inP.displayName
-              : '${inP.firstNames} ${inP.lastNames}'.trim();
+          inName = NameFormatter.playerMatchName(inP);
         } catch (_) {}
 
         _liberoManager?.performSwap(
@@ -419,9 +414,7 @@ class _MatchScreenState extends State<MatchScreen>
   }
 
   void _showPlayerActions(Player player, PartidoViewModel vm) {
-    final name = player.displayName.isNotEmpty
-        ? player.displayName
-        : '${player.firstNames} ${player.lastNames}'.trim();
+    final name = NameFormatter.playerMatchName(player);
 
     // If player is a libero, show swap sheet
     if (_liberoManager?.config.isLibero(player) == true) {
@@ -453,9 +446,7 @@ class _MatchScreenState extends State<MatchScreen>
 
   void _showLiberoSwap(Player libero, PartidoViewModel vm) {
     final courtPlayers = _courtPlayers(vm);
-    final libName = libero.displayName.isNotEmpty
-        ? libero.displayName
-        : '${libero.firstNames} ${libero.lastNames}'.trim();
+    final libName = NameFormatter.playerMatchName(libero);
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -466,9 +457,7 @@ class _MatchScreenState extends State<MatchScreen>
         onSwapIn: (playerOut) {
           _liberoManager?.performSwap(
             playerOutNumber: playerOut.numero ?? 0,
-            playerOutName: playerOut.displayName.isNotEmpty
-                ? playerOut.displayName
-                : '${playerOut.firstNames} ${playerOut.lastNames}'.trim(),
+            playerOutName: NameFormatter.playerMatchName(playerOut),
             playerInNumber: libero.numero ?? 0,
             playerInName: libName,
             setNumber: vm.setActual,
@@ -577,12 +566,8 @@ class _MatchScreenState extends State<MatchScreen>
     vm.addSubstitution(
       playerOutNumber: playerOut.numero ?? 0,
       playerInNumber: benchPlayer.numero ?? 0,
-      playerOutName: playerOut.displayName.isNotEmpty
-          ? playerOut.displayName
-          : '${playerOut.firstNames} ${playerOut.lastNames}'.trim(),
-      playerInName: benchPlayer.displayName.isNotEmpty
-          ? benchPlayer.displayName
-          : '${benchPlayer.firstNames} ${benchPlayer.lastNames}'.trim(),
+      playerOutName: NameFormatter.playerMatchName(playerOut),
+      playerInName: NameFormatter.playerMatchName(benchPlayer),
       setNumber: vm.setActual,
       rotationIndex: _rotationManager.rotationIndex,
     );
@@ -967,9 +952,7 @@ class _MatchScreenState extends State<MatchScreen>
     if (number == null) return null;
     try {
       final player = vm.jugadores.firstWhere((p) => p.numero == number);
-      return player.displayName.isNotEmpty
-          ? player.displayName
-          : '${player.firstNames} ${player.lastNames}'.trim();
+      return NameFormatter.playerMatchName(player);
     } catch (_) {
       return null;
     }

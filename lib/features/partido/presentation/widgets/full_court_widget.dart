@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/themes/app_colors.dart';
+import '../../../../core/utils/name_formatter.dart';
 import '../../../estadisticas/data/models/models.dart';
 
 class FullCourtWidget extends StatefulWidget {
@@ -294,7 +295,7 @@ class _MiniAvatar extends StatelessWidget {
             ],
           ),
           Text(
-            player.displayName.isNotEmpty ? player.displayName.split(' ').first : _posShort(player.posicion),
+            NameFormatter.playerMatchName(player),
             style: TextStyle(fontSize: 7, color: isSelected ? Colors.white : Colors.white38, fontWeight: FontWeight.bold),
           ),
         ],

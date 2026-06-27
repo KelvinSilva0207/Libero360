@@ -7,10 +7,10 @@ class AppTheme {
 
   static TextTheme get _poppinsTextTheme => GoogleFonts.poppinsTextTheme();
 
-  static ThemeData get dark {
+  static ThemeData dark({TextTheme? textTheme}) {
     return ThemeData(
       useMaterial3: true,
-      textTheme: _poppinsTextTheme,
+      textTheme: textTheme ?? _poppinsTextTheme,
       brightness: Brightness.dark,
       colorScheme: ColorScheme.dark(
         primary: AppColors.primary,
@@ -193,10 +193,10 @@ class AppTheme {
     );
   }
 
-  static ThemeData get light {
+  static ThemeData light({TextTheme? textTheme}) {
     return ThemeData(
       useMaterial3: true,
-      textTheme: _poppinsTextTheme,
+      textTheme: textTheme ?? _poppinsTextTheme,
       brightness: Brightness.light,
       colorScheme: ColorScheme.light(
         primary: AppColors.primary,

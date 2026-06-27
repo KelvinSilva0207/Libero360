@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../../../../core/widgets_globales/route_transitions.dart';
 import '../../../asistencia/presentation/views/athlete_list_screen.dart';
+import '../../../asistencia/presentation/views/attendance_analytics_screen.dart';
+import '../../../asistencia/presentation/views/pdf_export_screen.dart';
 import '../../../estadisticas/presentation/views/play_by_play_screen.dart';
 import '../../../statistics/presentation/views/statistics_screen.dart';
 import '../../../asistencia/presentation/views/attendance_screen.dart';
@@ -14,9 +16,8 @@ class QuickAccessRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SliverToBoxAdapter(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -39,12 +40,11 @@ class QuickAccessRow extends StatelessWidget {
                     },
                   );
                 },
-              ),
             ),
-          ],
-        ),
-      ),
-    );
+          ),    // close SizedBox
+        ],      // close Column children
+      ),        // close Column
+    );          // close Padding
   }
 
   Widget _quickButton({
@@ -53,45 +53,12 @@ class QuickAccessRow extends StatelessWidget {
     required Color color,
     required VoidCallback onTap,
   }) {
-    return GestureDetector(
+    return _QuickButtonWidget(
+      icon: icon,
+      label: label,
+      color: color,
       onTap: onTap,
-      child: TweenAnimationBuilder<double>(
-        tween: Tween(begin: 1.0, end: 1.0),
-        duration: const Duration(milliseconds: 150),
-        builder: (context, scale, child) {
-          return Transform.scale(
-            scale: scale,
-            child: child,
-          );
-        },
-        child: Container(
-          width: 64,
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          decoration: BoxDecoration(
-            color: isDark ? AppColors.surface : AppColors.lightCard,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: isDark ? AppColors.border : AppColors.lightBorder,
-            ),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(icon, style: const TextStyle(fontSize: 22)),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                  color: isDark ? AppColors.textSecondary : AppColors.textTertiary,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-      ),
+      isDark: isDark,
     );
   }
 
@@ -100,6 +67,8 @@ class QuickAccessRow extends StatelessWidget {
     _QuickItem('🏐', 'Partido', AppColors.accent, () => const PlayByPlayScreen()),
     _QuickItem('📈', 'Estadísticas', AppColors.success, () => const StatisticsScreen()),
     _QuickItem('📅', 'Asistencia', AppColors.info, () => const AttendanceScreen()),
+    _QuickItem('📊', 'Analytics', AppColors.info, () => const AttendanceAnalyticsScreen()),
+    _QuickItem('📄', 'PDF', AppColors.info, () => const PdfExportScreen()),
     _QuickItem('☁', 'Staff', AppColors.warning, () => const AdminScreen()),
   ];
 
@@ -111,6 +80,77 @@ class QuickAccessRow extends StatelessWidget {
         fontWeight: FontWeight.w700,
         color: isDark ? AppColors.textSecondary : AppColors.textTertiary,
         letterSpacing: 1.5,
+      ),
+    );
+  }
+}
+
+class _QuickButtonWidget extends StatefulWidget {
+  final String icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+  final bool isDark;
+
+  const _QuickButtonWidget({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+    required this.isDark,
+  });
+
+  @override
+  State<_QuickButtonWidget> createState() => _QuickButtonWidgetState();
+}
+
+class _QuickButtonWidgetState extends State<_QuickButtonWidget> {
+  double _scale = 1.0;
+
+  void _onTapDown(_) => setState(() => _scale = 0.95);
+  void _onTapUp(_) {
+    widget.onTap();
+    setState(() => _scale = 1.0);
+  }
+  void _onTapCancel() => setState(() => _scale = 1.0);
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: _onTapDown,
+      onTapUp: _onTapUp,
+      onTapCancel: _onTapCancel,
+      child: AnimatedScale(
+        scale: _scale,
+        duration: const Duration(milliseconds: 120),
+        curve: Curves.easeOut,
+        child: Container(
+          width: 64,
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: widget.isDark ? AppColors.surface : AppColors.lightCard,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: widget.isDark ? AppColors.border : AppColors.lightBorder,
+            ),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(widget.icon, style: const TextStyle(fontSize: 22)),
+              const SizedBox(height: 4),
+              Text(
+                widget.label,
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: widget.isDark ? AppColors.textSecondary : AppColors.textTertiary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

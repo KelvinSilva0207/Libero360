@@ -3,10 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import '../../../../core/services/log_service.dart';
 import '../../../../core/themes/app_colors.dart';
+import '../../../../core/utils/category_calculator.dart';
 import '../../../../core/utils/cedula_formatter.dart';
 import '../../../estadisticas/data/models/models.dart';
 import '../viewmodels/athlete_viewmodel.dart';
+import '../../../../core/utils/name_formatter.dart';
 
 class AthleteFormScreen extends StatefulWidget {
   final Player? existing;
@@ -35,6 +38,7 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
   bool _esCapitan = false;
   EstadoSalud _estadoSalud = EstadoSalud.disponible;
   bool _saving = false;
+  bool _hasCamera = false;
   File? _fotoFile;
 
   final _picker = ImagePicker();
@@ -44,11 +48,12 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
   @override
   void initState() {
     super.initState();
+    _checkCameraAvailability();
     if (_isEditing) {
       final p = widget.existing!;
       _firstNamesCtrl.text = p.firstNames;
       _lastNamesCtrl.text = p.lastNames;
-      _cedulaCtrl.text = p.cedula;
+      _cedulaCtrl.text = formatCedula(p.cedula);
       _numeroCtrl.text = p.numero?.toString() ?? '';
       if (p.altura > 0) _alturaCtrl.text = p.altura.toStringAsFixed(1);
       _condicionFisicaCtrl.text = p.condicionFisica;
@@ -75,6 +80,10 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
     super.dispose();
   }
 
+  void _checkCameraAvailability() {
+    setState(() => _hasCamera = _picker.supportsImageSource(ImageSource.camera));
+  }
+
   int get _edadCalculada {
     final hoy = DateTime.now();
     int edad = hoy.year - _fechaNacimiento.year;
@@ -86,14 +95,20 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
   }
 
   Future<void> _pickDate() async {
+    LogService.instance.system('DATE PICKER OPEN — fechaNacimiento: $_fechaNacimiento',
+        source: 'AthleteFormScreen');
     final picked = await showDatePicker(
       context: context,
       initialDate: _fechaNacimiento,
-      firstDate: DateTime(1970),
+      firstDate: DateTime(1980),
       lastDate: DateTime.now(),
+      initialDatePickerMode: DatePickerMode.year,
+      helpText: 'Seleccionar fecha de nacimiento',
+      cancelText: 'Cancelar',
+      confirmText: 'Confirmar',
       builder: (context, child) => Theme(
-        data: ThemeData.dark().copyWith(
-          colorScheme: const ColorScheme.dark(
+        data: Theme.of(context).copyWith(
+          colorScheme: Theme.of(context).colorScheme.copyWith(
             primary: AppColors.accent,
             onPrimary: Colors.white,
           ),
@@ -101,18 +116,31 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
         child: child!,
       ),
     );
-    if (picked != null) setState(() => _fechaNacimiento = picked);
+    if (picked != null && mounted) {
+      LogService.instance.auto('DATE SELECTED — fechaNacimiento: $picked',
+          source: 'AthleteFormScreen');
+      setState(() => _fechaNacimiento = picked);
+    } else if (mounted) {
+      LogService.instance.error('DATE CANCELLED — fechaNacimiento',
+          source: 'AthleteFormScreen');
+    }
   }
 
   Future<void> _pickIngresoDate() async {
+    LogService.instance.system('DATE PICKER OPEN — fechaIngreso: $_fechaIngreso',
+        source: 'AthleteFormScreen');
     final picked = await showDatePicker(
       context: context,
       initialDate: _fechaIngreso,
       firstDate: DateTime(2000),
       lastDate: DateTime.now(),
+      initialDatePickerMode: DatePickerMode.year,
+      helpText: 'Seleccionar fecha de ingreso',
+      cancelText: 'Cancelar',
+      confirmText: 'Confirmar',
       builder: (context, child) => Theme(
-        data: ThemeData.dark().copyWith(
-          colorScheme: const ColorScheme.dark(
+        data: Theme.of(context).copyWith(
+          colorScheme: Theme.of(context).colorScheme.copyWith(
             primary: AppColors.accent,
             onPrimary: Colors.white,
           ),
@@ -120,57 +148,30 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
         child: child!,
       ),
     );
-    if (picked != null) setState(() => _fechaIngreso = picked);
+    if (picked != null && mounted) {
+      LogService.instance.auto('DATE SELECTED — fechaIngreso: $picked',
+          source: 'AthleteFormScreen');
+      setState(() => _fechaIngreso = picked);
+    } else if (mounted) {
+      LogService.instance.error('DATE CANCELLED — fechaIngreso',
+          source: 'AthleteFormScreen');
+    }
   }
 
-  Future<void> _pickImage() async {
-    final source = await showModalBottomSheet<ImageSource>(
-      context: context,
-      backgroundColor: AppColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Foto del atleta', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _imageSourceOption(ctx, Icons.camera_alt_rounded, 'Cámara', ImageSource.camera),
-                _imageSourceOption(ctx, Icons.photo_library_rounded, 'Galería', ImageSource.gallery),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-    if (source == null) return;
+  Future<void> _pickImage(ImageSource source) async {
+    final isCamera = source == ImageSource.camera;
+    if (isCamera) {
+      LogService.instance.system('CAMERA OPEN', source: 'AthleteFormScreen');
+    }
     final picked = await _picker.pickImage(source: source, imageQuality: 85, maxWidth: 600);
-    if (picked != null) setState(() => _fotoFile = File(picked.path));
-  }
-
-  Widget _imageSourceOption(BuildContext ctx, IconData icon, String label, ImageSource source) {
-    return GestureDetector(
-      onTap: () => Navigator.pop(ctx, source),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceLight,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Icon(icon, color: AppColors.accent, size: 32),
-          ),
-          const SizedBox(height: 8),
-          Text(label, style: const TextStyle(color: Colors.white54, fontSize: 12)),
-        ],
-      ),
-    );
+    if (picked != null) {
+      if (isCamera) {
+        LogService.instance.auto('PHOTO CAPTURED', source: 'AthleteFormScreen');
+      }
+      setState(() => _fotoFile = File(picked.path));
+    } else if (isCamera) {
+      LogService.instance.error('CAMERA CANCELLED', source: 'AthleteFormScreen');
+    }
   }
 
   Future<void> _save() async {
@@ -178,6 +179,8 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
     setState(() => _saving = true);
 
     try {
+      LogService.instance.system('ATHLETE: update started — ${_isEditing ? "edit" : "new"}', source: 'AthleteFormScreen');
+
       final alt = double.tryParse(_alturaCtrl.text.trim().replaceAll(',', '.'));
       final player = Player.create(
         firstNames: _firstNamesCtrl.text.trim(),
@@ -198,28 +201,51 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
       );
 
       if (_isEditing) {
-        player.id = widget.existing!.id;
-        player.fotoUrl = widget.existing!.fotoUrl;
-        player.profileId = widget.existing!.profileId;
-        player.clubId = widget.existing!.clubId;
-        player.createdAt = widget.existing!.createdAt;
+        final e = widget.existing!;
+        player.id = e.id;
+        player.fotoUrl = e.fotoUrl;
+        player.profileId = e.profileId;
+        player.clubId = e.clubId;
+        player.createdAt = e.createdAt;
+        // Preserve status/restriction fields not in Player.create()
+        player.atletaStatus = e.atletaStatus;
+        player.statusReason = e.statusReason;
+        player.statusStartDate = e.statusStartDate;
+        player.statusEndDate = e.statusEndDate;
+        player.restriccion = e.restriccion;
+      }
+
+      if (_fotoFile != null) {
+        player.fotoUrl = _fotoFile!.path;
       }
 
       final vm = context.read<AthleteViewModel>();
       final ok = await vm.save(player);
       if (mounted) {
         if (ok) {
+          LogService.instance.auto('ATHLETE: update success — ${NameFormatter.playerDisplayName(player)}', source: 'AthleteFormScreen');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(_isEditing ? 'Atleta actualizado correctamente' : 'Atleta registrado'),
+              backgroundColor: const Color(0xFF22C55E),
+            ),
+          );
           Navigator.pop(context, true);
         } else {
+          LogService.instance.error('ATHLETE: update failed — ${vm.error}', source: 'AthleteFormScreen');
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: ${vm.error}'), backgroundColor: Colors.red),
+            SnackBar(
+              content: const Text('No fue posible guardar los cambios'),
+              backgroundColor: Colors.red,
+            ),
           );
         }
       }
     } catch (e) {
+      LogService.instance.error('ATHLETE: update failed — $e', source: 'AthleteFormScreen');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al guardar: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text('No fue posible guardar los cambios'), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -248,75 +274,79 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _section('Foto'),
-              const SizedBox(height: 8),
-              _buildPhotoPicker(),
-              const SizedBox(height: 20),
-              _section('Información Personal'),
-              const SizedBox(height: 8),
-              _buildTextField(_firstNamesCtrl, 'Nombres', Icons.person, validator: (v) {
-                if (v == null || v.trim().isEmpty) return 'Ingrese los nombres';
-                return null;
-              }),
-              const SizedBox(height: 12),
-              _buildTextField(_lastNamesCtrl, 'Apellidos', Icons.person_outline_rounded, validator: (v) {
-                if (v == null || v.trim().isEmpty) return 'Ingrese los apellidos';
-                return null;
-              }),
-              const SizedBox(height: 12),
-              _buildTextField(
-                _cedulaCtrl, 'Cédula', Icons.badge,
-                keyboardType: TextInputType.number,
-                inputFormatters: [CedulaFormatter()],
-                validator: (v) {
-                  if (v == null || v.trim().isEmpty) return 'Ingrese la cédula';
-                  final digits = v.replaceAll('.', '');
-                  if (digits.length < 9) return 'Cédula incompleta';
+              _animatedSection(Icons.person, 'INFORMACIÓN PERSONAL', 'Datos básicos del atleta', [
+                _buildTextField(_firstNamesCtrl, 'Nombres', Icons.person, validator: (v) {
+                  if (v == null || v.trim().isEmpty) return 'Ingrese los nombres';
                   return null;
-                },
-              ),
-              const SizedBox(height: 12),
-              _buildDateField('Fecha de Nacimiento', _fechaNacimiento, Icons.cake, _pickDate, _edadCalculada),
-              const SizedBox(height: 12),
-              _buildDateField('Fecha de Ingreso', _fechaIngreso, Icons.assignment_ind, _pickIngresoDate, null),
-              const SizedBox(height: 20),
-              _section('Categoría'),
-              const SizedBox(height: 4),
-              _buildCategoryDisplay(),
-              const SizedBox(height: 20),
-              _section('Datos Físicos'),
-              const SizedBox(height: 8),
-              _buildSexoDropdown(),
-              const SizedBox(height: 12),
-              _buildTextField(
-                _alturaCtrl, 'Altura (cm, opcional)', Icons.height,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d.]'))],
-              ),
-              const SizedBox(height: 12),
-              _buildTipoSangreDropdown(),
-              const SizedBox(height: 12),
-              _buildManoDropdown(),
-              const SizedBox(height: 20),
-              _section('Posición y Rol'),
-              const SizedBox(height: 8),
-              _buildPosicionDropdown('Posición Principal', _posicion, (v) {
-                if (v != null) setState(() => _posicion = v);
-              }),
-              const SizedBox(height: 12),
-              _buildPosicionDropdown('Posición Secundaria', _posicionSecundaria, (v) {
-                if (v != null) setState(() => _posicionSecundaria = v);
-              }),
-              const SizedBox(height: 12),
-              _buildSwitchRow(Icons.star, '¿Es Capitán?', _esCapitan, (v) {
-                setState(() => _esCapitan = v);
-              }),
-              const SizedBox(height: 20),
-              _section('Estado Físico'),
-              const SizedBox(height: 8),
-              _buildSaludDropdown(),
-              const SizedBox(height: 12),
-              _buildTextField(_condicionFisicaCtrl, 'Condición Física Actual', Icons.fitness_center),
+                }),
+                const SizedBox(height: 12),
+                _buildTextField(_lastNamesCtrl, 'Apellidos', Icons.person_outline_rounded, validator: (v) {
+                  if (v == null || v.trim().isEmpty) return 'Ingrese los apellidos';
+                  return null;
+                }),
+                const SizedBox(height: 12),
+                _buildSexoDropdown(),
+                const SizedBox(height: 12),
+                _buildBirthDateField(),
+                const SizedBox(height: 12),
+                _buildTextField(
+                  _cedulaCtrl, 'Cédula', Icons.badge,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    CedulaFormatter(),
+                  ],
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) return 'Ingrese la cédula';
+                    if (!CedulaFormatter.isValid(v)) return 'Cédula inválida';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 12),
+                _buildDateField('Fecha de Ingreso', _fechaIngreso, Icons.assignment_ind, _pickIngresoDate, null),
+              ], delay: Duration.zero),
+              const SizedBox(height: 24),
+              _animatedSection(Icons.sports_volleyball, 'INFORMACIÓN DEPORTIVA', 'Rol y capacidades en el campo', [
+                _buildTextField(
+                  _numeroCtrl, 'Número Camiseta', Icons.format_list_numbered,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d]'))],
+                ),
+                const SizedBox(height: 12),
+                _buildPosicionDropdown('Posición Principal', _posicion, (v) {
+                  if (v != null) setState(() => _posicion = v);
+                }),
+                const SizedBox(height: 12),
+                _buildPosicionDropdown('Posición Secundaria', _posicionSecundaria, (v) {
+                  if (v != null) setState(() => _posicionSecundaria = v);
+                }),
+                const SizedBox(height: 12),
+                _buildTextField(
+                  _alturaCtrl, 'Altura (cm)', Icons.height,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d.]'))],
+                ),
+                const SizedBox(height: 12),
+                _buildManoDropdown(),
+                const SizedBox(height: 12),
+                _buildCategoryField(),
+                const SizedBox(height: 12),
+                _buildSwitchRow(Icons.star, '¿Es Capitán?', _esCapitan, (v) {
+                  setState(() => _esCapitan = v);
+                }),
+              ], delay: const Duration(milliseconds: 80)),
+              const SizedBox(height: 24),
+              _animatedSection(Icons.medical_services, 'INFORMACIÓN MÉDICA', 'Datos de salud del atleta', [
+                _buildTipoSangreDropdown(),
+                const SizedBox(height: 12),
+                _buildSaludDropdown(),
+                const SizedBox(height: 12),
+                _buildTextField(_condicionFisicaCtrl, 'Condición Física', Icons.fitness_center),
+              ], delay: const Duration(milliseconds: 160)),
+              const SizedBox(height: 24),
+              _animatedSection(Icons.camera_alt, 'FOTOGRAFÍA', 'Imagen del atleta', [
+                _buildPhotoSection(),
+              ], delay: const Duration(milliseconds: 240)),
               const SizedBox(height: 32),
               FilledButton.icon(
                 onPressed: _saving ? null : _save,
@@ -339,42 +369,104 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
     );
   }
 
-  Widget _buildPhotoPicker() {
+  Widget _buildPhotoSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (_fotoFile != null)
+          Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            height: 200,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              image: DecorationImage(image: FileImage(_fotoFile!), fit: BoxFit.cover),
+            ),
+          ),
+        if (_hasCamera)
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => _pickImage(ImageSource.gallery),
+                  icon: const Icon(Icons.photo_library_rounded),
+                  label: const Text('Seleccionar imagen'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    side: BorderSide(color: AppColors.accent.withValues(alpha: 0.5)),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => _pickImage(ImageSource.camera),
+                  icon: const Icon(Icons.camera_alt_rounded),
+                  label: const Text('Tomar fotografía'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    side: BorderSide(color: AppColors.accent.withValues(alpha: 0.5)),
+                  ),
+                ),
+              ),
+            ],
+          )
+        else
+          OutlinedButton.icon(
+            onPressed: () => _pickImage(ImageSource.gallery),
+            icon: const Icon(Icons.photo_library_rounded),
+            label: const Text('Seleccionar imagen'),
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              side: BorderSide(color: AppColors.accent.withValues(alpha: 0.5)),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildBirthDateField() {
+    final edad = _edadCalculada;
+    final cat = CategoryCalculator.calculate(edad);
     return GestureDetector(
-      onTap: _pickImage,
+      onTap: _pickDate,
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: AppColors.surfaceLight,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(color: AppColors.border),
         ),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: 64,
-              height: 64,
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: _fotoFile != null
-                  ? ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: Image.file(_fotoFile!, fit: BoxFit.cover),
-                    )
-                  : const Icon(Icons.camera_alt, color: AppColors.primaryLight, size: 28),
-            ),
-            const SizedBox(width: 16),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            Row(
               children: [
-                const Text('Foto del atleta', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500)),
-                const SizedBox(height: 2),
+                Icon(Icons.cake, color: AppColors.primary, size: 20),
+                const SizedBox(width: 12),
+                Text('Fecha de Nacimiento',
+                  style: const TextStyle(color: Colors.white54, fontSize: 13)),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
                 Text(
-                  _fotoFile != null ? 'Foto seleccionada' : 'Toca para agregar foto',
-                  style: const TextStyle(color: Colors.white38, fontSize: 12),
+                  _formatDate(_fechaNacimiento),
+                  style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500),
                 ),
+                const Spacer(),
+                Icon(Icons.edit_calendar_rounded, color: AppColors.accent, size: 18),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                _ageChip('$edad años', AppColors.primary),
+                const SizedBox(width: 8),
+                _ageChip(cat, AppColors.accent),
               ],
             ),
           ],
@@ -383,51 +475,69 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
     );
   }
 
-  Widget _buildCategoryDisplay() {
-    final edad = _edadCalculada;
-    final cat = _categoriaForAge(edad);
+  Widget _ageChip(String text, Color color) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [AppColors.accent.withValues(alpha: 0.15), AppColors.primary.withValues(alpha: 0.1)],
-        ),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.accent.withValues(alpha: 0.3)),
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(8),
       ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: AppColors.accent,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(cat, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-          ),
-          const SizedBox(width: 12),
-          Text('$edad años', style: const TextStyle(color: Colors.white54, fontSize: 14)),
-        ],
+      child: Text(
+        text,
+        style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600),
       ),
     );
   }
 
-  String _categoriaForAge(int age) {
-    if (age <= 12) return 'U13';
-    if (age <= 14) return 'U15';
-    if (age <= 16) return 'U17';
-    if (age <= 18) return 'U19';
-    return 'Libre';
-  }
-
-  Widget _section(String title) {
-    return Text(
-      title,
-      style: const TextStyle(
-        color: AppColors.accent,
-        fontWeight: FontWeight.bold,
-        fontSize: 14,
-        letterSpacing: 1.2,
+  Widget _sectionCard(IconData icon, String title, String subtitle) {
+    return Card(
+      margin: EdgeInsets.zero,
+      color: AppColors.surfaceLight,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: AppColors.accent.withValues(alpha: 0.3)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: AppColors.accent.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: AppColors.accent, size: 20),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      color: Colors.white54,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -630,6 +740,52 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
     );
   }
 
+  Widget _buildCategoryField() {
+    final edad = _edadCalculada;
+    final cat = CategoryCalculator.calculate(edad);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceLight,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.category, color: AppColors.primary, size: 20),
+          const SizedBox(width: 12),
+          const Text('Categoría', style: TextStyle(color: Colors.white54, fontSize: 14)),
+          const Spacer(),
+          _ageChip(cat, AppColors.accent),
+        ],
+      ),
+    );
+  }
+
+  Widget _animatedSection(IconData icon, String title, String subtitle, List<Widget> fields, {required Duration delay}) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 400) + delay,
+      curve: Curves.easeOut,
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: value,
+          child: Transform.translate(
+            offset: Offset(0, 20 * (1 - value)),
+            child: child,
+          ),
+        );
+      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _sectionCard(icon, title, subtitle),
+          const SizedBox(height: 16),
+          ...fields,
+        ],
+      ),
+    );
+  }
+
   String _posicionLabel(Posicion p) {
     switch (p) {
       case Posicion.colocador: return 'Armador';
@@ -647,5 +803,9 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
       case EstadoSalud.lesionado: return 'Lesionado';
       case EstadoSalud.enDuda: return 'En duda';
     }
+  }
+
+  String _formatDate(DateTime d) {
+    return '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
   }
 }

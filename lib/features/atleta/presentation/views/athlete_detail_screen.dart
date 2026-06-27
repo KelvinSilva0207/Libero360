@@ -5,11 +5,13 @@ import '../../../../core/widgets_globales/route_transitions.dart';
 import '../../../estadisticas/data/models/models.dart';
 import '../../../estadisticas/data/local_db/database_service.dart';
 import '../../../estadisticas/domain/services/stats_calculator.dart';
+import '../../data/athlete_repository.dart';
 import '../../data/athlete_stats_model.dart';
 import '../../data/athlete_stats_service.dart';
 import '../viewmodels/athlete_viewmodel.dart';
 import '../widgets/athlete_stats_widget.dart';
 import 'athlete_form_screen.dart';
+import '../../../../core/utils/name_formatter.dart';
 
 class AthleteDetailScreen extends StatefulWidget {
   final Player player;
@@ -21,6 +23,8 @@ class AthleteDetailScreen extends StatefulWidget {
 
 class _AthleteDetailScreenState extends State<AthleteDetailScreen> {
   final AthleteStatsService _statsService = AthleteStatsService();
+  final AthleteRepository _repo = AthleteRepository();
+  late Player _player;
   PlayerStats? _stats;
   AthleteStatsData? _athleteStats;
   TeamRankings? _teamRankings;
@@ -30,6 +34,7 @@ class _AthleteDetailScreenState extends State<AthleteDetailScreen> {
   @override
   void initState() {
     super.initState();
+    _player = widget.player;
     _loadAll();
   }
 
@@ -40,64 +45,124 @@ class _AthleteDetailScreenState extends State<AthleteDetailScreen> {
   Future<void> _loadStats() async {
     try {
       await DatabaseService.instance.initialize();
-      final events = await DatabaseService.instance.getEventsByPlayer(widget.player.id);
-      _stats = StatsCalculator.calcularStats(events, widget.player.id);
+      final events = await DatabaseService.instance.getEventsByPlayer(_player.id);
+      _stats = StatsCalculator.calcularStats(events, _player.id);
     } catch (_) {}
     if (mounted) setState(() => _loadingStats = false);
   }
 
   Future<void> _loadRendimiento() async {
     try {
-      _athleteStats = await _statsService.calculate(widget.player.id);
+      _athleteStats = await _statsService.calculate(_player.id);
       _teamRankings = await _statsService.calculateTeamRankings();
     } catch (_) {}
     if (mounted) setState(() => _loadingRendimiento = false);
   }
 
   Future<void> _edit() async {
-    final result = await context.pushSlide<bool>(AthleteFormScreen(existing: widget.player));
+    final result = await context.pushSlide<bool>(AthleteFormScreen(existing: _player));
     if (result == true && mounted) {
-      if (mounted) setState(() {});
+      final updated = await _repo.getById(_player.id);
+      if (updated != null && mounted) {
+        setState(() => _player = updated);
+      }
       _loadStats();
     }
   }
 
   Future<void> _delete() async {
-    final confirm = await showDialog<bool>(
+    final reasonCtrl = TextEditingController();
+    final result = await showModalBottomSheet<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        title: const Text('Eliminar atleta', style: TextStyle(color: Colors.white)),
-        content: const Text('¿Mover a la papelera? Podrás restaurarlo después.',
-          style: TextStyle(color: Colors.white54)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancelar', style: TextStyle(color: Colors.white54)),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Eliminar'),
-          ),
-        ],
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(
+              width: 32, height: 4,
+              decoration: BoxDecoration(
+                color: Colors.white24,
+                borderRadius: BorderRadius.circular(2),
+              ),
+              alignment: Alignment.center,
+            ),
+            const SizedBox(height: 20),
+            const Text('Eliminar atleta',
+              style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 8),
+            const Text('El atleta será enviado a la papelera.\nPodrá restaurarse posteriormente.',
+              style: TextStyle(color: Colors.white54, fontSize: 14)),
+            const SizedBox(height: 20),
+            TextField(
+              controller: reasonCtrl,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                hintText: 'Motivo de eliminación (opcional)',
+                hintStyle: const TextStyle(color: Colors.white38),
+                filled: true,
+                fillColor: AppColors.surfaceLight,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(ctx, false),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: const Text('Cancelar', style: TextStyle(color: Colors.white54)),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: () => Navigator.pop(ctx, true),
+                    icon: const Icon(Icons.delete_outline, size: 18),
+                    label: const Text('Mover a papelera'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
-    if (confirm != true) return;
+    reasonCtrl.dispose();
+    if (result != true) return;
     final vm = context.read<AthleteViewModel>();
-    final ok = await vm.softDelete(widget.player.id, reason: 'Eliminado por el usuario');
+    final reason = reasonCtrl.text.trim();
+    final ok = await vm.softDelete(_player.id, reason: reason.isNotEmpty ? reason : null);
     if (ok && mounted) Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
-    final p = widget.player;
+    final p = _player;
 
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: AppColors.surface,
-        title: Text(p.nombre, style: const TextStyle(color: Colors.white, fontSize: 16)),
+        title: Text(NameFormatter.playerFullName(p), style: const TextStyle(color: Colors.white, fontSize: 16)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
@@ -181,7 +246,7 @@ class _AthleteDetailScreenState extends State<AthleteDetailScreen> {
                 Row(
                   children: [
                     Flexible(
-                      child: Text(p.nombre, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                      child: Text(NameFormatter.playerFullName(p), style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
                     ),
                     if (p.esCapitan) ...[
                       const SizedBox(width: 6),

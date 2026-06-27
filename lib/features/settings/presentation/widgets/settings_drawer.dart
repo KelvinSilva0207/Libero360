@@ -89,6 +89,14 @@ class _SettingsDrawerState extends State<SettingsDrawer>
       final db = DatabaseService.instance;
       await db.initialize();
       final json = await db.exportToJson();
+      if (json == null) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Error al exportar: integridad de datos'), backgroundColor: Colors.red),
+          );
+        }
+        return;
+      }
       final dir = await getTemporaryDirectory();
       final date = DateTime.now().toIso8601String().split('T').first;
       final file = File('${dir.path}/libero360_backup_$date.json');

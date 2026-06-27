@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../../../core/services/log_service.dart';
+import '../../../notifications/data/notification_service.dart';
+import '../../../notifications/data/notification_models.dart' show NotificationType;
+import '../../../dashboard/presentation/viewmodels/dashboard_viewmodel.dart';
 import '../../../estadisticas/data/models/models.dart';
 import '../../../estadisticas/data/local_db/database_service.dart';
+import '../../../../core/utils/name_formatter.dart';
 import 'attendance_history_screen.dart';
 
 class AttendanceScreen extends StatefulWidget {
@@ -73,6 +79,11 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       for (final record in _records.values) {
         await DatabaseService.instance.saveAttendanceRecord(record);
       }
+      LogService.instance.auto('Asistencia registrada: ${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}', source: 'AttendanceScreen');
+      _checkConsecutiveAbsences();
+      if (context.mounted) {
+        context.read<DashboardViewModel>().refresh();
+      }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Asistencia guardada')),
@@ -86,6 +97,44 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       }
     }
     if (mounted) setState(() => _saving = false);
+  }
+
+  Future<void> _checkConsecutiveAbsences() async {
+    try {
+      final allAttendance = await DatabaseService.instance.getAllAttendanceRecords();
+      final absentByPlayer = <int, List<AttendanceRecord>>{};
+      for (final r in allAttendance.where((a) => !a.asistio)) {
+        absentByPlayer.putIfAbsent(r.playerId, () => []).add(r);
+      }
+      for (final entry in absentByPlayer.entries) {
+        entry.value.sort((a, b) => a.fecha.compareTo(b.fecha));
+        int streak = 1;
+        for (int i = 1; i < entry.value.length; i++) {
+          final diff = entry.value[i].fecha.difference(entry.value[i - 1].fecha).inDays;
+          if (diff <= 2) {
+            streak++;
+          } else {
+            streak = 1;
+          }
+        }
+        if (streak >= 3) {
+          final player = await DatabaseService.instance.getPlayerById(entry.key);
+          final name = player != null ? NameFormatter.playerDisplayName(player) : 'Atleta';
+          if (streak >= 5) {
+            await NotificationService.instance.createNotification(
+              type: NotificationType.attendanceWarning,
+              title: 'Ausencias críticas',
+              message: '$name acumula $streak ausencias consecutivas.',
+              relatedAthleteId: entry.key.toString(),
+            );
+            LogService.instance.error('$name: $streak ausencias consecutivas (crítico)', source: 'AttendanceScreen');
+          } else {
+            await NotificationService.instance.notifyConsecutiveAbsences(name, streak);
+            LogService.instance.auto('$name: $streak ausencias consecutivas', source: 'AttendanceScreen');
+          }
+        }
+      }
+    } catch (_) {}
   }
 
   void _togglePlayer(int playerId, bool asistio) {
@@ -271,7 +320,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         ),
         title: Row(
           children: [
-            Text(p.nombre,
+            Text(NameFormatter.playerDisplayName(p),
                 style: TextStyle(
                     color: cs.onSurface,
                     fontSize: 14,

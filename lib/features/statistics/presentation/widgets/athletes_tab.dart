@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../../../../core/theme_provider/theme_notifier.dart';
+import '../../../../core/utils/name_formatter.dart';
 import '../../../../features/estadisticas/data/models/models.dart';
 import '../../data/statistics_models.dart';
 import '../viewmodels/athlete_list_viewmodel.dart';
@@ -201,7 +202,7 @@ class _AthleteCard extends StatelessWidget {
                 backgroundImage: p.fotoUrl != null ? NetworkImage(p.fotoUrl!) : null,
                 child: p.fotoUrl == null
                     ? Text(
-                        p.nombre.isNotEmpty ? p.nombre[0].toUpperCase() : '?',
+                        NameFormatter.avatarInitial(p),
                         style: const TextStyle(color: AppColors.accent, fontSize: 22, fontWeight: FontWeight.bold),
                       )
                     : null,
@@ -215,7 +216,7 @@ class _AthleteCard extends StatelessWidget {
                       children: [
                         Expanded(
                           child: Text(
-                            p.nombre,
+                            NameFormatter.playerDisplayName(p),
                             style: TextStyle(color: isDark ? AppColors.textPrimary : AppColors.lightTextPrimary, fontSize: 15, fontWeight: FontWeight.w600),
                             overflow: TextOverflow.ellipsis,
                           ),

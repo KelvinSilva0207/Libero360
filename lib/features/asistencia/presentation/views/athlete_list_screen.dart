@@ -3,6 +3,7 @@ import '../../../../core/themes/app_colors.dart';
 import '../../../../core/widgets_globales/route_transitions.dart';
 import '../../../estadisticas/data/models/models.dart';
 import '../../../estadisticas/data/local_db/database_service.dart';
+import '../../../../core/utils/name_formatter.dart';
 import 'athlete_form_screen.dart';
 import 'player_detail_screen.dart';
 
@@ -213,7 +214,7 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
     setState(() {
       _filteredPlayers = _players.where((p) {
         if (query.isNotEmpty) {
-          final name = p.nombre.toLowerCase();
+          final name = NameFormatter.playerDisplayName(p).toLowerCase();
           final num = p.numero?.toString() ?? '';
           final cedula = p.cedula.toLowerCase();
           if (!name.contains(query) && !num.contains(query) && !cedula.contains(query)) return false;
@@ -360,8 +361,7 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
 
   Widget _athleteCard(Player p) {
     final healthColor = _saludColor(p.estadoSalud);
-    final parts = p.nombre.trim().split(RegExp(r'\s+'));
-    final lastName = parts.length > 1 ? parts.sublist(1).join(' ') : '';
+    final displayName = NameFormatter.playerDisplayName(p);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -417,21 +417,11 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
                         children: [
                           Flexible(
                             child: Text(
-                              parts.first,
+                              displayName,
                               style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          if (lastName.isNotEmpty) ...[
-                            const SizedBox(width: 4),
-                            Flexible(
-                              child: Text(
-                                lastName,
-                                style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 14),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
                           if (p.esCapitan) ...[
                             const SizedBox(width: 6),
                             const Icon(Icons.star, color: AppColors.accent, size: 15),

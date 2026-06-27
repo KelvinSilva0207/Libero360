@@ -1,7 +1,9 @@
 import 'dart:convert';
+import 'package:crypto/crypto.dart';
 import 'package:sembast/sembast.dart';
 import '../../../../core/database/database_provider.dart';
 import '../../../../core/services/abstract_data_service.dart';
+import '../../../../core/services/category_service.dart';
 import '../models/models.dart';
 import '../../../auth/data/models/user_model.dart';
 import '../../../partido/data/match_event.dart';
@@ -35,6 +37,8 @@ class DatabaseService extends AbstractDataService {
   final _staffStore = intMapStoreFactory.store('staff_members');
   final _staffInvitationStore = intMapStoreFactory.store('staff_invitations');
   final _staffActivityStore = intMapStoreFactory.store('staff_activities');
+  final _medicalLeaveStore = intMapStoreFactory.store('medical_leaves');
+  final _categoryStore = intMapStoreFactory.store('categories');
 
   Future<void> initialize() async {
     if (_isInitialized) return;
@@ -914,22 +918,137 @@ class DatabaseService extends AbstractDataService {
 
   // ==================== BACKUP & RESTORE ====================
 
-  Future<String> exportToJson() async {
+  Future<String?> exportToJson({String? appVersion, String? devicePlatform}) async {
+    final _appVersion = appVersion ?? '1.0.0';
+    final _devicePlatform = devicePlatform ?? 'unknown';
+    final now = DateTime.now();
+
+    // Integrity-verified data collection
+    List<Map<String, dynamic>> players;
+    try {
+      players = (await getAllPlayers()).map(_playerToMap).toList();
+    } catch (_) { return null; }
+
+    List<Map<String, dynamic>> matches;
+    try {
+      matches = (await getAllMatches()).map(_matchToMap).toList();
+    } catch (_) { return null; }
+
+    List<Map<String, dynamic>> events;
+    try {
+      events = (await getAllEvents()).map(_eventToMap).toList();
+    } catch (_) { return null; }
+
+    List<Map<String, dynamic>> attendance;
+    try {
+      attendance = (await getAllAttendanceRecords()).map(_attendanceToMap).toList();
+    } catch (_) { return null; }
+
+    List<Map<String, dynamic>> matchEvents;
+    try {
+      matchEvents = (await getAllMatchEvents()).map(_matchEventToMap).toList();
+    } catch (_) { return null; }
+
+    List<Map<String, dynamic>> profiles;
+    try {
+      profiles = (await getAllProfiles()).map((p) => p.toJson()).toList();
+    } catch (_) { return null; }
+
+    String? activeProfileId;
+    try {
+      activeProfileId = await getActiveProfileId();
+    } catch (_) { return null; }
+
+    List<Map<String, dynamic>> users;
+    try {
+      users = (await getAllUsers()).map(_userToMap).toList();
+    } catch (_) { return null; }
+
+    List<Map<String, dynamic>> seasons;
+    try {
+      seasons = (await getAllSeasons()).map(_seasonToMap).toList();
+    } catch (_) { return null; }
+
+    List<Map<String, dynamic>> rotationStats;
+    try {
+      rotationStats = (await getAllRotationStatsRecords()).map(_rotationStatsToMap).toList();
+    } catch (_) { return null; }
+
+    List<Map<String, dynamic>> monthlyAwards;
+    try {
+      monthlyAwards = (await getAllMonthlyAwards()).map(_monthlyAwardToMap).toList();
+    } catch (_) { return null; }
+
+    List<Map<String, dynamic>> medicalLeaves;
+    try {
+      medicalLeaves = (await _medicalLeaveStore.find(_database)).map((e) => e.value).toList();
+    } catch (_) { return null; }
+
+    List<Map<String, dynamic>> staff;
+    try {
+      staff = (await _staffStore.find(_database)).map((e) => e.value).toList();
+    } catch (_) { return null; }
+
+    List<Map<String, dynamic>> staffInvitations;
+    try {
+      staffInvitations = (await _staffInvitationStore.find(_database)).map((e) => e.value).toList();
+    } catch (_) { return null; }
+
+    List<Map<String, dynamic>> staffActivities;
+    try {
+      staffActivities = (await _staffActivityStore.find(_database)).map((e) => e.value).toList();
+    } catch (_) { return null; }
+
+    List<Map<String, dynamic>> categories;
+    try {
+      categories = (await _categoryStore.find(_database)).map((e) => e.value).toList();
+    } catch (_) { return null; }
+
+    // Build data map without checksum
     final data = {
-      'version': '1.0.0',
-      'exportedAt': DateTime.now().toIso8601String(),
-      'players': (await getAllPlayers()).map(_playerToMap).toList(),
-      'matches': (await getAllMatches()).map(_matchToMap).toList(),
-      'events': (await getAllEvents()).map(_eventToMap).toList(),
-      'attendance': (await getAllAttendanceRecords()).map(_attendanceToMap).toList(),
-      'matchEvents': (await getAllMatchEvents()).map(_matchEventToMap).toList(),
-      'profiles': (await getAllProfiles()).map((p) => p.toJson()).toList(),
-      'profilesMeta': {'activeProfileId': await getActiveProfileId()},
-      'users': (await getAllUsers()).map(_userToMap).toList(),
-      'seasons': (await getAllSeasons()).map(_seasonToMap).toList(),
-      'rotationStats': (await getAllRotationStatsRecords()).map(_rotationStatsToMap).toList(),
-      'monthlyAwards': (await getAllMonthlyAwards()).map(_monthlyAwardToMap).toList(),
+      'version': '2.0.0',
+      'appVersion': _appVersion,
+      'schemaVersion': '2.0.0',
+      'createdAt': now.toIso8601String(),
+      'devicePlatform': _devicePlatform,
+      'databaseVersion': '1.0.0',
+      'totalPlayers': players.length,
+      'totalMatches': matches.length,
+      'totalEvents': events.length,
+      'totalAttendance': attendance.length,
+      'totalMatchEvents': matchEvents.length,
+      'totalProfiles': profiles.length,
+      'totalUsers': users.length,
+      'totalSeasons': seasons.length,
+      'totalRotationStats': rotationStats.length,
+      'totalMonthlyAwards': monthlyAwards.length,
+      'totalMedicalLeaves': medicalLeaves.length,
+      'totalStaff': staff.length,
+      'totalStaffInvitations': staffInvitations.length,
+      'totalStaffActivities': staffActivities.length,
+      'totalCategories': categories.length,
+      'players': players,
+      'matches': matches,
+      'events': events,
+      'attendance': attendance,
+      'matchEvents': matchEvents,
+      'profiles': profiles,
+      'profilesMeta': {'activeProfileId': activeProfileId},
+      'users': users,
+      'seasons': seasons,
+      'rotationStats': rotationStats,
+      'monthlyAwards': monthlyAwards,
+      'medicalLeaves': medicalLeaves,
+      'staffMembers': staff,
+      'staffInvitations': staffInvitations,
+      'staffActivities': staffActivities,
+      'categories': categories,
     };
+
+    final preChecksumJson = const JsonEncoder.withIndent('  ').convert(data);
+    final checksum = sha256.convert(utf8.encode(preChecksumJson)).toString();
+    data['checksum'] = checksum;
+
     return const JsonEncoder.withIndent('  ').convert(data);
   }
 
@@ -972,6 +1091,22 @@ class DatabaseService extends AbstractDataService {
       for (final ma in (data['monthlyAwards'] as List? ?? [])) {
         await _monthlyAwardStore.add(_database, ma as Map<String, dynamic>);
       }
+      for (final ml in (data['medicalLeaves'] as List? ?? [])) {
+        await _medicalLeaveStore.add(_database, ml as Map<String, dynamic>);
+      }
+      for (final sm in (data['staffMembers'] as List? ?? [])) {
+        await _staffStore.add(_database, sm as Map<String, dynamic>);
+      }
+      for (final si in (data['staffInvitations'] as List? ?? [])) {
+        await _staffInvitationStore.add(_database, si as Map<String, dynamic>);
+      }
+      for (final sa in (data['staffActivities'] as List? ?? [])) {
+        await _staffActivityStore.add(_database, sa as Map<String, dynamic>);
+      }
+      for (final c in (data['categories'] as List? ?? [])) {
+        await _categoryStore.add(_database, c as Map<String, dynamic>);
+      }
+      await CategoryService.instance.reload();
       return true;
     } catch (_) {
       return false;
@@ -1026,6 +1161,11 @@ class DatabaseService extends AbstractDataService {
     await _profileMetaStore.delete(_database);
     await _rotationStatsStore.delete(_database);
     await _monthlyAwardStore.delete(_database);
+    await _medicalLeaveStore.delete(_database);
+    await _staffStore.delete(_database);
+    await _staffInvitationStore.delete(_database);
+    await _staffActivityStore.delete(_database);
+    await _categoryStore.delete(_database);
   }
 
   // ==================== SERIALIZATION ====================
@@ -1113,6 +1253,7 @@ class DatabaseService extends AbstractDataService {
     'ultimoPuntoFueLocal': m.ultimoPuntoFueLocal ? 1 : 0,
     'resultadoFinal': m.resultadoFinal ?? '',
     'lugar': m.lugar ?? '',
+    'competitionName': m.competitionName ?? '',
     'seasonId': m.seasonId ?? 0,
     'profileId': m.profileId,
     'clubId': m.clubId,
@@ -1139,6 +1280,7 @@ class DatabaseService extends AbstractDataService {
     ..ultimoPuntoFueLocal = (map['ultimoPuntoFueLocal'] as int? ?? 1) == 1
     ..resultadoFinal = (map['resultadoFinal'] as String?)?.isNotEmpty == true ? map['resultadoFinal'] as String? : null
     ..lugar = (map['lugar'] as String?)?.isNotEmpty == true ? map['lugar'] as String? : null
+    ..competitionName = (map['competitionName'] as String?)?.isNotEmpty == true ? map['competitionName'] as String? : null
     ..seasonId = map['seasonId'] as int? ?? 0
     ..profileId = map['profileId'] as String?
     ..clubId = map['clubId'] as String?

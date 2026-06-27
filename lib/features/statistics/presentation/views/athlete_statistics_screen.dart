@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme_provider/theme_notifier.dart';
+import '../../../../core/utils/name_formatter.dart';
 import '../../../estadisticas/data/models/models.dart';
 import '../../data/statistics_models.dart';
 
@@ -32,7 +33,7 @@ class AthleteStatisticsScreen extends StatelessWidget {
           icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(p.nombre, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+        title: Text(NameFormatter.playerDisplayName(p), style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
@@ -126,7 +127,7 @@ class _AthleteHeader extends StatelessWidget {
             radius: 32,
             backgroundColor: const Color(0xFFFF8C00).withValues(alpha: 0.15),
             child: Text(
-              player.nombre.isNotEmpty ? player.nombre[0].toUpperCase() : '?',
+              NameFormatter.avatarInitial(player),
               style: const TextStyle(color: Color(0xFFFF8C00), fontSize: 24, fontWeight: FontWeight.bold),
             ),
           ),
@@ -135,7 +136,7 @@ class _AthleteHeader extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(player.nombre, style: TextStyle(color: textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
+                Text(NameFormatter.playerDisplayName(player), style: TextStyle(color: textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 4),
                 Row(
                   children: [

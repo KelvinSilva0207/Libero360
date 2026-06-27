@@ -21,9 +21,8 @@ class AthleteOfMonthCard extends StatelessWidget {
     final textPri = isDark ? Colors.white : AppColors.textPrimary;
     final textSec = isDark ? AppColors.textSecondary : AppColors.textTertiary;
 
-    return SliverToBoxAdapter(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
@@ -134,8 +133,7 @@ class AthleteOfMonthCard extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
+      );
   }
 
   Widget _statBadge(String label, String value, Color color) {

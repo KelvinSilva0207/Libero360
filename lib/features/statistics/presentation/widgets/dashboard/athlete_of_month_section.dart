@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../../core/themes/app_colors.dart';
+import '../../../../../core/utils/name_formatter.dart';
 import '../../../../estadisticas/data/models/models.dart';
 import '../../../data/stats_dashboard_model.dart';
 
@@ -172,7 +173,7 @@ class _AthleteOfMonthSectionState extends State<AthleteOfMonthSection>
           backgroundImage:
               p.fotoUrl != null ? NetworkImage(p.fotoUrl!) : null,
           child: p.fotoUrl == null
-              ? Text(p.nombre.isNotEmpty ? p.nombre[0].toUpperCase() : '?',
+              ? Text(NameFormatter.avatarInitial(p),
                   style: const TextStyle(
                       color: AppColors.accent,
                       fontSize: 24,
@@ -185,7 +186,7 @@ class _AthleteOfMonthSectionState extends State<AthleteOfMonthSection>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                p.displayName.isNotEmpty ? p.displayName : p.nombre,
+                NameFormatter.playerDisplayName(p),
                 style: TextStyle(
                   color: widget.isDark
                       ? AppColors.textPrimary

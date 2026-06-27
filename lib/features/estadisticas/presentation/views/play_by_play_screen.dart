@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../../data/models/models.dart';
 import '../../../partido/presentation/controllers/match_controller.dart';
+import '../../../../core/utils/name_formatter.dart';
 import '../viewmodels/play_by_play_viewmodel.dart';
 
 class PlayByPlayScreen extends StatelessWidget {
@@ -362,7 +363,7 @@ class _PlayByPlayContent extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 4),
                   child: Text(
-                    jugador.nombre,
+                    NameFormatter.playerDisplayName(jugador),
                     style: TextStyle(fontSize: 10, color: isSelected ? Colors.white70 : Colors.white38),
                     maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center,
                   ),
@@ -405,7 +406,7 @@ class _PlayByPlayContent extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(vm.jugadorSeleccionado!.nombre, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13)),
+                        Text(NameFormatter.playerDisplayName(vm.jugadorSeleccionado!), style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13)),
                         Text(_posicionToString(vm.jugadorSeleccionado!.posicion), style: const TextStyle(fontSize: 11, color: Colors.white54)),
                       ],
                     ),

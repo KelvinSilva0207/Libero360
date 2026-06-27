@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../../core/services/log_service.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../../../../core/theme_provider/theme_notifier.dart';
 import '../../../../core/widgets_globales/route_transitions.dart';
@@ -7,9 +8,10 @@ import '../../../auth/presentation/viewmodels/auth_viewmodel.dart';
 import '../../../profiles/presentation/viewmodels/profile_viewmodel.dart';
 import '../../../teams/presentation/viewmodels/club_viewmodel.dart';
 import '../../../teams/data/team_models.dart' show ClubRole;
-import '../../../settings/presentation/widgets/settings_drawer.dart';
 import '../../../asistencia/asistencia.dart';
+import '../../../admin/presentation/views/admin_screen.dart';
 import '../../../estadisticas/presentation/views/play_by_play_screen.dart';
+import '../../../atleta/presentation/viewmodels/athlete_viewmodel.dart';
 import '../viewmodels/dashboard_viewmodel.dart';
 import '../widgets/header_section.dart';
 import '../widgets/main_card_section.dart';
@@ -21,6 +23,7 @@ import '../widgets/recent_activity_timeline.dart';
 import '../widgets/quick_access_row.dart';
 import '../widgets/dashboard_skeleton.dart';
 import '../widgets/animated_section.dart';
+import '../../../../core/utils/name_formatter.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -32,6 +35,8 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   bool _initialized = false;
+  bool _didLogReady = false;
+  bool _didLogError = false;
 
   @override
   void didChangeDependencies() {
@@ -43,9 +48,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   void _load() {
+    LogService.instance.auto('🔵 DASHBOARD SKELETON');
     final profileVm = context.read<ProfileViewModel>();
     final clubVm = context.read<ClubViewModel>();
-    context.read<DashboardViewModel>().load(
+    final athleteVm = context.read<AthleteViewModel>();
+    final dashVm = context.read<DashboardViewModel>();
+    dashVm.setCategoryFilter(athleteVm.selectedCategories);
+    dashVm.load(
       profileId: profileVm.currentProfile?.id,
       clubName: clubVm.currentClub?.name,
       clubMemberCount: clubVm.memberCount,
@@ -58,14 +67,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final vm = context.watch<DashboardViewModel>();
     final user = context.watch<AuthViewModel>().user;
     final profile = context.watch<ProfileViewModel>().currentProfile;
-    final userName = user?.nombre.split(' ').first ?? 'Usuario';
+    final userName = NameFormatter.formatDisplayName(user?.nombre ?? 'Usuario');
+
+    if (vm.data != null && !_didLogReady) {
+      _didLogReady = true;
+      LogService.instance.auto('🟢 DASHBOARD READY — ${vm.data!.quickSummary.athleteCount} atletas, ${vm.data!.quickSummary.matchCount} partidos');
+    }
+    if (vm.error != null && !_didLogError) {
+      _didLogError = true;
+      LogService.instance.error('🔴 DASHBOARD ERROR — ${vm.error}');
+    }
 
     final bg = isDark ? AppColors.background : AppColors.lightBackground;
 
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: bg,
-      endDrawer: const SettingsDrawer(),
       body: SafeArea(
         child: vm.loading && vm.data == null
             ? DashboardSkeleton(isDark: isDark)
@@ -76,92 +93,103 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     child: CustomScrollView(
                       physics: const BouncingScrollPhysics(),
                       slivers: [
-                        SliverToBoxAdapter(child: AnimatedSection(
-                          index: 0,
-                          child: HeaderSection(
-                            userName: userName,
-                            teamInfo: vm.data!.teamInfo,
-                            isDark: isDark,
-                            onSettings: () => _scaffoldKey.currentState?.openEndDrawer(),
-                            roleLabel: _roleLabel(context.read<ClubViewModel>().myRole),
+                        _sectionBuilder(0, 'Header', HeaderSection(
+                          userName: userName,
+                          teamInfo: vm.data!.teamInfo,
+                          isDark: isDark,
+                          onSettings: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const AdminScreen()),
                           ),
+                          roleLabel: _roleLabel(context.read<ClubViewModel>().myRole),
                         )),
-                        SliverToBoxAdapter(child: AnimatedCard(
-                          child: AnimatedSection(
-                            index: 1,
-                            child: MainCardSection(
-                              nextTraining: vm.data!.nextTraining,
-                              nextMatch: vm.data!.nextMatch,
-                              isDark: isDark,
-                            ),
-                          ),
+                        _sectionCardBuilder(1, 'MainCard', MainCardSection(
+                          nextTraining: vm.data!.nextTraining,
+                          nextMatch: vm.data!.nextMatch,
+                          isDark: isDark,
                         )),
-                        SliverToBoxAdapter(child: AnimatedCard(
-                          child: AnimatedSection(
-                            index: 2,
-                            child: AthleteOfMonthCard(
-                              athlete: vm.data!.athleteOfMonth,
-                              isDark: isDark,
-                            ),
-                          ),
+                        _sectionCardBuilder(2, 'AthleteOfMonth', AthleteOfMonthCard(
+                          athlete: vm.data!.athleteOfMonth,
+                          isDark: isDark,
                         )),
-                        SliverToBoxAdapter(child: AnimatedCard(
-                          child: AnimatedSection(
-                            index: 3,
-                            child: QuickSummaryGrid(
-                              summary: vm.data!.quickSummary,
-                              isDark: isDark,
-                            ),
-                          ),
+                        _sectionCardBuilder(3, 'QuickSummary', QuickSummaryGrid(
+                          summary: vm.data!.quickSummary,
+                          isDark: isDark,
                         )),
-                        SliverToBoxAdapter(child: AnimatedCard(
-                          child: AnimatedSection(
-                            index: 4,
-                            child: TeamStatusSection(
-                              status: vm.data!.teamStatus,
-                              isDark: isDark,
-                            ),
-                          ),
+                        _sectionCardBuilder(4, 'TeamStatus', TeamStatusSection(
+                          status: vm.data!.teamStatus,
+                          isDark: isDark,
                         )),
-                        SliverToBoxAdapter(child: AnimatedCard(
-                          child: AnimatedSection(
-                            index: 5,
-                            child: LastMatchBanner(
-                              lastMatch: vm.data!.lastMatch,
-                              isDark: isDark,
-                            ),
-                          ),
+                        _sectionCardBuilder(5, 'LastMatch', LastMatchBanner(
+                          lastMatch: vm.data!.lastMatch,
+                          isDark: isDark,
                         )),
-                        SliverToBoxAdapter(child: AnimatedSection(
-                          index: 6,
-                          child: RecentActivityTimeline(
-                            activities: vm.data!.recentActivity,
-                            isDark: isDark,
-                          ),
+                        _sectionBuilder(6, 'ActivityTimeline', RecentActivityTimeline(
+                          activities: vm.data!.recentActivity,
+                          isDark: isDark,
                         )),
-                        SliverToBoxAdapter(child: AnimatedCard(
-                          child: AnimatedSection(
-                            index: 7,
-                            child: QuickAccessRow(isDark: isDark),
-                          ),
-                        )),
+                        _sectionCardBuilder(7, 'QuickAccess', QuickAccessRow(isDark: isDark)),
                         if (vm.data!.quickSummary.athleteCount == 0)
-                          SliverToBoxAdapter(child: AnimatedSection(
-                            index: 8,
-                            child: _emptyState(isDark, 'registerAthlete'),
-                          )),
+                          _sectionBuilder(8, 'EmptyRegister', _emptyState(isDark, 'registerAthlete')),
                         if (vm.data!.quickSummary.athleteCount > 0 &&
                             vm.data!.quickSummary.matchCount == 0)
-                          SliverToBoxAdapter(child: AnimatedSection(
-                            index: 8,
-                            child: _emptyState(isDark, 'createMatch'),
-                          )),
+                          _sectionBuilder(8, 'EmptyMatch', _emptyState(isDark, 'createMatch')),
                         const SliverToBoxAdapter(
                           child: SizedBox(height: 32),
                         ),
                       ],
                     ),
                   ),
+      ),
+    );
+  }
+
+  Widget _sectionBuilder(int index, String label, Widget child) {
+    try {
+      LogService.instance.auto('🔵 DASHBOARD RENDER — $label');
+      return SliverToBoxAdapter(
+        child: AnimatedSection(index: index, child: child),
+      );
+    } catch (e) {
+      LogService.instance.error('🔴 DASHBOARD RENDER FALLÓ — $label — $e');
+      return _errorFallback(label);
+    }
+  }
+
+  Widget _sectionCardBuilder(int index, String label, Widget child) {
+    try {
+      LogService.instance.auto('🔵 DASHBOARD RENDER — $label');
+      return SliverToBoxAdapter(
+        child: AnimatedCard(child: AnimatedSection(index: index, child: child)),
+      );
+    } catch (e) {
+      LogService.instance.error('🔴 DASHBOARD RENDER FALLÓ — $label — $e');
+      return _errorFallback(label);
+    }
+  }
+
+  Widget _errorFallback(String label) {
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.orange.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.orange.withValues(alpha: 0.4)),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.error_outline_rounded, color: Colors.orange, size: 20),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text('Error en $label',
+                    style: const TextStyle(color: Colors.orange, fontSize: 13)),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -222,7 +250,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           child: Column(
             children: [
-              Text('👥', style: TextStyle(fontSize: 40)),
+              const Text('👥', style: TextStyle(fontSize: 40)),
               const SizedBox(height: 12),
               Text('Aún no has registrado atletas',
                   style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: textPri)),
@@ -259,7 +287,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           child: Column(
             children: [
-              Text('🏐', style: TextStyle(fontSize: 40)),
+              const Text('🏐', style: TextStyle(fontSize: 40)),
               const SizedBox(height: 12),
               Text('No hay partidos registrados',
                   style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: textPri)),

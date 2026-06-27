@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/themes/app_colors.dart';
+import '../../../../core/utils/name_formatter.dart';
 import '../../data/statistics_models.dart';
 import '../viewmodels/athlete_of_month_viewmodel.dart';
 
@@ -204,14 +205,14 @@ class _RankingRow extends StatelessWidget {
               backgroundColor: AppColors.accent.withValues(alpha: 0.15),
               backgroundImage: p.fotoUrl != null ? NetworkImage(p.fotoUrl!) : null,
               child: p.fotoUrl == null
-                  ? Text(p.nombre.isNotEmpty ? p.nombre[0].toUpperCase() : '?',
+                  ? Text(NameFormatter.avatarInitial(p),
                       style: const TextStyle(color: AppColors.accent, fontSize: 12))
                   : null,
             ),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                p.displayName.isNotEmpty ? p.displayName : p.nombre,
+                NameFormatter.playerDisplayName(p),
                 style: TextStyle(
                   color: isDark ? AppColors.textPrimary : AppColors.lightTextPrimary,
                   fontSize: 13, fontWeight: FontWeight.w500,

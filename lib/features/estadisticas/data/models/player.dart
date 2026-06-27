@@ -183,6 +183,137 @@ class Player {
     }
   }
 
+  Map<String, dynamic> toMap() => {
+    'nombre': nombre,
+    'firstNames': firstNames,
+    'lastNames': lastNames,
+    'displayName': displayName,
+    'cedula': cedula,
+    'fechaNacimiento': fechaNacimiento.millisecondsSinceEpoch,
+    'numero': numero ?? 0,
+    'posicion': posicion.index,
+    'esCapitan': esCapitan ? 1 : 0,
+    'fotoUrl': fotoUrl ?? '',
+    'estadoSalud': estadoSalud.index,
+    'condicionFisica': condicionFisica,
+    'profileId': profileId,
+    'clubId': clubId,
+    'createdAt': createdAt.millisecondsSinceEpoch,
+    'sexo': sexo.index,
+    'altura': altura,
+    'tipoSangre': tipoSangre.index,
+    'manoDominante': manoDominante.index,
+    'posicionSecundaria': posicionSecundaria.index,
+    'fechaIngreso': fechaIngreso.millisecondsSinceEpoch,
+    'atletaStatus': atletaStatus.index,
+    'statusReason': statusReason ?? '',
+    'statusStartDate': statusStartDate?.millisecondsSinceEpoch,
+    'statusEndDate': statusEndDate?.millisecondsSinceEpoch,
+    'isDeleted': isDeleted ? 1 : 0,
+    'deletedAt': deletedAt?.millisecondsSinceEpoch,
+    'deletedBy': deletedBy ?? '',
+    'deletionReason': deletionReason ?? '',
+  };
+
+  factory Player.fromMap(Map<String, dynamic> map) => Player()
+    ..id = (map['id'] as int? ?? 0)
+    ..nombre = map['nombre'] as String? ?? ''
+    ..firstNames = map['firstNames'] as String? ?? (map['nombre'] as String? ?? '')
+    ..lastNames = map['lastNames'] as String? ?? ''
+    ..displayName = map['displayName'] as String? ?? (map['nombre'] as String? ?? '')
+    ..cedula = map['cedula'] as String? ?? ''
+    ..fechaNacimiento = DateTime.fromMillisecondsSinceEpoch(map['fechaNacimiento'] as int? ?? DateTime.now().millisecondsSinceEpoch)
+    ..numero = map['numero'] as int?
+    ..posicion = Posicion.values[map['posicion'] as int? ?? 0]
+    ..esCapitan = (map['esCapitan'] as int? ?? 0) == 1
+    ..fotoUrl = (map['fotoUrl'] as String?)?.isNotEmpty == true ? map['fotoUrl'] as String? : null
+    ..estadoSalud = EstadoSalud.values[map['estadoSalud'] as int? ?? 0]
+    ..condicionFisica = map['condicionFisica'] as String? ?? 'Excelente'
+    ..profileId = map['profileId'] as String?
+    ..clubId = map['clubId'] as String?
+    ..createdAt = DateTime.fromMillisecondsSinceEpoch(map['createdAt'] as int? ?? DateTime.now().millisecondsSinceEpoch)
+    ..sexo = Sexo.values[map['sexo'] as int? ?? 0]
+    ..altura = (map['altura'] as num?)?.toDouble() ?? 0
+    ..tipoSangre = TipoSangre.values[map['tipoSangre'] as int? ?? 3]
+    ..manoDominante = ManoDominante.values[map['manoDominante'] as int? ?? 0]
+    ..posicionSecundaria = Posicion.values[map['posicionSecundaria'] as int? ?? 5]
+    ..fechaIngreso = DateTime.fromMillisecondsSinceEpoch(map['fechaIngreso'] as int? ?? map['createdAt'] as int? ?? DateTime.now().millisecondsSinceEpoch)
+    ..atletaStatus = AthleteStatus.values[map['atletaStatus'] as int? ?? 0]
+    ..statusReason = (map['statusReason'] as String?)?.isNotEmpty == true ? map['statusReason'] as String? : null
+    ..statusStartDate = map['statusStartDate'] != null ? DateTime.fromMillisecondsSinceEpoch(map['statusStartDate'] as int) : null
+    ..statusEndDate = map['statusEndDate'] != null ? DateTime.fromMillisecondsSinceEpoch(map['statusEndDate'] as int) : null
+    ..isDeleted = (map['isDeleted'] as int? ?? 0) == 1
+    ..deletedAt = map['deletedAt'] != null ? DateTime.fromMillisecondsSinceEpoch(map['deletedAt'] as int) : null
+    ..deletedBy = (map['deletedBy'] as String?)?.isNotEmpty == true ? map['deletedBy'] as String? : null
+    ..deletionReason = (map['deletionReason'] as String?)?.isNotEmpty == true ? map['deletionReason'] as String? : null;
+
+  Player copyWith({
+    int? id,
+    String? nombre,
+    String? firstNames,
+    String? lastNames,
+    String? displayName,
+    String? cedula,
+    DateTime? fechaNacimiento,
+    int? numero,
+    Posicion? posicion,
+    bool? esCapitan,
+    String? fotoUrl,
+    EstadoSalud? estadoSalud,
+    String? condicionFisica,
+    DateTime? createdAt,
+    String? profileId,
+    String? clubId,
+    AthleteStatus? atletaStatus,
+    String? statusReason,
+    DateTime? statusStartDate,
+    DateTime? statusEndDate,
+    RestriccionDeportiva? restriccion,
+    Sexo? sexo,
+    double? altura,
+    TipoSangre? tipoSangre,
+    ManoDominante? manoDominante,
+    Posicion? posicionSecundaria,
+    DateTime? fechaIngreso,
+    bool? isDeleted,
+    DateTime? deletedAt,
+    String? deletedBy,
+    String? deletionReason,
+  }) {
+    return Player()
+      ..id = id ?? this.id
+      ..nombre = nombre ?? this.nombre
+      ..firstNames = firstNames ?? this.firstNames
+      ..lastNames = lastNames ?? this.lastNames
+      ..displayName = displayName ?? this.displayName
+      ..cedula = cedula ?? this.cedula
+      ..fechaNacimiento = fechaNacimiento ?? this.fechaNacimiento
+      ..numero = numero ?? this.numero
+      ..posicion = posicion ?? this.posicion
+      ..esCapitan = esCapitan ?? this.esCapitan
+      ..fotoUrl = fotoUrl ?? this.fotoUrl
+      ..estadoSalud = estadoSalud ?? this.estadoSalud
+      ..condicionFisica = condicionFisica ?? this.condicionFisica
+      ..createdAt = createdAt ?? this.createdAt
+      ..profileId = profileId ?? this.profileId
+      ..clubId = clubId ?? this.clubId
+      ..atletaStatus = atletaStatus ?? this.atletaStatus
+      ..statusReason = statusReason ?? this.statusReason
+      ..statusStartDate = statusStartDate ?? this.statusStartDate
+      ..statusEndDate = statusEndDate ?? this.statusEndDate
+      ..restriccion = restriccion ?? this.restriccion
+      ..sexo = sexo ?? this.sexo
+      ..altura = altura ?? this.altura
+      ..tipoSangre = tipoSangre ?? this.tipoSangre
+      ..manoDominante = manoDominante ?? this.manoDominante
+      ..posicionSecundaria = posicionSecundaria ?? this.posicionSecundaria
+      ..fechaIngreso = fechaIngreso ?? this.fechaIngreso
+      ..isDeleted = isDeleted ?? this.isDeleted
+      ..deletedAt = deletedAt ?? this.deletedAt
+      ..deletedBy = deletedBy ?? this.deletedBy
+      ..deletionReason = deletionReason ?? this.deletionReason;
+  }
+
   @override
-  String toString() => 'Player(id: $id, nombre: $nombre, #${numero ?? 0}, ${posicionLabel})';
+  String toString() => 'Player(id: $id, nombre: $nombre, #${numero ?? 0}, $posicionLabel)';
 }

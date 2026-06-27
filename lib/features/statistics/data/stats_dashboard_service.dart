@@ -1,3 +1,4 @@
+import '../../../core/utils/name_formatter.dart';
 import '../../estadisticas/data/local_db/database_service.dart';
 import '../../estadisticas/data/models/models.dart';
 import '../data/athlete_ranking_service.dart';
@@ -228,7 +229,7 @@ class StatsDashboardService {
           final topId = pointsByPlayer.entries
               .reduce((a, b) => a.value > b.value ? a : b)
               .key;
-          mvpName = playerMap[topId]?.displayName;
+          mvpName = playerMap[topId] != null ? NameFormatter.playerDisplayName(playerMap[topId]!) : null;
         }
       }
 
@@ -277,7 +278,7 @@ class StatsDashboardService {
           final topId = pointsByPlayer.entries
               .reduce((a, b) => a.value > b.value ? a : b)
               .key;
-          final mvpName = playerMap[topId]?.displayName ?? 'Jugador';
+          final mvpName = playerMap[topId] != null ? NameFormatter.playerDisplayName(playerMap[topId]!) : 'Jugador';
           final result = m.setsLocal > m.setsVisitante ? 'ganado' : 'perdido';
           items.add(ActivityItem(
             icon: m.setsLocal > m.setsVisitante ? '🏆' : '❌',
@@ -302,7 +303,7 @@ class StatsDashboardService {
         .where((a) => a.fecha.isAfter(startOfMonth))
         .toList();
     for (final a in recentAttendances.take(3)) {
-      final pName = playerMap[a.playerId]?.displayName ?? 'Jugador';
+      final pName = playerMap[a.playerId] != null ? NameFormatter.playerDisplayName(playerMap[a.playerId]!) : 'Jugador';
       if (a.asistio) {
         items.add(ActivityItem(
           icon: '📅',
@@ -325,7 +326,7 @@ class StatsDashboardService {
     for (final p in injuredPlayers) {
       items.add(ActivityItem(
         icon: '⚠',
-        description: '${p.displayName} inició reposo médico',
+        description: '${NameFormatter.playerDisplayName(p)} inició reposo médico',
         timestamp: p.statusStartDate ?? DateTime.now(),
         type: ActivityType.medical,
       ));

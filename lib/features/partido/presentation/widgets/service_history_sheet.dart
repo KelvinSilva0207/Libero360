@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/themes/app_colors.dart';
+import '../../../../core/utils/name_formatter.dart';
 import '../../../estadisticas/data/models/models.dart';
 import '../../data/rotation_data.dart';
 
@@ -173,8 +174,8 @@ class _ServiceEntry extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name = player?.displayName.isNotEmpty == true
-        ? player!.displayName
+    final name = player != null
+        ? NameFormatter.playerMatchName(player!)
         : '#${record.playerNumber}';
     final timeRange = _formatRange(record.startTime, record.endTime);
 

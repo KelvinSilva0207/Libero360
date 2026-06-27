@@ -9,9 +9,11 @@ enum NotificationType {
   consecutiveAbsences,
   perfectAttendance,
   restPeriodEnded,
+  restExpiringSoon,
   injuryRegistered,
   // Partidos
   matchCreated,
+  matchUpcoming,
   mvpRegistered,
   matchResultSaved,
   newLeague,
@@ -20,6 +22,8 @@ enum NotificationType {
   newCoach,
   invitationReceived,
   invitationAccepted,
+  // Sistema
+  syncCompleted,
 }
 
 enum NotificationCategory { atletas, asistencia, partidos, colaboracion }
@@ -36,9 +40,11 @@ extension NotificationTypeX on NotificationType {
       case NotificationType.consecutiveAbsences:
       case NotificationType.perfectAttendance:
       case NotificationType.restPeriodEnded:
+      case NotificationType.restExpiringSoon:
       case NotificationType.injuryRegistered:
         return NotificationCategory.asistencia;
       case NotificationType.matchCreated:
+      case NotificationType.matchUpcoming:
       case NotificationType.mvpRegistered:
       case NotificationType.matchResultSaved:
       case NotificationType.newLeague:
@@ -48,6 +54,8 @@ extension NotificationTypeX on NotificationType {
       case NotificationType.invitationReceived:
       case NotificationType.invitationAccepted:
         return NotificationCategory.colaboracion;
+      case NotificationType.syncCompleted:
+        return NotificationCategory.asistencia;
     }
   }
 
@@ -61,8 +69,10 @@ extension NotificationTypeX on NotificationType {
       case NotificationType.consecutiveAbsences: return 'Faltas consecutivas';
       case NotificationType.perfectAttendance: return 'Asistencia perfecta';
       case NotificationType.restPeriodEnded: return 'Reposo finalizado';
+      case NotificationType.restExpiringSoon: return 'Reposo próximo a vencer';
       case NotificationType.injuryRegistered: return 'Lesión registrada';
       case NotificationType.matchCreated: return 'Nuevo partido';
+      case NotificationType.matchUpcoming: return 'Partido próximo';
       case NotificationType.mvpRegistered: return 'MVP registrado';
       case NotificationType.matchResultSaved: return 'Resultado guardado';
       case NotificationType.newLeague: return 'Nueva liga';
@@ -70,6 +80,7 @@ extension NotificationTypeX on NotificationType {
       case NotificationType.newCoach: return 'Nuevo entrenador';
       case NotificationType.invitationReceived: return 'Invitación recibida';
       case NotificationType.invitationAccepted: return 'Invitación aceptada';
+      case NotificationType.syncCompleted: return 'Sincronización completada';
     }
   }
 }

@@ -22,6 +22,14 @@ class DashboardViewModel extends ChangeNotifier {
   bool get loading => _loading;
   String? get error => _error;
 
+  Set<String> _categoryFilter = {};
+
+  Set<String> get categoryFilter => _categoryFilter;
+
+  void setCategoryFilter(Set<String> categories) {
+    _categoryFilter = Set.from(categories);
+  }
+
   Future<void> load({String? profileId, String? clubName, int clubMemberCount = 0}) async {
     _clubName = clubName;
     _clubMemberCount = clubMemberCount;
@@ -31,7 +39,12 @@ class DashboardViewModel extends ChangeNotifier {
 
     try {
       await _db.initialize();
-      _data = await _repository.load(profileId: profileId, clubName: _clubName, clubMemberCount: _clubMemberCount);
+      _data = await _repository.load(
+        profileId: profileId,
+        clubName: _clubName,
+        clubMemberCount: _clubMemberCount,
+        categoryFilter: _categoryFilter.isNotEmpty ? _categoryFilter : null,
+      );
       _loading = false;
       _subscribeToChanges(profileId);
     } catch (e) {
@@ -55,7 +68,12 @@ class DashboardViewModel extends ChangeNotifier {
 
   Future<void> _silentRefresh(String? profileId) async {
     try {
-      _data = await _repository.load(profileId: profileId, clubName: _clubName, clubMemberCount: _clubMemberCount);
+      _data = await _repository.load(
+        profileId: profileId,
+        clubName: _clubName,
+        clubMemberCount: _clubMemberCount,
+        categoryFilter: _categoryFilter.isNotEmpty ? _categoryFilter : null,
+      );
       notifyListeners();
     } catch (_) {}
   }
@@ -63,7 +81,12 @@ class DashboardViewModel extends ChangeNotifier {
   Future<void> refresh({String? profileId}) async {
     _error = null;
     try {
-      _data = await _repository.load(profileId: profileId, clubName: _clubName, clubMemberCount: _clubMemberCount);
+      _data = await _repository.load(
+        profileId: profileId,
+        clubName: _clubName,
+        clubMemberCount: _clubMemberCount,
+        categoryFilter: _categoryFilter.isNotEmpty ? _categoryFilter : null,
+      );
     } catch (e) {
       _error = e.toString();
     }

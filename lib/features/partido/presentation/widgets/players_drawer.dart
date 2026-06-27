@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/themes/app_colors.dart';
+import '../../../../core/utils/name_formatter.dart';
 import '../../../estadisticas/data/models/models.dart';
 
 class PlayersDrawer extends StatefulWidget {
@@ -165,9 +166,7 @@ class _PlayersDrawerState extends State<PlayersDrawer> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  player.displayName.isNotEmpty
-                      ? player.displayName
-                      : '${player.firstNames} ${player.lastNames}'.trim(),
+                  NameFormatter.playerMatchName(player),
                   style: const TextStyle(
                       color: Colors.white,
                       fontSize: 13,

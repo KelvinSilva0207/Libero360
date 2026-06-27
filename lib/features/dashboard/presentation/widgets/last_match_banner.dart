@@ -16,20 +16,28 @@ class LastMatchBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (lastMatch == null) return const SliverToBoxAdapter(child: SizedBox.shrink());
+    if (lastMatch == null) return const SizedBox.shrink();
 
     final days = ['lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom'];
     final months = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
     final d = lastMatch!.date;
     final dateStr = '${days[d.weekday - 1]}, ${d.day} ${months[d.month - 1]} ${d.year}';
 
-    return SliverToBoxAdapter(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
         child: Container(
           height: 200,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: lastMatch!.isWin
+                    ? AppColors.success.withValues(alpha: 0.25)
+                    : AppColors.error.withValues(alpha: 0.2),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
             gradient: LinearGradient(
               colors: lastMatch!.isWin
                   ? [AppColors.success.withValues(alpha: 0.8), AppColors.success.withValues(alpha: 0.3)]
@@ -41,12 +49,12 @@ class LastMatchBanner extends StatelessWidget {
           child: Stack(
             children: [
               Positioned(
-                right: -20,
-                bottom: -20,
+                right: -10,
+                bottom: -10,
                 child: Icon(
                   lastMatch!.isWin ? Icons.emoji_events_rounded : Icons.sports_volleyball_rounded,
-                  size: 120,
-                  color: Colors.white.withValues(alpha: 0.08),
+                  size: 100,
+                  color: Colors.white.withValues(alpha: 0.06),
                 ),
               ),
               Padding(
@@ -126,7 +134,7 @@ class LastMatchBanner extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
+      );
   }
 }
+

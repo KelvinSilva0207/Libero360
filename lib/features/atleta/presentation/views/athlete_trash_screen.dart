@@ -1,8 +1,11 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/themes/app_colors.dart';
+import '../../../../core/utils/category_calculator.dart';
 import '../../../estadisticas/data/models/models.dart';
 import '../viewmodels/athlete_viewmodel.dart';
+import '../../../../core/utils/name_formatter.dart';
 
 class AthleteTrashScreen extends StatefulWidget {
   const AthleteTrashScreen({super.key});
@@ -36,7 +39,7 @@ class _AthleteTrashScreenState extends State<AthleteTrashScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.surface,
         title: const Text('Eliminar permanentemente', style: TextStyle(color: Colors.white)),
-        content: const Text('Esta acción no se puede deshacer.',
+        content: const Text('Esta acción no podrá deshacerse.',
           style: TextStyle(color: Colors.white54)),
         actions: [
           TextButton(
@@ -46,7 +49,7 @@ class _AthleteTrashScreenState extends State<AthleteTrashScreen> {
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Eliminar'),
+            child: const Text('Eliminar definitivamente'),
           ),
         ],
       ),
@@ -95,55 +98,79 @@ class _AthleteTrashScreenState extends State<AthleteTrashScreen> {
             itemCount: vm.trashed.length,
             itemBuilder: (context, index) {
               final p = vm.trashed[index];
+              final cat = CategoryCalculator.calculate(p.edad);
               return Padding(
-                padding: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.only(bottom: 10),
                 child: Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
                     color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                     border: Border.all(color: AppColors.border),
                   ),
                   child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: Colors.red.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Center(
-                          child: Icon(Icons.person_off_rounded, color: Colors.red, size: 20),
-                        ),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: p.fotoUrl != null && File(p.fotoUrl!).existsSync()
+                            ? Image.file(File(p.fotoUrl!), width: 48, height: 48, fit: BoxFit.cover)
+                            : Container(
+                                width: 48, height: 48,
+                                color: Colors.red.withValues(alpha: 0.15),
+                                child: const Icon(Icons.person_off_rounded, color: Colors.red, size: 24),
+                              ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 14),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(p.displayName,
-                              style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
-                            const SizedBox(height: 2),
-                            Text('#${p.numero ?? '-'} · ${p.posicionLabel}',
-                              style: const TextStyle(color: Colors.white38, fontSize: 12)),
+                            Text(NameFormatter.playerDisplayName(p),
+                              style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600)),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Text('#${p.numero ?? '-'}',
+                                  style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.accent.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(cat,
+                                    style: const TextStyle(color: AppColors.accent, fontSize: 10, fontWeight: FontWeight.w600)),
+                                ),
+                              ],
+                            ),
                             if (p.deletedAt != null) ...[
-                              const SizedBox(height: 2),
+                              const SizedBox(height: 4),
                               Text('Eliminado: ${_formatDate(p.deletedAt!)}',
+                                style: const TextStyle(color: Colors.white24, fontSize: 11)),
+                            ],
+                            if (p.deletionReason != null && p.deletionReason!.isNotEmpty) ...[
+                              const SizedBox(height: 4),
+                              Text('Motivo: ${p.deletionReason}',
                                 style: const TextStyle(color: Colors.white24, fontSize: 11)),
                             ],
                           ],
                         ),
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.restore_rounded, color: Color(0xFF22C55E), size: 20),
-                        onPressed: () => _restore(p),
-                        tooltip: 'Restaurar',
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.delete_forever_rounded, color: Colors.red, size: 20),
-                        onPressed: () => _permanentDelete(p),
-                        tooltip: 'Eliminar permanentemente',
+                      Column(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.restore_rounded, color: Color(0xFF22C55E), size: 22),
+                            onPressed: () => _restore(p),
+                            tooltip: 'Restaurar',
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete_forever_rounded, color: Colors.red, size: 22),
+                            onPressed: () => _permanentDelete(p),
+                            tooltip: 'Eliminar permanentemente',
+                          ),
+                        ],
                       ),
                     ],
                   ),

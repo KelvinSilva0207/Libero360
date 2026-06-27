@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../../../../core/utils/name_formatter.dart';
 import '../../../../features/estadisticas/data/models/models.dart';
 import '../../data/statistics_models.dart';
 import '../../data/statistics_service.dart';
@@ -52,9 +53,7 @@ class AthleteListViewModel extends ChangeNotifier {
     final lower = _query.toLowerCase();
     _filteredAthletes = _allAthletes.where((a) {
       final p = a.player;
-      if (p.nombre.toLowerCase().contains(lower)) return true;
-      if (p.firstNames.toLowerCase().contains(lower)) return true;
-      if (p.lastNames.toLowerCase().contains(lower)) return true;
+      if (NameFormatter.playerDisplayName(p).toLowerCase().contains(lower)) return true;
       if (p.cedula.toLowerCase().contains(lower)) return true;
       if (p.numero?.toString() == _query) return true;
       if (p.numero?.toString().contains(_query) ?? false) return true;

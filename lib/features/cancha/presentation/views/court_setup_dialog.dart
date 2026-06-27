@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../../../estadisticas/data/models/player.dart';
 import '../../../estadisticas/data/local_db/database_service.dart';
+import '../../../../core/utils/name_formatter.dart';
 
 class CourtSetupDialog extends StatefulWidget {
   final void Function(List<Player> selected) onComplete;
@@ -165,7 +166,7 @@ class _CourtSetupDialogState extends State<CourtSetupDialog> {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  player != null ? player.nombre : positionNames[index],
+                  player != null ? NameFormatter.playerDisplayName(player) : positionNames[index],
                   style: TextStyle(
                     color: player != null ? colors.onSurface : colors.onSurfaceVariant,
                     fontSize: 13,
@@ -287,7 +288,7 @@ class _CourtSetupDialogState extends State<CourtSetupDialog> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(p.nombre, style: TextStyle(color: colors.onSurface, fontSize: 14, fontWeight: FontWeight.w500)),
+                  Text(NameFormatter.playerDisplayName(p), style: TextStyle(color: colors.onSurface, fontSize: 14, fontWeight: FontWeight.w500)),
                   Text(p.posicionLabel, style: TextStyle(color: colors.onSurfaceVariant, fontSize: 11)),
                 ],
               ),

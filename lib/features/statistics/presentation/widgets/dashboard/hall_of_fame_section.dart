@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../../core/themes/app_colors.dart';
+import '../../../../../core/utils/name_formatter.dart';
 import '../../../data/stats_dashboard_model.dart';
 
 class HallOfFameSection extends StatelessWidget {
@@ -103,9 +104,7 @@ class HallOfFameSection extends StatelessWidget {
                   : null,
               child: p.fotoUrl == null
                   ? Text(
-                      p.nombre.isNotEmpty
-                          ? p.nombre[0].toUpperCase()
-                          : '?',
+                      NameFormatter.avatarInitial(p),
                       style:
                           const TextStyle(color: AppColors.accent, fontSize: 12))
                   : null,
@@ -116,7 +115,7 @@ class HallOfFameSection extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    p.displayName.isNotEmpty ? p.displayName : p.nombre,
+                    NameFormatter.playerDisplayName(p),
                     style: TextStyle(
                       color: isDark
                           ? AppColors.textPrimary

@@ -1,5 +1,6 @@
 import '../../estadisticas/data/local_db/database_service.dart';
 import '../../estadisticas/data/models/models.dart';
+import '../../../core/utils/name_formatter.dart';
 
 class AthleteRepository {
   final DatabaseService _db = DatabaseService.instance;
@@ -24,7 +25,7 @@ class AthleteRepository {
         : await _db.getActivePlayers();
     final lower = query.toLowerCase();
     return all.where((p) =>
-      p.displayName.toLowerCase().contains(lower) ||
+      NameFormatter.playerDisplayName(p).toLowerCase().contains(lower) ||
       (p.numero?.toString() ?? '').contains(lower) ||
       p.cedula.replaceAll('.', '').contains(lower)
     ).toList();
@@ -55,6 +56,8 @@ class AthleteRepository {
     if (player == null) return;
     player.isDeleted = false;
     player.deletedAt = null;
+    player.deletedBy = null;
+    player.deletionReason = null;
     await _db.savePlayer(player);
   }
 

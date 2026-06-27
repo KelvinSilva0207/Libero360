@@ -1,9 +1,11 @@
 import 'package:libero360/features/estadisticas/data/local_db/database_service.dart';
 import 'package:libero360/features/estadisticas/data/models/models.dart';
+import 'medical_leave_repository.dart';
 import 'attendance_history_model.dart';
 
 class AttendanceHistoryRepository {
   final DatabaseService _db = DatabaseService.instance;
+  final MedicalLeaveRepository _medicalRepo = MedicalLeaveRepository.instance;
 
   Future<List<DailyAttendanceSummary>> load({
     int? year,
@@ -18,6 +20,9 @@ class AttendanceHistoryRepository {
     for (final p in allPlayers) {
       players[p.id] = p;
     }
+
+    final activeLeaves = await _medicalRepo.getActive();
+    final playerOnLeave = activeLeaves.map((l) => l.playerId).toSet();
 
     final filtered = records.where((r) {
       if (year != null && r.fecha.year != year) return false;
@@ -46,7 +51,7 @@ class AttendanceHistoryRepository {
       final present = dayRecords.where((r) => r.asistio).length;
       final medicalRest = dayRecords.where((r) {
         final p = players[r.playerId];
-        return p != null && (p.estadoSalud == EstadoSalud.lesionado || p.atletaStatus == AthleteStatus.injured);
+        return p != null && (p.estadoSalud == EstadoSalud.lesionado || p.atletaStatus == AthleteStatus.injured || playerOnLeave.contains(r.playerId));
       }).length;
       return DailyAttendanceSummary(
         date: date,

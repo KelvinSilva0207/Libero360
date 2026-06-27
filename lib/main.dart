@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'core/themes/app_theme.dart';
 import 'core/widgets_globales/route_transitions.dart';
 import 'core/services/service_locator.dart';
 import 'core/theme_provider/theme_notifier.dart';
+import 'core/theme_provider/typography_viewmodel.dart';
+import 'core/theme_provider/text_scale_viewmodel.dart';
 import 'core/config.dart';
 import 'features/auth/auth.dart';
 import 'features/auth/data/repositories/firebase_auth_repository.dart';
@@ -40,6 +43,10 @@ void main() async {
         ChangeNotifierProvider(create: (_) => MatchController()),
         ChangeNotifierProvider(create: (_) => AthleteViewModel()),
         ChangeNotifierProvider(create: (_) => StaffTecnicoViewModel()),
+        ChangeNotifierProvider(create: (_) => MedicalLeaveViewModel()..load()),
+        ChangeNotifierProvider(create: (_) => AttendanceAnalyticsViewModel()),
+        ChangeNotifierProvider(create: (_) => TypographyViewModel()),
+        ChangeNotifierProvider(create: (_) => TextScaleViewModel()),
       ],
       child: const Libero360App(),
     ),
@@ -61,20 +68,33 @@ class Libero360App extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = context.watch<ThemeNotifier>();
+    final typography = context.watch<TypographyViewModel>();
+    final textScale = context.watch<TextScaleViewModel>();
     return MaterialApp(
       title: 'Libero360',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.light,
-      darkTheme: AppTheme.dark,
+      locale: const Locale('es'),
+      supportedLocales: const [Locale('es')],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      theme: AppTheme.light(textTheme: typography.textTheme),
+      darkTheme: AppTheme.dark(textTheme: typography.textTheme),
       themeMode: theme.mode,
       initialRoute: '/',
       onGenerateRoute: _onGenerateRoute,
       home: const AuthGate(),
       builder: (context, child) {
-        return AnimatedTheme(
+        child = AnimatedTheme(
           data: Theme.of(context),
           duration: const Duration(milliseconds: 250),
           child: child!,
+        );
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(textScaler: textScale.textScaler),
+          child: child,
         );
       },
     );

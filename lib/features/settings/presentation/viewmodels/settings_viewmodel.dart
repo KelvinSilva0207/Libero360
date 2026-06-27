@@ -75,6 +75,11 @@ class SettingsViewModel extends ChangeNotifier {
     notifyListeners();
     try {
       final json = await _repository.exportToJson();
+      if (json == null) {
+        _isExporting = false;
+        notifyListeners();
+        return;
+      }
       final date = DateTime.now().toIso8601String().split('T').first;
       final file = await _repository.saveTempFile(
           'libero360_backup_$date.json', json);

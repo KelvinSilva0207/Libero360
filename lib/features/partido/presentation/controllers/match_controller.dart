@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'dart:collection';
 import 'package:flutter/foundation.dart';
+import '../../../../core/services/log_service.dart';
+import '../../../notifications/data/notification_service.dart';
+import '../../../notifications/data/notification_models.dart' show NotificationType;
 import '../../../estadisticas/data/models/models.dart';
 import '../../../estadisticas/data/repositories/repositories.dart';
 import '../../../estadisticas/data/local_db/database_service.dart';
@@ -558,6 +561,15 @@ class MatchController extends ChangeNotifier {
       _detenerTimer();
       await _guardarDuracion();
       _match = await _matchRepository.finalizarPartido(_match!.id);
+      final isWin = _match!.setsLocal > _match!.setsVisitante;
+      final result = isWin ? 'Victoria' : 'Derrota';
+      LogService.instance.event('Partido finalizado: ${_match!.equipoLocal} vs ${_match!.equipoVisitante} — $result ${_match!.setsLocal}-${_match!.setsVisitante}', source: 'MatchController');
+      NotificationService.instance.createNotification(
+        type: NotificationType.matchResultSaved,
+        title: 'Resultado guardado',
+        message: '${_match!.equipoLocal} ${_match!.setsLocal}-${_match!.setsVisitante} ${_match!.equipoVisitante}',
+        relatedMatchId: _match!.id.toString(),
+      );
       notifyListeners();
     } catch (e) {
       _error = 'Error: $e';

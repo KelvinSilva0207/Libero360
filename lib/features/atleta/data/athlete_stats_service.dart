@@ -1,6 +1,7 @@
 import '../../estadisticas/data/local_db/database_service.dart';
 import '../../estadisticas/data/models/models.dart';
 import 'athlete_stats_model.dart';
+import '../../../core/utils/name_formatter.dart';
 
 class AthleteStatsService {
   final DatabaseService _db = DatabaseService.instance;
@@ -248,37 +249,37 @@ class AthleteStatsService {
       final mvpScore = _computeMvpScore(bar, _computePieData(p.id, allMatches, events), events);
 
       rankingItems.add(TeamRankingItem(
-        rank: 0, playerName: p.displayName, playerId: p.id,
+        rank: 0, playerName: NameFormatter.playerDisplayName(p), playerId: p.id,
         score: mvpScore, numero: p.numero,
       ));
 
       final attackVal = radar.firstWhere((s) => s.name == 'Ataque').value;
       attackItems.add(TeamRankingItem(
-        rank: 0, playerName: p.displayName, playerId: p.id,
+        rank: 0, playerName: NameFormatter.playerDisplayName(p), playerId: p.id,
         score: attackVal, numero: p.numero,
       ));
 
       final blockVal = radar.firstWhere((s) => s.name == 'Bloqueo').value;
       blockItems.add(TeamRankingItem(
-        rank: 0, playerName: p.displayName, playerId: p.id,
+        rank: 0, playerName: NameFormatter.playerDisplayName(p), playerId: p.id,
         score: blockVal, numero: p.numero,
       ));
 
       final defenseVal = radar.firstWhere((s) => s.name == 'Defensa').value;
       defenseItems.add(TeamRankingItem(
-        rank: 0, playerName: p.displayName, playerId: p.id,
+        rank: 0, playerName: NameFormatter.playerDisplayName(p), playerId: p.id,
         score: defenseVal, numero: p.numero,
       ));
 
       final serveVal = radar.firstWhere((s) => s.name == 'Servicio').value;
       serveItems.add(TeamRankingItem(
-        rank: 0, playerName: p.displayName, playerId: p.id,
+        rank: 0, playerName: NameFormatter.playerDisplayName(p), playerId: p.id,
         score: serveVal, numero: p.numero,
       ));
 
       final disciplineVal = radar.firstWhere((s) => s.name == 'Disciplina').value;
       consistentItems.add(TeamRankingItem(
-        rank: 0, playerName: p.displayName, playerId: p.id,
+        rank: 0, playerName: NameFormatter.playerDisplayName(p), playerId: p.id,
         score: disciplineVal, numero: p.numero,
       ));
     }

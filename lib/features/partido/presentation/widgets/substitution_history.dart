@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/themes/app_colors.dart';
+import '../../../../core/utils/name_formatter.dart';
 import '../../../estadisticas/data/models/models.dart';
 import '../../data/substitution_record.dart';
 
@@ -80,8 +81,8 @@ class SubstitutionHistory extends StatelessWidget {
         ),
         const SizedBox(width: 6),
         Text(
-          player?.displayName.isNotEmpty == true
-              ? player!.displayName
+          player != null
+              ? NameFormatter.playerMatchName(player!)
               : '#$number',
           style: const TextStyle(color: Colors.white, fontSize: 12),
         ),

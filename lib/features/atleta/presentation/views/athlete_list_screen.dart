@@ -7,6 +7,8 @@ import '../viewmodels/athlete_viewmodel.dart';
 import 'athlete_form_screen.dart';
 import 'athlete_detail_screen.dart';
 import 'athlete_trash_screen.dart';
+import 'category_manager_screen.dart';
+import '../../../../core/utils/name_formatter.dart';
 
 class AthleteListScreen extends StatefulWidget {
   const AthleteListScreen({super.key});
@@ -194,10 +196,10 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
   }
 
   Widget _buildCategoryChips(AthleteViewModel vm) {
-    final categories = vm.athletes.map((p) => p.categoria).toSet().toList()..sort();
+    final categories = vm.allCategoryNames;
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      height: 48,
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      height: 52,
       child: ListView(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -205,28 +207,40 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
           Padding(
             padding: const EdgeInsets.only(right: 8),
             child: FilterChip(
-              label: Text('Todos', style: TextStyle(fontSize: 12, color: vm.query.isEmpty && vm.filterPosicion == null ? Colors.white : Colors.white54)),
-              selected: vm.query.isEmpty && vm.filterPosicion == null,
+              label: Text('Todos', style: TextStyle(fontSize: 12, color: !vm.hasActiveFilter ? Colors.white : Colors.white54)),
+              selected: !vm.hasActiveFilter,
               selectedColor: AppColors.accent.withValues(alpha: 0.3),
               backgroundColor: AppColors.surface,
               side: BorderSide.none,
               onSelected: (_) {
                 vm.setQuery('');
                 vm.setFilterPosicion(null);
+                vm.clearCategoryFilter();
               },
             ),
           ),
           ...categories.map((cat) => Padding(
             padding: const EdgeInsets.only(right: 8),
             child: FilterChip(
-              label: Text(cat, style: TextStyle(fontSize: 12, color: vm.query == cat ? Colors.white : Colors.white54)),
-              selected: vm.query == cat,
+              label: Text(cat, style: TextStyle(fontSize: 12, color: vm.selectedCategories.contains(cat) ? Colors.white : Colors.white54)),
+              selected: vm.selectedCategories.contains(cat),
               selectedColor: AppColors.accent.withValues(alpha: 0.3),
               backgroundColor: AppColors.surface,
               side: BorderSide.none,
-              onSelected: (v) => vm.setQuery(v ? cat : ''),
+              onSelected: (_) => vm.toggleCategory(cat),
             ),
           )),
+          Padding(
+            padding: const EdgeInsets.only(left: 8),
+            child: ActionChip(
+              avatar: const Icon(Icons.tune, color: Colors.white38, size: 16),
+              label: const Text('Gestionar', style: TextStyle(color: Colors.white38, fontSize: 11)),
+              backgroundColor: AppColors.surface,
+              side: BorderSide.none,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+              onPressed: () => context.pushSlide(const CategoryManagerScreen()),
+            ),
+          ),
         ],
       ),
     );
@@ -247,9 +261,6 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
 
   Widget _athleteCard(Player p) {
     final healthColor = _saludColor(p.estadoSalud);
-    final parts = p.nombre.trim().split(RegExp(r'\s+'));
-    final lastName = parts.length > 1 ? parts.sublist(1).join(' ') : '';
-
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Material(
@@ -303,21 +314,11 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
                         children: [
                           Flexible(
                             child: Text(
-                              parts.first,
+                              NameFormatter.playerDisplayName(p),
                               style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          if (lastName.isNotEmpty) ...[
-                            const SizedBox(width: 4),
-                            Flexible(
-                              child: Text(
-                                lastName,
-                                style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 14),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
                           if (p.esCapitan) ...[
                             const SizedBox(width: 6),
                             const Icon(Icons.star, color: AppColors.accent, size: 15),
@@ -462,7 +463,7 @@ class _AthleteSearchDelegate extends SearchDelegate<void> {
     final results = lower.isEmpty
         ? vm.athletes
         : vm.athletes.where((p) =>
-            p.displayName.toLowerCase().contains(lower) ||
+            NameFormatter.playerDisplayName(p).toLowerCase().contains(lower) ||
             (p.numero?.toString() ?? '').contains(lower) ||
             p.cedula.replaceAll('.', '').contains(lower)
           ).toList();
@@ -492,7 +493,7 @@ class _AthleteSearchDelegate extends SearchDelegate<void> {
               ),
             ),
           ),
-          title: Text(p.displayName, style: const TextStyle(color: Colors.white, fontSize: 14)),
+          title: Text(NameFormatter.playerDisplayName(p), style: const TextStyle(color: Colors.white, fontSize: 14)),
           subtitle: Text('${p.posicionLabel} · ${p.categoria}',
             style: const TextStyle(color: Colors.white38, fontSize: 12),
           ),

@@ -1,31 +1,45 @@
+import '../../../core/services/category_service.dart';
+import '../../asistencia/data/medical_leave_repository.dart';
 import '../../estadisticas/data/local_db/database_service.dart';
 import '../../estadisticas/data/models/models.dart';
 import '../../statistics/data/athlete_ranking_service.dart';
 import '../../statistics/data/statistics_models.dart';
 import 'dashboard_model.dart';
+import '../../../core/utils/name_formatter.dart';
 
 class DashboardRepository {
   final DatabaseService _db = DatabaseService.instance;
   final AthleteRankingService _rankingService = AthleteRankingService();
+  final MedicalLeaveRepository _medicalRepo = MedicalLeaveRepository.instance;
+  final CategoryService _catService = CategoryService.instance;
 
-  Future<DashboardData> load({String? profileId, String? clubName, int clubMemberCount = 0}) async {
+  Future<DashboardData> load({String? profileId, String? clubName, int clubMemberCount = 0, Set<String>? categoryFilter}) async {
     await _db.initialize();
+    await _catService.load();
 
-    final players = profileId != null
+    var players = profileId != null
         ? await _db.getPlayersByProfile(profileId)
         : await _db.getAllPlayers();
+
+    if (categoryFilter != null && categoryFilter.isNotEmpty) {
+      players = players.where((p) => categoryFilter.contains(p.categoria)).toList();
+    }
     final matches = await _db.getAllMatches();
     final attendance = await _db.getAllAttendanceRecords();
     final rankings = await _rankingService.loadRankings();
+
+    final activeLeaves = await _medicalRepo.getActive();
+    final medicalLeaveCount = activeLeaves.length;
+    final athletesOnLeave = activeLeaves.map((l) => l.playerId).toSet();
 
     final teamInfo = _buildTeamInfo(clubName: clubName, clubMemberCount: clubMemberCount);
     final nextTraining = _findNextTraining(attendance);
     final nextMatch = _findNextMatch(matches);
     final athleteOfMonth = _buildAthleteOfMonth(players, rankings);
     final quickSummary = _buildQuickSummary(players, matches, attendance);
-    final teamStatus = _buildTeamStatus(players, matches, rankings, attendance);
+    final teamStatus = _buildTeamStatus(players, matches, rankings, attendance, medicalLeaveCount);
     final lastMatch = _buildLastMatch(matches);
-    final recentActivity = _buildRecentActivity(matches, players, attendance);
+    final recentActivity = _buildRecentActivity(matches, players, attendance, athletesOnLeave);
 
     return DashboardData(
       teamInfo: teamInfo,
@@ -88,7 +102,7 @@ class DashboardRepository {
     final p = top.player;
     return AthleteOfMonth(
       playerId: p.id.toString(),
-      name: p.displayName,
+      name: NameFormatter.playerDisplayName(p),
       category: p.posicionLabel,
       position: p.posicionLabel,
       photoUrl: p.fotoUrl,
@@ -110,8 +124,8 @@ class DashboardRepository {
     );
   }
 
-  TeamStatus _buildTeamStatus(List<Player> players, List<Match> matches, List<AthleteRankingScore> rankings, List<AttendanceRecord> attendance) {
-    final medicalRest = players.where((p) => p.atletaStatus == AthleteStatus.injured || p.estadoSalud == EstadoSalud.lesionado).length;
+  TeamStatus _buildTeamStatus(List<Player> players, List<Match> matches, List<AthleteRankingScore> rankings, List<AttendanceRecord> attendance, int medicalLeaveCount) {
+    final medicalRest = medicalLeaveCount > 0 ? medicalLeaveCount : players.where((p) => p.atletaStatus == AthleteStatus.injured || p.estadoSalud == EstadoSalud.lesionado).length;
     final now = DateTime.now();
     final last30 = now.subtract(const Duration(days: 30));
     final recentAbsences = attendance.where((a) => a.fecha.isAfter(last30) && !a.asistio).length;
@@ -134,7 +148,7 @@ class DashboardRepository {
 
     String? currentMvp;
     if (rankings.isNotEmpty) {
-      currentMvp = rankings.first.player.displayName;
+      currentMvp = NameFormatter.playerDisplayName(rankings.first.player);
     }
 
     return TeamStatus(
@@ -162,7 +176,7 @@ class DashboardRepository {
     );
   }
 
-  List<ActivityItem> _buildRecentActivity(List<Match> matches, List<Player> players, List<AttendanceRecord> attendance) {
+  List<ActivityItem> _buildRecentActivity(List<Match> matches, List<Player> players, List<AttendanceRecord> attendance, Set<int> athletesOnLeave) {
     final items = <ActivityItem>[];
     final finalized = matches.where((m) => m.estado == EstadoPartido.finalizado).toList();
     finalized.sort((a, b) => b.fecha.compareTo(a.fecha));
@@ -194,11 +208,11 @@ class DashboardRepository {
       ));
     }
 
-    final injured = players.where((p) => p.estadoSalud == EstadoSalud.lesionado).toList();
-    if (injured.isNotEmpty) {
+    final injuredPlayers = players.where((p) => athletesOnLeave.contains(p.id) || p.estadoSalud == EstadoSalud.lesionado).toList();
+    if (injuredPlayers.isNotEmpty) {
       items.add(ActivityItem(
         icon: '⚠',
-        description: '${injured.first.displayName} inició reposo médico',
+        description: '${NameFormatter.playerDisplayName(injuredPlayers.first)} en reposo médico',
         timestamp: DateTime.now().subtract(const Duration(days: 1)),
         type: ActivityType.medical,
       ));

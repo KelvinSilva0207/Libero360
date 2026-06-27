@@ -66,7 +66,7 @@ abstract class AbstractDataService {
   Future<void> clearSession();
 
   // Backup & Restore
-  Future<String> exportToJson();
+  Future<String?> exportToJson({String? appVersion, String? devicePlatform});
   Future<bool> importFromJson(String jsonString);
 
   // Lifecycle

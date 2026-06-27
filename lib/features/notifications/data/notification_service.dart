@@ -169,6 +169,35 @@ class NotificationService {
     );
   }
 
+  /// Notify: consecutive absences.
+  Future<void> notifyConsecutiveAbsences(String athleteName, int count) async {
+    await createNotification(
+      type: NotificationType.consecutiveAbsences,
+      title: 'Faltas consecutivas',
+      message: '$athleteName lleva $count faltas consecutivas.',
+    );
+  }
+
+  /// Notify: rest period expiring soon.
+  Future<void> notifyRestExpiringSoon(String athleteName, int daysLeft) async {
+    await createNotification(
+      type: NotificationType.restExpiringSoon,
+      title: 'Reposo próximo a vencer',
+      message: 'El reposo de $athleteName vence en $daysLeft día(s).',
+    );
+  }
+
+  /// Notify: upcoming match.
+  Future<void> notifyMatchUpcoming(String local, String visitor, int matchId, DateTime date) async {
+    final dayStr = '${date.day}/${date.month}';
+    await createNotification(
+      type: NotificationType.matchUpcoming,
+      title: 'Partido próximo',
+      message: '$local vs $visitor el $dayStr.',
+      relatedMatchId: matchId.toString(),
+    );
+  }
+
   /// Notify: new coach joined.
   Future<void> notifyNewCoach(String coachName) async {
     await createNotification(
@@ -184,6 +213,15 @@ class NotificationService {
       type: NotificationType.invitationAccepted,
       title: 'Invitación aceptada',
       message: '$memberName aceptó la invitación al club.',
+    );
+  }
+
+  /// Notify: sync completed.
+  Future<void> notifySyncCompleted(String details) async {
+    await createNotification(
+      type: NotificationType.syncCompleted,
+      title: 'Sincronización completada',
+      message: details,
     );
   }
 

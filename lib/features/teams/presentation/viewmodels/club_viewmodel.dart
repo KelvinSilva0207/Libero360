@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../core/services/club_data_service.dart';
+import '../../../../core/services/log_service.dart';
+import '../../../notifications/data/notification_service.dart';
 import '../../../estadisticas/data/local_db/database_service.dart';
 import '../../../estadisticas/data/models/player.dart';
 import '../../../estadisticas/data/models/match.dart';
@@ -207,6 +209,8 @@ class ClubViewModel extends ChangeNotifier {
         invitation.inviteeEmail,
         clubId: invitation.clubId,
       );
+      NotificationService.instance.notifyInvitationAccepted(invitation.inviteeEmail);
+      LogService.instance.auto('Invitación aceptada: ${invitation.inviteeEmail}', source: 'ClubViewModel');
     }
     return err;
   }

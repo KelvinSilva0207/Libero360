@@ -29,15 +29,16 @@ class HeaderSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SliverToBoxAdapter(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 300),
                   child: Text(
                     _greeting(),
                     style: TextStyle(
@@ -47,59 +48,62 @@ class HeaderSection extends StatelessWidget {
                     ),
                   ),
                 ),
-                const NotificationBell(),
-                const SizedBox(width: 4),
-                _iconButton(Icons.settings_rounded, onSettings),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                CircleAvatar(
-                  radius: 28,
-                  backgroundColor: isDark ? AppColors.surfaceLight : AppColors.lightBorder,
-                  child: Icon(Icons.shield_rounded, size: 28,
-                      color: isDark ? AppColors.textSecondary : AppColors.textTertiary),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
+              ),
+              const NotificationBell(),
+              const SizedBox(width: 4),
+              _iconButton(Icons.settings_rounded, onSettings),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 28,
+                backgroundColor: isDark ? AppColors.surfaceLight : AppColors.lightBorder,
+                child: Icon(Icons.shield_rounded, size: 28,
+                    color: isDark ? AppColors.primary.withValues(alpha: 0.7) : AppColors.primary),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      teamInfo.name,
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: isDark ? Colors.white : AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${teamInfo.category} · ${teamInfo.ageGroup}',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: isDark ? AppColors.textSecondary : AppColors.textTertiary,
+                      ),
+                    ),
+                    if (teamInfo.memberCount > 0) ...[
+                      const SizedBox(height: 3),
                       Text(
-                        teamInfo.name,
+                        '${teamInfo.memberCount} entrenadores${roleLabel != null ? ' · $roleLabel' : ''}',
                         style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                          color: isDark ? Colors.white : AppColors.textPrimary,
+                          fontSize: 11,
+                          color: isDark ? AppColors.textTertiary : AppColors.lightTextTertiary,
                         ),
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '${teamInfo.category} · ${teamInfo.ageGroup}',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: isDark ? AppColors.textSecondary : AppColors.textTertiary,
-                        ),
-                      ),
-                      if (teamInfo.memberCount > 0) ...[
-                        const SizedBox(height: 2),
-                        Text(
-                          '${teamInfo.memberCount} entrenadores${roleLabel != null ? ' · $roleLabel' : ''}',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: isDark ? AppColors.textTertiary : AppColors.lightTextTertiary,
-                          ),
-                        ),
-                      ],
                     ],
-                  ),
+                  ],
                 ),
-                const ProfileSelector(),
-              ],
-            ),
-          ],
-        ),
+              ),
+              const Padding(
+                padding: EdgeInsets.only(left: 4),
+                child: ProfileSelector(),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

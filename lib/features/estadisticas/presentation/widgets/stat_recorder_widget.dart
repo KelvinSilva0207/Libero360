@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../data/local_db/database_service.dart';
 import '../../data/models/models.dart';
 import '../../data/repositories/repositories.dart';
+import '../../../../core/utils/name_formatter.dart';
 
 /// Widget para registrar estadísticas en tiempo real durante un partido
 ///
@@ -280,7 +281,7 @@ class _StatRecorderWidgetState extends State<StatRecorderWidget> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          _jugadorSeleccionado!.nombre,
+                          NameFormatter.playerDisplayName(_jugadorSeleccionado!),
                           style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,

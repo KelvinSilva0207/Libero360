@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/themes/app_colors.dart';
+import '../../../../core/utils/name_formatter.dart';
 import '../../../estadisticas/data/models/models.dart';
 import '../../data/match_config.dart';
 import '../controllers/match_controller.dart';
@@ -519,9 +520,6 @@ class _MatchScreenState extends State<MatchScreen> {
                 separatorBuilder: (_, __) => const Divider(height: 1, color: Colors.white10),
                 itemBuilder: (_, i) {
                   final p = players[i];
-                  final parts = p.nombre.trim().split(RegExp(r'\s+'));
-                  final firstName = parts.isNotEmpty ? parts[0] : p.nombre;
-                  final lastNameInitial = parts.length > 1 ? parts.last[0].toUpperCase() : '';
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     child: Row(
@@ -539,7 +537,7 @@ class _MatchScreenState extends State<MatchScreen> {
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            '$firstName ${lastNameInitial.isNotEmpty ? '$lastNameInitial.' : ''}',
+                            NameFormatter.playerMatchName(p),
                             style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
                           ),
                         ),

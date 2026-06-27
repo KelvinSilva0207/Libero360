@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/themes/app_colors.dart';
+import '../../../../core/utils/name_formatter.dart';
 import '../../../estadisticas/data/models/models.dart';
 
 class SubstitutionDialog extends StatefulWidget {
@@ -82,10 +83,7 @@ class _SubstitutionDialogState extends State<SubstitutionDialog>
                           ),
                         ),
                         Text(
-                          widget.benchPlayer.displayName.isNotEmpty
-                              ? widget.benchPlayer.displayName
-                              : '${widget.benchPlayer.firstNames} ${widget.benchPlayer.lastNames}'
-                                  .trim(),
+                          NameFormatter.playerMatchName(widget.benchPlayer),
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 15,
@@ -154,9 +152,7 @@ class _SubstitutionDialogState extends State<SubstitutionDialog>
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(
-                                p.displayName.isNotEmpty
-                                    ? p.displayName
-                                    : '${p.firstNames} ${p.lastNames}'.trim(),
+                              NameFormatter.playerMatchName(p),
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 13,

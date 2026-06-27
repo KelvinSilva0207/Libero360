@@ -1,33 +1,67 @@
 import 'package:flutter/material.dart';
 import '../../../../core/themes/app_colors.dart';
 
-class DashboardSkeleton extends StatelessWidget {
+class DashboardSkeleton extends StatefulWidget {
   final bool isDark;
 
   const DashboardSkeleton({super.key, required this.isDark});
 
   @override
+  State<DashboardSkeleton> createState() => _DashboardSkeletonState();
+}
+
+class _DashboardSkeletonState extends State<DashboardSkeleton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<Alignment> _slide;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat(reverse: true);
+    _slide = Tween<Alignment>(
+      begin: const Alignment(-1.5, 0),
+      end: const Alignment(1.5, 0),
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOutSine));
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return ListView(
-      physics: const NeverScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-      children: [
-        _headerSkeleton(),
-        const SizedBox(height: 20),
-        _cardSkeleton(200),
-        const SizedBox(height: 20),
-        _cardSkeleton(180),
-        const SizedBox(height: 20),
-        _gridSkeleton(),
-        const SizedBox(height: 20),
-        _cardSkeleton(140),
-      ],
+    return AnimatedBuilder(
+      animation: _ctrl,
+      builder: (context, _) {
+        return ListView(
+          physics: const NeverScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          children: [
+            _headerSkeleton(),
+            const SizedBox(height: 20),
+            _cardSkeleton(200),
+            const SizedBox(height: 20),
+            _cardSkeleton(180),
+            const SizedBox(height: 20),
+            _gridSkeleton(),
+            const SizedBox(height: 20),
+            _cardSkeleton(140),
+          ],
+        );
+      },
     );
   }
 
   Widget _shimmer(double width, double height, {double radius = 12}) {
-    final base = isDark ? AppColors.surfaceLight : AppColors.lightBorder;
-    final highlight = isDark ? AppColors.border : AppColors.lightSurface;
+    final base = widget.isDark ? AppColors.surfaceLight : AppColors.lightBorder;
+    final highlight = widget.isDark ? AppColors.border : AppColors.lightSurface;
+    final dx = _slide.value.x;
     return Container(
       width: width,
       height: height,
@@ -40,8 +74,8 @@ class DashboardSkeleton extends StatelessWidget {
         gradient: LinearGradient(
           colors: [base, highlight, base],
           stops: const [0.0, 0.5, 1.0],
-          begin: const Alignment(-1, 0),
-          end: const Alignment(1, 0),
+          begin: Alignment(dx - 1.5, 0),
+          end: Alignment(dx + 1.5, 0),
         ),
       ),
     );
@@ -85,7 +119,7 @@ class DashboardSkeleton extends StatelessWidget {
   }
 
   Widget _cardSkeleton(double height) {
-    final bg = isDark ? AppColors.surface : AppColors.lightCard;
+    final bg = widget.isDark ? AppColors.surface : AppColors.lightCard;
     return Container(
       height: height,
       decoration: BoxDecoration(

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/local_db/stats_stream_service.dart';
 import '../../data/models/models.dart';
+import '../../../../core/utils/name_formatter.dart';
 import '../../domain/services/stats_calculator.dart';
 
 /// Widget que muestra estadísticas en vivo de los jugadores
@@ -216,7 +217,7 @@ class _LiveStatsWidgetState extends State<LiveStatsWidget> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      jugador.nombre,
+                      NameFormatter.playerDisplayName(jugador),
                       style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,

@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 
 import 'package:provider/provider.dart';
+import '../core/services/log_service.dart';
 import '../core/themes/app_colors.dart';
-import '../core/widgets_globales/route_transitions.dart';
 import '../features/auth/presentation/viewmodels/auth_viewmodel.dart';
 import '../features/atleta/atleta.dart';
 import '../features/asistencia/asistencia.dart' show AttendanceScreen;
 import '../features/partido/presentation/views/match_start_dialog.dart';
-import '../features/partido/presentation/views/coach_mode_screen.dart';
 import '../features/statistics/presentation/views/statistics_screen.dart';
 import '../features/admin/presentation/views/admin_screen.dart';
 import '../features/teams/teams.dart';
@@ -37,7 +36,7 @@ class _AppShellState extends State<AppShell> {
     _screens.addAll([
       const DashboardScreen(),
       const AthleteListScreen(),
-      const _MatchLauncherPlaceholder(),
+      _MatchLauncherPlaceholder(),
       const StatisticsScreen(),
       const AttendanceScreen(),
       const AdminScreen(),
@@ -468,8 +467,22 @@ class _AppShellState extends State<AppShell> {
   }
 }
 
-class _MatchLauncherPlaceholder extends StatelessWidget {
-  const _MatchLauncherPlaceholder();
+class _MatchLauncherPlaceholder extends StatefulWidget {
+  @override
+  State<_MatchLauncherPlaceholder> createState() => _MatchLauncherPlaceholderState();
+}
+
+class _MatchLauncherPlaceholderState extends State<_MatchLauncherPlaceholder> {
+  bool _logged = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (!_logged) {
+      _logged = true;
+      LogService.instance.auto('PARTIDO: legacy cleanup complete');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -506,17 +519,6 @@ class _MatchLauncherPlaceholder extends StatelessWidget {
               ),
               icon: const Icon(Icons.grid_view_rounded, size: 16),
               label: const Text('Cancha de práctica'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: colors.onSurface,
-                side: BorderSide(color: colors.outlineVariant),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-              ),
-            ),
-            const SizedBox(height: 12),
-            OutlinedButton.icon(
-              onPressed: () => context.pushSlide(const CoachModeScreen()),
-              icon: const Icon(Icons.school_rounded, size: 16),
-              label: const Text('Modo Entrenador'),
               style: OutlinedButton.styleFrom(
                 foregroundColor: colors.onSurface,
                 side: BorderSide(color: colors.outlineVariant),

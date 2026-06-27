@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/themes/app_colors.dart';
+import '../../../../core/utils/name_formatter.dart';
 import '../../data/court_models.dart';
 
 class PositionSlot extends StatelessWidget {
@@ -75,7 +76,7 @@ class PositionSlot extends StatelessWidget {
   Widget _buildFilledSlot(BuildContext context, ColorScheme colors) {
     final p = assignment!;
     final number = p.effectiveNumber;
-    final name = p.displayName;
+    final name = NameFormatter.playerDisplayName(p.player);
     final isLibero = p.player.posicion.index == 4;
 
     final slotSize = 62.0;
@@ -207,7 +208,7 @@ class PositionSlot extends StatelessWidget {
               const SizedBox(height: 20),
               if (assignment != null) ...[
                 Text(
-                  assignment!.player.nombre,
+                  NameFormatter.playerDisplayName(assignment!.player),
                   style: TextStyle(color: colors.onSurface, fontSize: 16, fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 4),

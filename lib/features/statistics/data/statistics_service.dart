@@ -1,3 +1,4 @@
+import '../../../core/utils/name_formatter.dart';
 import '../../estadisticas/data/local_db/database_service.dart';
 import '../../estadisticas/data/models/models.dart';
 import 'statistics_models.dart';
@@ -30,7 +31,7 @@ class StatisticsService {
       for (final p in players) {
         final playerAtt = attendances.where((a) => a.playerId == p.id);
         if (playerAtt.isNotEmpty && playerAtt.every((a) => a.asistio)) {
-          neverMissed.add(p.nombre);
+          neverMissed.add(NameFormatter.playerDisplayName(p));
         }
       }
 
@@ -45,7 +46,7 @@ class StatisticsService {
         final winners = playerEvents.where((e) => e.resultado == ResultadoAccion.positivo).length;
         if (winners > mvpPoints) {
           mvpPoints = winners;
-          mvpName = p.nombre;
+          mvpName = NameFormatter.playerDisplayName(p);
         }
       }
     }
@@ -153,7 +154,7 @@ class StatisticsService {
       final pct = (playerAtt.where((a) => a.asistio).length / playerAtt.length) * 100;
       final justificacion = playerAtt.where((a) => a.observaciones.isNotEmpty).toList();
       summaries.add(PlayerAttendanceSummary(
-        name: p.nombre,
+        name: NameFormatter.playerDisplayName(p),
         pct: pct,
         justificacion: justificacion.isNotEmpty ? justificacion.first.observaciones : null,
         diasAusente: playerAtt.where((a) => !a.asistio).length,
@@ -190,7 +191,7 @@ class StatisticsService {
       }
       if (maxStreak > bestStreak) {
         bestStreak = maxStreak;
-        bestPlayer = p.nombre;
+        bestPlayer = NameFormatter.playerDisplayName(p);
       }
     }
     return '$bestPlayer ($bestStreak)';

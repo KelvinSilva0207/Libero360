@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:libero360/features/estadisticas/data/local_db/database_service.dart';
 import 'package:libero360/features/estadisticas/data/models/models.dart';
+import 'package:libero360/core/utils/name_formatter.dart';
 
 class AttendanceHistoryDetailScreen extends StatefulWidget {
   final DateTime date;
@@ -124,7 +125,7 @@ class _AttendanceHistoryDetailScreenState extends State<AttendanceHistoryDetailS
       if (widget.searchQuery.isEmpty) return true;
       final p = _players[r.playerId];
       if (p == null) return false;
-      return p.nombre.toLowerCase().contains(widget.searchQuery.toLowerCase());
+      return NameFormatter.playerDisplayName(p).toLowerCase().contains(widget.searchQuery.toLowerCase());
     }).toList();
 
     if (filtered.isEmpty) return const SizedBox.shrink();
@@ -155,7 +156,7 @@ class _AttendanceHistoryDetailScreenState extends State<AttendanceHistoryDetailS
 
   Widget _buildPlayerCard(AttendanceRecord record, ColorScheme cs) {
     final player = _players[record.playerId];
-    final name = player?.nombre ?? 'Atleta #${record.playerId}';
+    final name = player != null ? NameFormatter.playerDisplayName(player) : 'Atleta #${record.playerId}';
     final position = player?.posicionLabel ?? '';
     final category = player?.categoria ?? '';
     final photoUrl = player?.fotoUrl;

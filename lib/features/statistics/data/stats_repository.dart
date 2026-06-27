@@ -1,3 +1,4 @@
+import '../../../core/utils/name_formatter.dart';
 import '../../../features/estadisticas/data/local_db/database_service.dart';
 import '../../../features/estadisticas/data/models/models.dart';
 import 'stats_summary_model.dart';
@@ -36,7 +37,7 @@ class StatsRepository {
       final winners = playerEvents.where((e) => e.resultado == ResultadoAccion.positivo).length;
       if (winners > mvpPoints) {
         mvpPoints = winners;
-        mvpName = p.nombre;
+        mvpName = NameFormatter.playerDisplayName(p);
       }
     }
 

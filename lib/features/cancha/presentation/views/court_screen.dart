@@ -7,6 +7,7 @@ import '../viewmodels/court_viewmodel.dart';
 import '../widgets/court_painter.dart';
 import '../widgets/position_slot.dart';
 import '../widgets/rotation_timeline.dart';
+import '../../../../core/utils/name_formatter.dart';
 import 'court_setup_dialog.dart';
 
 class CourtScreen extends StatefulWidget {
@@ -317,7 +318,7 @@ class _CourtScreenState extends State<CourtScreen> with SingleTickerProviderStat
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(p.player.nombre,
+                      Text(NameFormatter.playerDisplayName(p.player),
                         style: TextStyle(color: colors.onSurface, fontSize: 16, fontWeight: FontWeight.w600)),
                       Text('Posición ${p.position} · ${p.player.posicionLabel}',
                         style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12)),
@@ -477,7 +478,7 @@ class _CourtScreenState extends State<CourtScreen> with SingleTickerProviderStat
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(p.nombre, style: TextStyle(color: colors.onSurface, fontSize: 14, fontWeight: FontWeight.w500)),
+                  Text(NameFormatter.playerDisplayName(p), style: TextStyle(color: colors.onSurface, fontSize: 14, fontWeight: FontWeight.w500)),
                   Text(p.posicionLabel, style: TextStyle(color: colors.onSurfaceVariant, fontSize: 11)),
                 ],
               ),
@@ -501,7 +502,7 @@ class _CourtScreenState extends State<CourtScreen> with SingleTickerProviderStat
       builder: (ctx) => AlertDialog(
         backgroundColor: colors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Editar número · ${current.player.nombre}',
+        title: Text('Editar número · ${NameFormatter.playerDisplayName(current.player)}',
           style: TextStyle(color: colors.onSurface, fontSize: 16)),
         content: TextField(
           controller: ctrl,
@@ -561,7 +562,7 @@ class _CourtScreenState extends State<CourtScreen> with SingleTickerProviderStat
               Text('Servicio', style: TextStyle(color: colors.onSurfaceVariant, fontSize: 10, fontWeight: FontWeight.w500)),
               Text(
                 server != null
-                    ? '#${server.effectiveNumber} · ${server.player.nombre}'
+                    ? '#${server.effectiveNumber} · ${NameFormatter.playerDisplayName(server.player)}'
                     : 'Sin servidor',
                 style: TextStyle(color: colors.onSurface, fontSize: 13, fontWeight: FontWeight.w600),
               ),

@@ -5,6 +5,8 @@ import '../../../../core/widgets_globales/route_transitions.dart';
 import '../../../estadisticas/data/models/models.dart';
 import '../../../estadisticas/data/local_db/database_service.dart';
 import '../../../estadisticas/domain/services/stats_calculator.dart';
+import '../../../../core/utils/name_formatter.dart';
+import '../widgets/medical_leave_section.dart';
 import 'athlete_edit_screen.dart';
 
 class PlayerDetailScreen extends StatefulWidget {
@@ -18,11 +20,25 @@ class PlayerDetailScreen extends StatefulWidget {
 class _PlayerDetailScreenState extends State<PlayerDetailScreen> {
   PlayerStats? _stats;
   bool _loading = true;
+  double _attendancePercentage = 0;
+  int _attendancePresent = 0;
+  int _attendanceTotal = 0;
 
   @override
   void initState() {
     super.initState();
     _loadStats();
+    _loadAttendance();
+  }
+
+  Future<void> _loadAttendance() async {
+    try {
+      final records = await DatabaseService.instance.getAttendanceByPlayer(widget.player.id);
+      _attendanceTotal = records.length;
+      _attendancePresent = records.where((r) => r.asistio).length;
+      _attendancePercentage = _attendanceTotal > 0 ? (_attendancePresent / _attendanceTotal * 100) : 0;
+    } catch (_) {}
+    if (mounted) setState(() {});
   }
 
   Future<void> _loadStats() async {
@@ -42,7 +58,7 @@ class _PlayerDetailScreenState extends State<PlayerDetailScreen> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: AppColors.surface,
-        title: Text('${p.nombre}', style: const TextStyle(color: Colors.white, fontSize: 16)),
+        title: Text(NameFormatter.playerFullName(p), style: const TextStyle(color: Colors.white, fontSize: 16)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
@@ -68,6 +84,8 @@ class _PlayerDetailScreenState extends State<PlayerDetailScreen> {
             const SizedBox(height: 16),
             _infoGrid(p),
             const SizedBox(height: 16),
+            _attendanceCard(),
+            const SizedBox(height: 16),
             if (_loading)
               const Padding(
                 padding: EdgeInsets.all(24),
@@ -77,6 +95,8 @@ class _PlayerDetailScreenState extends State<PlayerDetailScreen> {
               _statsCard(_stats!),
             const SizedBox(height: 16),
             _positionBadges(p),
+            const SizedBox(height: 16),
+            MedicalLeaveSection(player: p),
           ],
         ),
       ),
@@ -121,7 +141,7 @@ class _PlayerDetailScreenState extends State<PlayerDetailScreen> {
               children: [
                 Row(
                   children: [
-                    Text(p.nombre, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                    Text(NameFormatter.playerFullName(p), style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
                     if (p.esCapitan) ...[
                       const SizedBox(width: 6),
                       const Icon(Icons.star, color: AppColors.accent, size: 18),
@@ -209,6 +229,57 @@ class _PlayerDetailScreenState extends State<PlayerDetailScreen> {
           Text(
             value,
             style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _attendanceCard() {
+    final pctColor = _attendancePercentage >= 80
+        ? const Color(0xFF22C55E)
+        : _attendancePercentage >= 50
+            ? const Color(0xFFF59E0B)
+            : const Color(0xFFEF4444);
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 56, height: 56,
+            decoration: BoxDecoration(
+              color: pctColor.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Center(
+              child: Text('${_attendancePercentage.toStringAsFixed(0)}%', style: TextStyle(color: pctColor, fontSize: 18, fontWeight: FontWeight.bold)),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Asistencia', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+                const SizedBox(height: 2),
+                Text('$_attendancePresent de $_attendanceTotal entrenos', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                const SizedBox(height: 4),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: _attendancePercentage / 100,
+                    backgroundColor: pctColor.withValues(alpha: 0.1),
+                    color: pctColor,
+                    minHeight: 4,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),

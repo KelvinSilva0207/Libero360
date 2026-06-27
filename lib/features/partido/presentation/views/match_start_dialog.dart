@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../../../core/services/category_service.dart';
 import '../../../../core/themes/app_colors.dart';
+import '../../../../core/utils/name_formatter.dart';
 import '../../../../core/widgets_globales/route_transitions.dart';
 import '../../../estadisticas/data/models/models.dart';
 import '../../../estadisticas/data/local_db/database_service.dart';
@@ -33,6 +35,8 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
   final Set<int> _selectedIds = {};
   bool _loadingPlayers = true;
   String _filter = '';
+  final Set<String> _matchCategoryFilter = {};
+  final CategoryService _catService = CategoryService.instance;
 
   int _currentPage = 0;
 
@@ -58,6 +62,7 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
   Future<void> _loadPlayers() async {
     try {
       await DatabaseService.instance.initialize();
+      await _catService.load();
       final players = await DatabaseService.instance.getAllPlayers();
       if (mounted) {
         setState(() {
@@ -103,14 +108,20 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
   }
 
   List<Player> get _filteredPlayers {
-    if (_filter.isEmpty) return _allPlayers;
-    final q = _filter.toLowerCase();
-    return _allPlayers
-        .where((p) =>
-            p.nombre.toLowerCase().contains(q) ||
-            p.cedula.toLowerCase().contains(q) ||
-            (p.numero?.toString() ?? '').contains(q))
-        .toList();
+    var result = _allPlayers;
+    if (_matchCategoryFilter.isNotEmpty) {
+      result = result.where((p) => _matchCategoryFilter.contains(p.categoria)).toList();
+    }
+    if (_filter.isNotEmpty) {
+      final q = _filter.toLowerCase();
+      result = result
+          .where((p) =>
+              NameFormatter.playerDisplayName(p).toLowerCase().contains(q) ||
+              p.cedula.toLowerCase().contains(q) ||
+              (p.numero?.toString() ?? '').contains(q))
+          .toList();
+    }
+    return result;
   }
 
   @override
@@ -669,6 +680,48 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
     );
   }
 
+  Widget _buildMatchCategoryFilter() {
+    final cats = _catService.getAllNames();
+    return SizedBox(
+      height: 36,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(right: 6),
+            child: FilterChip(
+              label: Text('Todos', style: TextStyle(fontSize: 11, color: _matchCategoryFilter.isEmpty ? Colors.white : Colors.white54)),
+              selected: _matchCategoryFilter.isEmpty,
+              selectedColor: AppColors.accent.withValues(alpha: 0.3),
+              backgroundColor: AppColors.surfaceLight,
+              side: BorderSide.none,
+              visualDensity: VisualDensity.compact,
+              onSelected: (_) => setState(() => _matchCategoryFilter.clear()),
+            ),
+          ),
+          ...cats.map((cat) => Padding(
+            padding: const EdgeInsets.only(right: 6),
+            child: FilterChip(
+              label: Text(cat, style: TextStyle(fontSize: 11, color: _matchCategoryFilter.contains(cat) ? Colors.white : Colors.white54)),
+              selected: _matchCategoryFilter.contains(cat),
+              selectedColor: AppColors.accent.withValues(alpha: 0.3),
+              backgroundColor: AppColors.surfaceLight,
+              side: BorderSide.none,
+              visualDensity: VisualDensity.compact,
+              onSelected: (_) => setState(() {
+                if (_matchCategoryFilter.contains(cat)) {
+                  _matchCategoryFilter.remove(cat);
+                } else {
+                  _matchCategoryFilter.add(cat);
+                }
+              }),
+            ),
+          )),
+        ],
+      ),
+    );
+  }
+
   // ========== STEP 3 – Athletes ==========
 
   Widget _buildStep3() {
@@ -706,6 +759,8 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
               ),
             ),
           ),
+          const SizedBox(height: 8),
+          _buildMatchCategoryFilter(),
           const SizedBox(height: 8),
           TextField(
             style: const TextStyle(color: Colors.white, fontSize: 13),
@@ -854,7 +909,7 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(p.nombre,
+                    Text(NameFormatter.playerDisplayName(p),
                         style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w500,

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../../../../core/theme_provider/theme_notifier.dart';
+import '../../../../core/utils/name_formatter.dart';
 import '../../../estadisticas/data/models/models.dart';
 import '../../data/player_stats_model.dart';
 import '../viewmodels/player_stats_viewmodel.dart';
@@ -25,7 +26,7 @@ class PlayerStatsScreen extends StatelessWidget {
           icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(player.nombre, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+        title: Text(NameFormatter.playerDisplayName(player), style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
       ),
       body: _buildBody(viewModel, isDark),
     );
@@ -109,7 +110,7 @@ class _PlayerHeader extends StatelessWidget {
             backgroundImage: player.fotoUrl != null ? NetworkImage(player.fotoUrl!) : null,
             child: player.fotoUrl == null
                 ? Text(
-                    player.nombre.isNotEmpty ? player.nombre[0].toUpperCase() : '?',
+                    NameFormatter.avatarInitial(player),
                     style: const TextStyle(color: AppColors.accent, fontSize: 26, fontWeight: FontWeight.bold),
                   )
                 : null,
@@ -119,7 +120,7 @@ class _PlayerHeader extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(player.nombre, style: TextStyle(color: isDark ? AppColors.textPrimary : AppColors.lightTextPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
+                Text(NameFormatter.playerDisplayName(player), style: TextStyle(color: isDark ? AppColors.textPrimary : AppColors.lightTextPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 4),
                 Row(
                   children: [

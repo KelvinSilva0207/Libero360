@@ -8,6 +8,7 @@ import '../../../estadisticas/domain/services/stats_calculator.dart';
 import '../../data/athlete_repository.dart';
 import '../../data/athlete_stats_model.dart';
 import '../../data/athlete_stats_service.dart';
+import '../../../estadisticas/data/stat_event_bus.dart';
 import '../viewmodels/athlete_viewmodel.dart';
 import '../widgets/athlete_stats_widget.dart';
 import 'athlete_form_screen.dart';
@@ -30,12 +31,28 @@ class _AthleteDetailScreenState extends State<AthleteDetailScreen> {
   TeamRankings? _teamRankings;
   bool _loadingStats = true;
   bool _loadingRendimiento = true;
+  VoidCallback? _eventBusHandler;
 
   @override
   void initState() {
     super.initState();
     _player = widget.player;
     _loadAll();
+    _eventBusHandler = () {
+      final affectedPlayerId = StatEventBus.instance.lastPlayerId;
+      if (affectedPlayerId != null && affectedPlayerId == _player.id) {
+        _loadAll();
+      }
+    };
+    StatEventBus.instance.addListener(_eventBusHandler!);
+  }
+
+  @override
+  void dispose() {
+    if (_eventBusHandler != null) {
+      StatEventBus.instance.removeListener(_eventBusHandler!);
+    }
+    super.dispose();
   }
 
   Future<void> _loadAll() async {

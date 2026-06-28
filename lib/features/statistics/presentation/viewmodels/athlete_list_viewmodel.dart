@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import '../../../../core/utils/name_formatter.dart';
 import '../../../../features/estadisticas/data/models/models.dart';
+import '../../../../features/estadisticas/data/stat_event_bus.dart';
 import '../../data/statistics_models.dart';
 import '../../data/statistics_service.dart';
 
@@ -12,6 +13,8 @@ class AthleteListViewModel extends ChangeNotifier {
   bool _loading = true;
   String? _error;
   String _query = '';
+  bool _loaded = false;
+  VoidCallback? _eventBusHandler;
 
   AthleteListViewModel({StatisticsService? service})
       : _service = service ?? StatisticsService();
@@ -30,12 +33,29 @@ class AthleteListViewModel extends ChangeNotifier {
       _allAthletes = await _service.loadAthleteStats();
       _applyFilter();
       _loading = false;
+      _loaded = true;
+      _subscribeToBus();
     } catch (e) {
       _error = e.toString();
       _loading = false;
     }
 
     notifyListeners();
+  }
+
+  void _subscribeToBus() {
+    _unsubscribeFromBus();
+    _eventBusHandler = () {
+      if (_loaded) load();
+    };
+    StatEventBus.instance.addListener(_eventBusHandler!);
+  }
+
+  void _unsubscribeFromBus() {
+    if (_eventBusHandler != null) {
+      StatEventBus.instance.removeListener(_eventBusHandler!);
+      _eventBusHandler = null;
+    }
   }
 
   void search(String q) {
@@ -61,5 +81,11 @@ class AthleteListViewModel extends ChangeNotifier {
       if (p.atletaStatus.label.toLowerCase().contains(lower)) return true;
       return false;
     }).toList();
+  }
+
+  @override
+  void dispose() {
+    _unsubscribeFromBus();
+    super.dispose();
   }
 }

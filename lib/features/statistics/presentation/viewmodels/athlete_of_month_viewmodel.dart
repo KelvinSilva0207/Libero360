@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import '../../data/athlete_ranking_service.dart';
 import '../../data/statistics_models.dart';
+import '../../../estadisticas/data/stat_event_bus.dart';
 
 enum RankingPeriod { actual, mesAnterior, temporada, historico }
 
@@ -15,6 +16,8 @@ class AthleteOfMonthViewModel extends ChangeNotifier {
   String? _error;
   RankingPeriod _selectedPeriod = RankingPeriod.actual;
   String _selectedCategory = 'Todos';
+  bool _loaded = false;
+  VoidCallback? _eventBusHandler;
 
   AthleteOfMonthViewModel({AthleteRankingService? service})
       : _service = service ?? AthleteRankingService();
@@ -69,12 +72,29 @@ class AthleteOfMonthViewModel extends ChangeNotifier {
 
       _currentMonthAward = await _service.getCurrentMonthAward();
       _loading = false;
+      _loaded = true;
+      _subscribeToBus();
     } catch (e) {
       _error = e.toString();
       _loading = false;
     }
 
     notifyListeners();
+  }
+
+  void _subscribeToBus() {
+    _unsubscribeFromBus();
+    _eventBusHandler = () {
+      if (_loaded && _selectedPeriod == RankingPeriod.actual) load();
+    };
+    StatEventBus.instance.addListener(_eventBusHandler!);
+  }
+
+  void _unsubscribeFromBus() {
+    if (_eventBusHandler != null) {
+      StatEventBus.instance.removeListener(_eventBusHandler!);
+      _eventBusHandler = null;
+    }
   }
 
   void setPeriod(RankingPeriod period) {
@@ -92,5 +112,11 @@ class AthleteOfMonthViewModel extends ChangeNotifier {
   List<AthleteRankingScore> get filteredRankings {
     if (_selectedCategory == 'Todos') return _rankings;
     return _rankings;
+  }
+
+  @override
+  void dispose() {
+    _unsubscribeFromBus();
+    super.dispose();
   }
 }

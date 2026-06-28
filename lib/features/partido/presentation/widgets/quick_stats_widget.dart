@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import '../../../../core/themes/app_colors.dart';
+import '../../../estadisticas/data/local_db/database_service.dart';
+import '../../../estadisticas/data/models/models.dart';
 
 class QuickStatsWidget extends StatelessWidget {
-  const QuickStatsWidget({super.key});
+  final int matchId;
+
+  const QuickStatsWidget({super.key, required this.matchId});
 
   @override
   Widget build(BuildContext context) {
@@ -14,7 +18,7 @@ class QuickStatsWidget extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
       ),
-      child: const Column(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -33,14 +37,83 @@ class QuickStatsWidget extends StatelessWidget {
             ],
           ),
           SizedBox(height: 8),
-          Center(
+          _StatsBody(matchId: matchId),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatsBody extends StatelessWidget {
+  final int matchId;
+
+  const _StatsBody({required this.matchId});
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<StatEvent>>(
+      future: DatabaseService.instance.getEventsByMatch(matchId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(
+            child: SizedBox(
+              width: 16, height: 16,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Colors.white38,
+              ),
+            ),
+          );
+        }
+
+        final events = snapshot.data ?? [];
+        if (events.isEmpty) {
+          return Center(
             child: Text(
               'Sin datos',
               style: TextStyle(color: Colors.white24, fontSize: 12),
             ),
-          ),
-        ],
-      ),
+          );
+        }
+
+        final counts = <TipoAccion, int>{};
+        for (final e in events) {
+          counts[e.tipoAccion] = (counts[e.tipoAccion] ?? 0) + 1;
+        }
+
+        final colorMapping = {
+          TipoAccion.ataque: Colors.orangeAccent,
+          TipoAccion.saque: Colors.blueAccent,
+          TipoAccion.bloqueo: Colors.greenAccent,
+          TipoAccion.defensa: Colors.purpleAccent,
+          TipoAccion.recepcion: Colors.tealAccent,
+          TipoAccion.colocacion: Colors.amberAccent,
+          TipoAccion.errorContrario: Colors.redAccent,
+        };
+
+        return Wrap(
+          spacing: 6,
+          runSpacing: 4,
+          children: counts.entries.map((e) {
+            final color = colorMapping[e.key] ?? Colors.white54;
+            return Container(
+              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                '${e.key.name.toUpperCase()} ${e.value}',
+                style: TextStyle(
+                  color: color,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            );
+          }).toList(),
+        );
+      },
     );
   }
 }

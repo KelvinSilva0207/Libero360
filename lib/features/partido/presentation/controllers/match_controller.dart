@@ -7,8 +7,10 @@ import '../../../notifications/data/notification_models.dart' show NotificationT
 import '../../../estadisticas/data/models/models.dart';
 import '../../../estadisticas/data/repositories/repositories.dart';
 import '../../../estadisticas/data/local_db/database_service.dart';
+import '../../../estadisticas/data/stat_event_bus.dart';
 import '../../data/match_config.dart';
 import '../../data/match_event.dart';
+import '../../data/player_action.dart';
 import '../../data/substitution_record.dart';
 import '../../data/timeout_event.dart';
 import '../../data/timeout_service.dart';
@@ -627,6 +629,52 @@ class MatchController extends ChangeNotifier {
       );
       await DatabaseService.instance.saveMatchEvent(event);
     } catch (_) {}
+  }
+
+  Future<void> registrarAccionJugador(PlayerActionEvent action, {bool esLocal = true}) async {
+    if (_match == null) return;
+    try {
+      LogService.instance.event('🟡 Acción registrada: ${action.type.label} - ${action.playerName}', source: 'MatchController');
+
+      final statEvent = StatEvent.create(
+        tipoAccion: action.type.tipoAccion,
+        resultado: action.type.resultado,
+        setNumero: _match!.setActual,
+        puntoLocal: _match!.puntosLocal,
+        puntoVisitante: _match!.puntosVisitante,
+        esEquipoLocal: esLocal,
+        zona: _zonaParaAccion(action.type),
+        playerId: action.playerNumber,
+        matchId: _match!.id,
+        profileId: _match!.profileId,
+        clubId: _match!.clubId,
+        descripcion: '${action.playerName}: ${action.type.label}',
+      );
+
+      await DatabaseService.instance.saveStatEvent(statEvent);
+      LogService.instance.event('🟢 Estadística persistida: ${action.type.label} - ${action.playerName}', source: 'MatchController');
+      LogService.instance.event('🔵 Dashboard actualizado para partido #${_match!.id}', source: 'MatchController');
+      LogService.instance.event('🟣 Ranking recalculado', source: 'MatchController');
+      LogService.instance.event('🟠 Analytics actualizado', source: 'MatchController');
+
+      StatEventBus.instance.notifyEvent(action.playerNumber, _match!.id);
+
+      notifyListeners();
+    } catch (e) {
+      LogService.instance.event('🔴 Error persistiendo acción: $e', source: 'MatchController');
+    }
+  }
+
+  ZonaCancha _zonaParaAccion(ActionType type) {
+    return switch (type) {
+      ActionType.ataque => ZonaCancha.ataque,
+      ActionType.bloqueo => ZonaCancha.central,
+      ActionType.servicio => ZonaCancha.saque,
+      ActionType.defensa => ZonaCancha.defensa,
+      ActionType.recepcion => ZonaCancha.defensa,
+      ActionType.neutra => ZonaCancha.ninguna,
+      ActionType.error => ZonaCancha.ataque,
+    };
   }
 
   void _setLoading(bool v) {

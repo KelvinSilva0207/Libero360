@@ -4,6 +4,7 @@ import '../../data/dashboard_model.dart';
 import '../../data/dashboard_repository.dart';
 import '../../../estadisticas/data/local_db/database_service.dart';
 import '../../../estadisticas/data/models/models.dart';
+import '../../../estadisticas/data/stat_event_bus.dart';
 
 class DashboardViewModel extends ChangeNotifier {
   final DashboardRepository _repository = DashboardRepository();
@@ -16,6 +17,7 @@ class DashboardViewModel extends ChangeNotifier {
   int _clubMemberCount = 0;
   StreamSubscription<List<Player>>? _playerSub;
   StreamSubscription<List<Match>>? _matchSub;
+  VoidCallback? _eventBusHandler;
   Timer? _debounce;
 
   DashboardData? get data => _data;
@@ -57,8 +59,18 @@ class DashboardViewModel extends ChangeNotifier {
   void _subscribeToChanges(String? profileId) {
     _playerSub?.cancel();
     _matchSub?.cancel();
+    _unsubscribeFromBus();
     _playerSub = _db.watchAllPlayers().listen((_) => _scheduleRefresh(profileId));
     _matchSub = _db.watchMatchesByState(EstadoPartido.finalizado).listen((_) => _scheduleRefresh(profileId));
+    _eventBusHandler = () => _scheduleRefresh(profileId);
+    StatEventBus.instance.addListener(_eventBusHandler!);
+  }
+
+  void _unsubscribeFromBus() {
+    if (_eventBusHandler != null) {
+      StatEventBus.instance.removeListener(_eventBusHandler!);
+      _eventBusHandler = null;
+    }
   }
 
   void _scheduleRefresh(String? profileId) {
@@ -103,6 +115,7 @@ class DashboardViewModel extends ChangeNotifier {
   void dispose() {
     _playerSub?.cancel();
     _matchSub?.cancel();
+    _unsubscribeFromBus();
     _debounce?.cancel();
     super.dispose();
   }

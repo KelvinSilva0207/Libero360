@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../core/services/log_service.dart';
+import '../../estadisticas/data/local_db/database_service.dart';
 import 'team_models.dart';
 
 class ClubService {
@@ -10,6 +11,7 @@ class ClubService {
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final LogService _log = LogService.instance;
+  final DatabaseService _db = DatabaseService.instance;
 
   String? get _uid => FirebaseAuth.instance.currentUser?.uid;
 
@@ -93,23 +95,29 @@ class ClubService {
     }
   }
 
-  /// Get a single club.
+  /// Get a single club (cached in Sembast for offline).
   Stream<Club?> clubStream(String clubId) =>
       _clubs.doc(clubId).snapshots().map((doc) {
         if (!doc.exists) return null;
-        return Club.fromMap(doc.id, doc.data() as Map<String, dynamic>);
+        final club = Club.fromMap(doc.id, doc.data() as Map<String, dynamic>);
+        _db.cacheClub({'id': club.id, ...club.toMap()});
+        return club;
       });
 
-  /// Stream members of a club.
+  /// Stream members of a club (cached in Sembast for offline).
   Stream<List<ClubMember>> membersStream(String clubId) => _clubs
       .doc(clubId)
       .collection('members')
       .snapshots()
-      .map((snap) => snap.docs
-          .map((d) => ClubMember.fromMap(d.id, d.data()))
-          .toList());
+      .map((snap) {
+        final members = snap.docs
+            .map((d) => ClubMember.fromMap(d.id, d.data()))
+            .toList();
+        _db.cacheMembers(clubId, snap.docs.map((d) => {'id': d.id, ...d.data()}).toList());
+        return members;
+      });
 
-  /// Stream clubs where current user is a member (active only).
+  /// Stream clubs where current user is a member (active only, cached in Sembast).
   Stream<List<Club>> myClubsStream() {
     final uid = _uid;
     if (uid == null) return const Stream.empty();
@@ -121,16 +129,36 @@ class ClubService {
         .snapshots()
         .asyncMap((snap) async {
       final clubs = <Club>[];
+      final clubMaps = <Map<String, dynamic>>[];
       for (final memberDoc in snap.docs) {
         final clubDoc = await memberDoc.reference.parent.parent?.get();
         if (clubDoc != null && clubDoc.exists) {
-          clubs.add(
-            Club.fromMap(clubDoc.id, clubDoc.data() as Map<String, dynamic>),
-          );
+          final club = Club.fromMap(clubDoc.id, clubDoc.data() as Map<String, dynamic>);
+          clubs.add(club);
+          clubMaps.add({'id': clubDoc.id, ...clubDoc.data() as Map<String, dynamic>});
         }
+      }
+      if (clubMaps.isNotEmpty) {
+        _db.cacheClubs(clubMaps);
       }
       return clubs;
     });
+  }
+
+  /// Get cached clubs (offline fallback).
+  Future<List<Club>> getCachedClubs() async {
+    final cached = await _db.getAllCachedClubs();
+    return cached
+        .map((m) => Club.fromMap(m['id'] as String? ?? '', m))
+        .toList();
+  }
+
+  /// Get cached members (offline fallback).
+  Future<List<ClubMember>> getCachedMembers(String clubId) async {
+    final cached = await _db.getCachedMembers(clubId);
+    return cached
+        .map((m) => ClubMember.fromMap(m['id'] as String? ?? '', m))
+        .toList();
   }
 
   /// Get a member's role in a club.

@@ -39,6 +39,9 @@ class DatabaseService extends AbstractDataService {
   final _staffActivityStore = intMapStoreFactory.store('staff_activities');
   final _medicalLeaveStore = intMapStoreFactory.store('medical_leaves');
   final _categoryStore = intMapStoreFactory.store('categories');
+  final _clubCacheStore = stringMapStoreFactory.store('club_cache');
+  final _memberCacheStore = stringMapStoreFactory.store('member_cache');
+  final _invitationCacheStore = stringMapStoreFactory.store('invitation_cache');
 
   Future<void> initialize() async {
     if (_isInitialized) return;
@@ -285,6 +288,46 @@ class DatabaseService extends AbstractDataService {
 
   // ==================== STAT EVENTS (OPTIMIZED) ====================
 
+  Stream<List<Match>> watchAllMatches() {
+    return _matchStore.query(
+      finder: Finder(sortOrders: [SortOrder('createdAt', false)]),
+    ).onSnapshots(_database).map(
+      (snapshots) => snapshots.map((e) => _matchFromMap(e.value)..id = e.key).toList(),
+    );
+  }
+
+  Stream<List<StatEvent>> watchAllEvents() {
+    return _eventStore.query(
+      finder: Finder(sortOrders: [SortOrder('timestamp')]),
+    ).onSnapshots(_database).map(
+      (snapshots) => snapshots.map((e) => _eventFromMap(e.value)..id = e.key).toList(),
+    );
+  }
+
+  Stream<List<AttendanceRecord>> watchAllAttendance() {
+    return _attendanceStore.query(
+      finder: Finder(sortOrders: [SortOrder('fecha', false)]),
+    ).onSnapshots(_database).map(
+      (snapshots) => snapshots.map((e) => _attendanceFromMap(e.value)..id = e.key).toList(),
+    );
+  }
+
+  Stream<List<MatchEvent>> watchAllMatchEvents() {
+    return _matchEventStore.query(
+      finder: Finder(sortOrders: [SortOrder('fecha')]),
+    ).onSnapshots(_database).map(
+      (snapshots) => snapshots.map((e) => _matchEventFromMap(e.value)..id = e.key).toList(),
+    );
+  }
+
+  Stream<List<Season>> watchAllSeasons() {
+    return _seasonStore.query(
+      finder: Finder(sortOrders: [SortOrder('year', false)]),
+    ).onSnapshots(_database).map(
+      (snapshots) => snapshots.map((e) => _seasonFromMap(e.value)..id = e.key).toList(),
+    );
+  }
+
   Future<List<StatEvent>> getAllEvents() async {
     final snapshots = await _eventStore.find(_database);
     return snapshots.map((e) => _eventFromMap(e.value)..id = e.key).toList();
@@ -432,6 +475,10 @@ class DatabaseService extends AbstractDataService {
       await _attendanceStore.record(record.id).put(_database, map);
       return record.id;
     }
+  }
+
+  Future<void> deleteAttendance(int recordId) async {
+    await _attendanceStore.record(recordId).delete(_database);
   }
 
   // ==================== MATCH EVENTS ====================
@@ -1146,6 +1193,72 @@ class DatabaseService extends AbstractDataService {
     return buf.toString();
   }
 
+  // ==================== CLUB CACHE ====================
+
+  Future<void> cacheClub(Map<String, dynamic> clubMap) async {
+    await _clubCacheStore.record(clubMap['id'] as String).put(_database, clubMap);
+  }
+
+  Future<void> cacheClubs(List<Map<String, dynamic>> clubMaps) async {
+    await _clubCacheStore.delete(_database);
+    for (final m in clubMaps) {
+      await _clubCacheStore.add(_database, m);
+    }
+  }
+
+  Future<Map<String, dynamic>?> getCachedClub(String clubId) async {
+    return await _clubCacheStore.record(clubId).get(_database);
+  }
+
+  Future<List<Map<String, dynamic>>> getAllCachedClubs() async {
+    final snapshots = await _clubCacheStore.find(_database);
+    return snapshots.map((e) => e.value).toList();
+  }
+
+  Future<void> cacheMember(String clubId, Map<String, dynamic> memberMap) async {
+    final key = '${clubId}_${memberMap['userId']}';
+    await _memberCacheStore.record(key).put(_database, memberMap);
+  }
+
+  Future<void> cacheMembers(String clubId, List<Map<String, dynamic>> memberMaps) async {
+    final prefix = '${clubId}_';
+    final existing = await _memberCacheStore.find(_database);
+    for (final e in existing) {
+      if (e.key.startsWith(prefix)) {
+        await _memberCacheStore.record(e.key).delete(_database);
+      }
+    }
+    for (final m in memberMaps) {
+      await _memberCacheStore.record('$prefix${m['userId']}').put(_database, m);
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getCachedMembers(String clubId) async {
+    final prefix = '${clubId}_';
+    final snapshots = await _memberCacheStore.find(_database);
+    return snapshots
+        .where((e) => e.key.startsWith(prefix))
+        .map((e) => e.value)
+        .toList();
+  }
+
+  Future<void> cacheInvitation(Map<String, dynamic> invitationMap) async {
+    final key = invitationMap['id'] as String? ?? '';
+    await _invitationCacheStore.record(key).put(_database, invitationMap);
+  }
+
+  Future<void> cacheInvitations(List<Map<String, dynamic>> invitationMaps) async {
+    for (final m in invitationMaps) {
+      final key = m['id'] as String? ?? '';
+      await _invitationCacheStore.record(key).put(_database, m);
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getAllCachedInvitations() async {
+    final snapshots = await _invitationCacheStore.find(_database);
+    return snapshots.map((e) => e.value).toList();
+  }
+
   // ==================== CLEANUP ====================
 
   Future<void> clearAllData() async {
@@ -1166,6 +1279,9 @@ class DatabaseService extends AbstractDataService {
     await _staffInvitationStore.delete(_database);
     await _staffActivityStore.delete(_database);
     await _categoryStore.delete(_database);
+    await _clubCacheStore.delete(_database);
+    await _memberCacheStore.delete(_database);
+    await _invitationCacheStore.delete(_database);
   }
 
   // ==================== SERIALIZATION ====================

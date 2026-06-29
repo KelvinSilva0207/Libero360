@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../estadisticas/data/local_db/database_service.dart';
 import 'team_models.dart';
 
 class InvitationService {
@@ -8,6 +9,7 @@ class InvitationService {
   InvitationService._internal();
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final DatabaseService _db = DatabaseService.instance;
 
   String? get _uid => FirebaseAuth.instance.currentUser?.uid;
 
@@ -80,9 +82,13 @@ class InvitationService {
         .collection('invitations')
         .where('inviteeUserId', isEqualTo: uid)
         .snapshots()
-        .map((snap) => snap.docs
-            .map((d) => ClubInvitation.fromMap(d.id, d.data()))
-            .toList());
+        .map((snap) {
+          final invitations = snap.docs
+              .map((d) => ClubInvitation.fromMap(d.id, d.data()))
+              .toList();
+          _db.cacheInvitations(snap.docs.map((d) => {'id': d.id, ...d.data()}).toList());
+          return invitations;
+        });
   }
 
   Stream<List<ClubInvitation>> pendingInvitationsStream() {

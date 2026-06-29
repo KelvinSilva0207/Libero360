@@ -262,6 +262,7 @@ class SyncService {
         'statusReason': p.statusReason ?? '',
         'statusStartDate': p.statusStartDate?.toIso8601String(),
         'statusEndDate': p.statusEndDate?.toIso8601String(),
+        'updatedAt': DateTime.now().toIso8601String(),
       };
 
   Player _mapToPlayer(String id, Map<String, dynamic> data) => Player()
@@ -333,6 +334,7 @@ class SyncService {
         'clubId': m.clubId,
         'duracionSegundos': m.duracionSegundos,
         'ultimoPuntoFueLocal': m.ultimoPuntoFueLocal,
+        'updatedAt': DateTime.now().toIso8601String(),
       };
 
   Match _mapToMatch(String id, Map<String, dynamic> data) => Match()
@@ -381,6 +383,7 @@ class SyncService {
         'fecha': r.fecha.toIso8601String(),
         'asistio': r.asistio,
         'observaciones': r.observaciones,
+        'updatedAt': DateTime.now().toIso8601String(),
       };
 
   AttendanceRecord _mapToAttendance(String id, Map<String, dynamic> data) =>
@@ -414,6 +417,7 @@ class SyncService {
         'profileId': e.profileId,
         'clubId': e.clubId,
         'createdAt': e.createdAt.toIso8601String(),
+        'updatedAt': DateTime.now().toIso8601String(),
       };
 
   StatEvent _mapToStatEvent(String id, Map<String, dynamic> data) =>

@@ -52,7 +52,6 @@ class ThemeNotifier extends ChangeNotifier {
       ThemeMode.dark => ThemeMode.light,
       ThemeMode.light => ThemeMode.system,
       ThemeMode.system => ThemeMode.dark,
-      _ => ThemeMode.dark,
     };
     notifyListeners();
     _save();

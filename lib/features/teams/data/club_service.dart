@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../../core/services/log_service.dart';
 import 'team_models.dart';
 
 class ClubService {
@@ -8,18 +9,55 @@ class ClubService {
   ClubService._internal();
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final LogService _log = LogService.instance;
 
   String? get _uid => FirebaseAuth.instance.currentUser?.uid;
 
   CollectionReference get _clubs => _firestore.collection('clubs');
 
+  /// Validar nombre del club.
+  String? validateName(String name) {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) return 'El nombre del club es obligatorio';
+    if (trimmed.length < 3) return 'El nombre debe tener al menos 3 caracteres';
+    if (trimmed.length > 50) return 'El nombre no puede exceder 50 caracteres';
+    return null;
+  }
+
+  /// Verificar si ya existe un club con el mismo nombre (del mismo owner).
+  Future<bool> nameExists(String name) async {
+    final uid = _uid;
+    if (uid == null) return false;
+    final snap = await _clubs
+        .where('name', isEqualTo: name.trim())
+        .where('ownerId', isEqualTo: uid)
+        .limit(1)
+        .get();
+    return snap.docs.isNotEmpty;
+  }
+
   /// Create a new club and add creator as owner member.
   Future<String> createClub(String name, {String description = '', String? photoUrl}) async {
     final uid = _uid;
-    if (uid == null) throw Exception('Not authenticated');
+    if (uid == null) {
+      await _log.error('🔴 No authenticated user', source: 'ClubService');
+      throw Exception('No hay usuario autenticado');
+    }
+
+    final nameError = validateName(name);
+    if (nameError != null) {
+      await _log.error('🔴 $nameError', source: 'ClubService');
+      throw Exception(nameError);
+    }
+
+    final duplicate = await nameExists(name);
+    if (duplicate) {
+      await _log.error('🔴 Club duplicado: $name', source: 'ClubService');
+      throw Exception('Ya tienes un club con ese nombre');
+    }
 
     final doc = await _clubs.add({
-      'name': name,
+      'name': name.trim(),
       'description': description,
       'photoUrl': photoUrl ?? '',
       'ownerId': uid,
@@ -40,6 +78,7 @@ class ClubService {
       'joinedAt': DateTime.now().toIso8601String(),
     });
 
+    await _log.auto('🟢 Club creado: ${name.trim()}', source: 'ClubService');
     return doc.id;
   }
 

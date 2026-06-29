@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../../../../core/widgets_globales/route_transitions.dart';
+import '../../../estadisticas/presentation/views/play_by_play_screen.dart';
 import '../../../statistics/presentation/views/statistics_screen.dart';
 import '../../data/dashboard_model.dart';
 
@@ -16,7 +17,64 @@ class LastMatchBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (lastMatch == null) return const SizedBox.shrink();
+    final bg = isDark ? AppColors.surface : AppColors.lightCard;
+    final borderClr = isDark ? AppColors.border : AppColors.lightBorder;
+    final textPri = isDark ? Colors.white : AppColors.textPrimary;
+    final textSec = isDark ? AppColors.textSecondary : AppColors.textTertiary;
+
+    if (lastMatch == null) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: borderClr),
+          ),
+          child: Column(
+            children: [
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.surfaceLight : AppColors.lightSurface,
+                  borderRadius: BorderRadius.circular(28),
+                ),
+                child: const Icon(Icons.sports_volleyball_rounded,
+                    size: 28, color: AppColors.textTertiary),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Sin partidos recientes',
+                style: TextStyle(
+                  color: textPri,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Los partidos finalizados aparecerán aquí',
+                style: TextStyle(color: textSec, fontSize: 12),
+              ),
+              const SizedBox(height: 16),
+              TextButton.icon(
+                onPressed: () => context.pushSlide(const PlayByPlayScreen()),
+                icon: const Icon(Icons.add_rounded, size: 18),
+                label: const Text('Jugar partido'),
+                style: TextButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     final days = ['lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom'];
     final months = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
@@ -137,4 +195,3 @@ class LastMatchBanner extends StatelessWidget {
       );
   }
 }
-

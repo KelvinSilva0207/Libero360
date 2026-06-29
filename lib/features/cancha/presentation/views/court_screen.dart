@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../../../estadisticas/data/models/player.dart';
+import '../../../partido/data/rotation_data.dart';
+import '../../../partido/presentation/widgets/court_widget.dart';
 import '../../data/court_models.dart';
 import '../viewmodels/court_viewmodel.dart';
-import '../widgets/court_painter.dart';
-import '../widgets/position_slot.dart';
 import '../widgets/rotation_timeline.dart';
 import '../../../../core/utils/name_formatter.dart';
 import 'court_setup_dialog.dart';
@@ -20,7 +20,6 @@ class CourtScreen extends StatefulWidget {
 class _CourtScreenState extends State<CourtScreen> with SingleTickerProviderStateMixin {
   late AnimationController _rotationAnimCtrl;
   bool _isRotating = false;
-  int? _eventPlayerId;
 
   @override
   void initState() {
@@ -194,84 +193,26 @@ class _CourtScreenState extends State<CourtScreen> with SingleTickerProviderStat
   }
 
   Widget _buildCourtWithSlots(BuildContext context, CourtViewModel vm) {
-    final colors = Theme.of(context).colorScheme;
+    final courtState = vm.toCourtState();
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final maxWidth = constraints.maxWidth;
-        final courtWidth = maxWidth.clamp(280.0, 400.0);
-        final courtHeight = courtWidth * 1.3;
-
-        return Center(
-          child: SizedBox(
-            width: courtWidth,
-            height: courtHeight,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: Stack(
-                children: [
-                  CustomPaint(
-                    size: Size(courtWidth, courtHeight),
-                    painter: CourtPainter(
-                      lineColor: colors.onSurfaceVariant.withValues(alpha: 0.2),
-                      courtColor: colors.surface,
-                      netColor: colors.onSurface.withValues(alpha: 0.15),
-                    ),
-                  ),
-                  _buildSlots(vm, courtWidth, courtHeight),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
+    return Center(
+      child: SizedBox(
+        width: 360,
+        height: 360 * 1.3,
+        child: CourtWidget(
+          state: courtState,
+          onZoneTap: (zoneNum) => _onZoneTap(context, vm, zoneNum),
+          onZoneLongPress: (zoneNum) => _onZoneLongPress(context, vm, zoneNum),
+        ),
+      ),
     );
   }
 
-  Widget _buildSlots(CourtViewModel vm, double w, double h) {
-    const positions = [
-      _SlotPos(0.5, 0.03),  // Pos 4
-      _SlotPos(0.15, 0.30), // Pos 3
-      _SlotPos(0.85, 0.30), // Pos 5
-      _SlotPos(0.50, 0.53), // Pos 6
-      _SlotPos(0.15, 0.76), // Pos 2
-      _SlotPos(0.85, 0.76), // Pos 1
-    ];
+  void _onZoneTap(BuildContext context, CourtViewModel vm, int zoneNum) {
+    final index = RotationManager.zoneToVisual[zoneNum];
+    if (index == null) return;
+    final assignment = vm.positions[index];
 
-    final slots = <Widget>[];
-    for (int i = 0; i < 6; i++) {
-      final assignment = vm.positions[i];
-      final isServer = i == vm.serverIndex && vm.isServing;
-      final isSelected = _eventPlayerId == (assignment?.player.id);
-
-      slots.add(
-        Positioned(
-          left: positions[i].x * w - 31,
-          top: positions[i].y * h - 31,
-          child: AnimatedSlide(
-            duration: const Duration(milliseconds: 400),
-            curve: Curves.easeInOutCubic,
-            offset: Offset.zero,
-            child: Opacity(
-              opacity: _isRotating ? 0.85 : 1.0,
-              child: PositionSlot(
-                index: i,
-                assignment: assignment,
-                isServing: isServer,
-                isBeingEdited: isSelected,
-                onTap: () => _onSlotTap(context, vm, i, assignment),
-                onEditNumber: assignment != null ? () => _showEditNumber(context, vm, i) : null,
-                onRemove: assignment != null ? () => vm.removePlayerFromPosition(i) : null,
-              ),
-            ),
-          ),
-        ),
-      );
-    }
-    return Stack(children: slots);
-  }
-
-  void _onSlotTap(BuildContext context, CourtViewModel vm, int index, PlayerAssignment? assignment) {
     if (assignment == null) {
       vm.selectPlayerForPosition(index);
       _showPlayerPicker(context, vm);
@@ -286,6 +227,63 @@ class _CourtScreenState extends State<CourtScreen> with SingleTickerProviderStat
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (ctx) => _buildPointRecorderSheet(ctx, vm, assignment, colors),
+    );
+  }
+
+  void _onZoneLongPress(BuildContext context, CourtViewModel vm, int zoneNum) {
+    final index = RotationManager.zoneToVisual[zoneNum];
+    if (index == null) return;
+    final assignment = vm.positions[index];
+    if (assignment == null) return;
+
+    final colors = Theme.of(context).colorScheme;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: colors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(width: 40, height: 4,
+                decoration: BoxDecoration(color: colors.onSurfaceVariant.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(2)),
+              ),
+              const SizedBox(height: 20),
+              Text(NameFormatter.playerDisplayName(assignment.player),
+                style: TextStyle(color: colors.onSurface, fontSize: 16, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 4),
+              Text('#${assignment.effectiveNumber} · Posición ${index + 1}',
+                style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13)),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: _ActionButton(
+                      icon: Icons.edit_rounded,
+                      label: 'Editar número',
+                      onTap: () { Navigator.pop(ctx); _showEditNumber(context, vm, index); },
+                      color: colors.primary,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _ActionButton(
+                      icon: Icons.person_remove_rounded,
+                      label: 'Quitar',
+                      onTap: () { Navigator.pop(ctx); vm.removePlayerFromPosition(index); },
+                      color: const Color(0xFFEF4444),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -694,9 +692,41 @@ class _CourtScreenState extends State<CourtScreen> with SingleTickerProviderStat
   }
 }
 
-class _SlotPos {
-  final double x, y;
-  const _SlotPos(this.x, this.y);
+class _ActionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final Color color;
+
+  const _ActionButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Material(
+      color: color.withValues(alpha: 0.1),
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          child: Column(
+            children: [
+              Icon(icon, color: color, size: 22),
+              const SizedBox(height: 6),
+              Text(label, style: TextStyle(color: colors.onSurface, fontSize: 12, fontWeight: FontWeight.w500)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _EventButton extends StatelessWidget {

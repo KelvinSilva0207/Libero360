@@ -39,8 +39,8 @@ class AppearanceSection extends StatelessWidget {
           _themeOption(
             cs, theme,
             Icons.light_mode_rounded, 'Claro',
-            'Fondo claro (próximamente)',
-            ThemeMode.light, theme.isLight, false,
+            'Fondo claro',
+            ThemeMode.light, theme.isLight, true,
           ),
           const SizedBox(height: 4),
           Divider(color: cs.outlineVariant, height: 1),
@@ -48,8 +48,8 @@ class AppearanceSection extends StatelessWidget {
           _themeOption(
             cs, theme,
             Icons.settings_brightness_rounded, 'Sistema',
-            'Sigue la configuración del dispositivo (próximamente)',
-            ThemeMode.system, theme.isSystem, false,
+            'Sigue la configuración del dispositivo',
+            ThemeMode.system, theme.isSystem, true,
           ),
         ],
       ),

@@ -1,4 +1,6 @@
 import 'package:flutter/foundation.dart';
+import '../../../core/config.dart';
+import '../../sync/data/sync_service.dart';
 
 enum SyncEvent { clubCreated, clubSynced, invitationSent, syncError }
 
@@ -71,26 +73,34 @@ class ClubSyncService {
     _log(SyncEvent.syncError, 'Error sincronización: $error', clubId: clubId);
   }
 
-  Future<void> syncAthletes({String? clubId}) async {
-    debugPrint('[ClubSync] syncAthletes stub — clubId: $clubId');
+  Future<void> syncAthletes({String? clubId, String? profileId}) async {
+    if (!AppConfig.useFirebase || clubId == null || profileId == null) return;
+    await SyncService.instance.uploadPlayers(profileId, clubId);
+    logClubSynced('Atletas sincronizados', clubId: clubId);
   }
 
-  Future<void> syncAttendance({String? clubId}) async {
-    debugPrint('[ClubSync] syncAttendance stub — clubId: $clubId');
+  Future<void> syncAttendance({String? clubId, String? profileId}) async {
+    if (!AppConfig.useFirebase || clubId == null || profileId == null) return;
+    await SyncService.instance.uploadAttendance(profileId, clubId);
+    logClubSynced('Asistencias sincronizadas', clubId: clubId);
   }
 
-  Future<void> syncMatches({String? clubId}) async {
-    debugPrint('[ClubSync] syncMatches stub — clubId: $clubId');
+  Future<void> syncMatches({String? clubId, String? profileId}) async {
+    if (!AppConfig.useFirebase || clubId == null || profileId == null) return;
+    await SyncService.instance.uploadMatches(profileId, clubId);
+    logClubSynced('Partidos sincronizados', clubId: clubId);
   }
 
-  Future<void> syncStatistics({String? clubId}) async {
-    debugPrint('[ClubSync] syncStatistics stub — clubId: $clubId');
+  Future<void> syncStatistics({String? clubId, String? profileId}) async {
+    if (!AppConfig.useFirebase || clubId == null || profileId == null) return;
+    await SyncService.instance.uploadStats(profileId, clubId);
+    logClubSynced('Estadísticas sincronizadas', clubId: clubId);
   }
 
-  Future<void> syncAll({String? clubId}) async {
-    await syncAthletes(clubId: clubId);
-    await syncAttendance(clubId: clubId);
-    await syncMatches(clubId: clubId);
-    await syncStatistics(clubId: clubId);
+  Future<void> syncAll({String? clubId, String? profileId}) async {
+    if (!AppConfig.useFirebase || clubId == null || profileId == null) return;
+    debugPrint('[ClubSync] syncAll — clubId: $clubId, profileId: $profileId');
+    await SyncService.instance.syncAll(profileId, clubId);
+    logClubSynced('Sincronización completa', clubId: clubId);
   }
 }

@@ -15,6 +15,7 @@ class _CreateClubScreenState extends State<CreateClubScreen> {
   final _descCtrl = TextEditingController();
   final _photoCtrl = TextEditingController();
   bool _creating = false;
+  String? _nameError;
 
   @override
   void dispose() {
@@ -22,6 +23,20 @@ class _CreateClubScreenState extends State<CreateClubScreen> {
     _descCtrl.dispose();
     _photoCtrl.dispose();
     super.dispose();
+  }
+
+  String? _validateName(String name) {
+    if (name.isEmpty) return 'El nombre del club es obligatorio';
+    if (name.length < 3) return 'El nombre debe tener al menos 3 caracteres';
+    if (name.length > 50) return 'El nombre no puede exceder 50 caracteres';
+    return null;
+  }
+
+  String? _validatePhotoUrl(String url) {
+    if (url.isEmpty) return null;
+    final uri = Uri.tryParse(url);
+    if (uri == null || !uri.hasScheme || !uri.hasAuthority) return 'URL de imagen no válida';
+    return null;
   }
 
   @override
@@ -53,12 +68,16 @@ class _CreateClubScreenState extends State<CreateClubScreen> {
               decoration: InputDecoration(
                 hintText: 'Ej: Academia Elite',
                 hintStyle: TextStyle(color: cs.onSurface.withValues(alpha: 0.3)),
+                errorText: _nameError,
                 filled: true,
                 fillColor: cs.surfaceContainerHighest,
                 border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
               ),
               autofocus: true,
+              onChanged: (_) {
+                if (_nameError != null) setState(() => _nameError = null);
+              },
             ),
             const SizedBox(height: 16),
             Text(
@@ -124,19 +143,30 @@ class _CreateClubScreenState extends State<CreateClubScreen> {
 
   Future<void> _create(BuildContext context, ClubViewModel vm) async {
     final name = _nameCtrl.text.trim();
-    if (name.isEmpty) {
+    final nameError = _validateName(name);
+    if (nameError != null) {
+      setState(() => _nameError = nameError);
+      return;
+    }
+
+    final photoUrl = _photoCtrl.text.trim();
+    final photoError = _validatePhotoUrl(photoUrl);
+    if (photoError != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Ingresa un nombre para el club')),
+        SnackBar(content: Text(photoError), backgroundColor: Colors.red),
       );
       return;
     }
 
     final description = _descCtrl.text.trim();
-    final photoUrl = _photoCtrl.text.trim();
 
     setState(() => _creating = true);
-    final err = await vm.createClub(name, description: description, photoUrl: photoUrl.isNotEmpty ? photoUrl : null);
-    setState(() => _creating = false);
+    final err = await vm.createClub(
+      name,
+      description: description,
+      photoUrl: photoUrl.isNotEmpty ? photoUrl : null,
+    );
+    if (mounted) setState(() => _creating = false);
 
     if (err != null) {
       if (mounted) {

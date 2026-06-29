@@ -1,7 +1,7 @@
 # Libero360 — AGENTS.md (Anchored Summary)
 
 ## Goal
-Auditar y corregir la capa de persistencia; crear NameFormatter global; refinar Dashboard visualmente; extender BackupService con SharedPreferences.
+Maintain and improve Libero360 — dashboard fixes, theme personalization, club management, Google Drive backup.
 
 ## Constraints & Preferences
 - Material 3, dark/light theme, responsive (Android, Web, Windows)
@@ -9,15 +9,26 @@ Auditar y corregir la capa de persistencia; crear NameFormatter global; refinar 
 - No UI/DB/logic mixing
 - Firebase Firestore for clubs/members/invitations/notifications; sembast for local data
 - Todos los cambios deben pasar `flutter analyze` con 0 errores, 0 warnings
-- Retrocompatibilidad: valores por defecto para backups antiguos
+- **CLUB 3.1**: botón Crear Club independiente; validar nombre y URL; guardar en Firestore; loading infinito corregido
+- **BACKUP 2.0**: Google Sign-In, subir/restaurar JSON a Drive, metadata (fecha, tamaño, versión, checksum), validar integridad
 
 ## Progress
 ### Done
-- **FASE UX 1.0A — NameFormatter global**: Creado `NameFormatter` en `lib/core/utils/name_formatter.dart`. Métodos: `playerFullName()`, `playerDisplayName()`, `playerShortName()`, `playerMatchName()`, `avatarInitial()`, `formatDisplayName()`, `formatShortName()`, `formatInitial()`. Actualizados ~40 archivos en Partido (matchName), Atletas (displayName/fullName), Dashboard (displayName), Estadísticas (displayName), Rankings (displayName), Asistencia (displayName/fullName), Cancha (displayName). Avatares usan `avatarInitial()`. Logs: 🔵 NAME FORMATTER, 🟢 NAME DISPLAY UPDATED en ViewModels.
-- **FASE DASHBOARD 3.2 — Refinamiento Visual Profesional**: Skeleton convertido a StatefulWidget con shimmer animado (1500ms fade-in-out). AnimatedSection: 400ms con fade+slide+easeOutQuint. AnimatedCard: 350ms easeOutQuint. AnimatedStaggeredSection: 60ms delay. Header: greeting con constrainedBox, shield icon primary color. MainCard: BoxShadow + countdown mejorado. QuickSummary: BoxShadow + emoji 24px. TeamStatus: BoxShadow + iconos 24px. LastMatchBanner: BoxShadow + decoración sutil. QuickAccess: press animation scale 0.95→1.0. Timeline: iconos 40px, spacing mejorado. Logs: 🔵 DASHBOARD RENDER, 🟢 DASHBOARD READY, 🔴 DASHBOARD ERROR.
-- **FASE BACKUP 2.0 — Respaldo Completo**: BackupService extendido para incluir SharedPreferences (`appSettings` en JSON). `createBackup()` exporta todas las keys de SP. `restoreBackup()` restaura SP post-DB-import con type checking. Backups antiguos sin `appSettings` usan valores por defecto. Logs: 🔵 BACKUP SETTINGS, 🟢 SETTINGS RESTORED, 🔴 SETTINGS NOT FOUND.
-- **FASE DATABASE 1.0 — Auditoría Completa**: 19 modelos auditados, 6 bugs corregidos (4 DATA LOSS: competitionName, medicalLeaves, staff, categories). `DATABASE_AUDIT.md` generado. Logs en BackupService/SettingsRepository.
-- **FASE ATLETAS 3.2A a 3.4, DASHBOARD 4.0A** (completadas en sesiones anteriores)
+- **DASHBOARD 3.2B** — 6 fixes aplicados (navegación mainCard/quickSummary/teamStatus, hardcoded data eliminado, absenceCount corregido, logs)
+- **DASHBOARD 3.2A** — `DASHBOARD_FORENSIC_AUDIT.md` escrito
+- **PERSONALIZACIÓN 2.0** — Light Theme completo (selector activado + 11 temas de componente faltantes agregados)
+- **CLUB 3.1 — Corrección completa de gestión de Club**:
+  1. **ClubService**: validación de nombre (min 3, max 50), chequeo de duplicados por owner, logs 🟢/🔴
+  2. **ClubViewModel**: `createClub()` con `on Exception catch` (no genérico), `syncClubData()` que propaga a SyncService, logging con emojis
+  3. **CreateClubScreen**: validación inline de nombre (min 3/max 50), validación de URL de foto, errores con `SnackBar` rojo
+  4. **ClubSection**: botón independiente "Crear Club" agregado (antes solo en dialog); removido del switcher dialog
+  5. **ClubSyncService**: sync methods reales (`syncAthletes`, `syncAttendance`, `syncMatches`, `syncStatistics`, `syncAll`) conectados a `SyncService`
+- **BACKUP 2.0 — Google Drive Backup**:
+  1. **GoogleDriveService**: sign-in con scope `drive.file`, upload multipart, download, list backups, checksum verification, app folder creation
+  2. **BackupService**: Drive upload automático tras backup local, restore desde Drive con confirmación, validación de checksum SHA-256 antes de importar, metadata completa (cuenta, fecha, tamaño, versión, checksum)
+  3. **DriveBackupSection UI**: estado de conexión, metadata del último backup (cuenta, fecha, tamaño, versión, checksum), botones Conectar/Desconectar/Subir/Restaurar, indicadores de loading
+  4. **SettingsScreen**: sección "Google Drive" agregada después de Sincronización
+  5. **pubspec.yaml**: `http: ^1.2.0` agregado como dependencia directa
 
 ### In Progress
 - (none)
@@ -26,37 +37,28 @@ Auditar y corregir la capa de persistencia; crear NameFormatter global; refinar 
 - (none)
 
 ## Key Decisions
-- `NameFormatter` tiene métodos Player-specific y String-based (para StaffMember, AppUser, ClubMember)
-- Partido usa `playerMatchName()` (PrimerNombre + inicial Apellido)
-- Listas/Stats/Dashboard/Rankings usan `playerDisplayName()` (PrimerNombre + PrimerApellido)
-- Ficha/Detalle usan `playerFullName()` (todos los nombres)
-- Dashboard skeleton con AnimationController real (no estático)
-- Backup JSON incluye sección `appSettings` con SharedPreferences key-value
-- Settings se restauran DESPUÉS de DB import (orden: primero datos, luego preferencias)
-- Backups antiguos sin `appSettings` son compatibles (se ignora la sección faltante)
+- CLUB 3.1: `ClubService.nameExists()` verifica duplicados por `ownerId` + `name` (mismo dueño no puede crear dos clubs con mismo nombre)
+- CLUB 3.1: `ClubViewModel.syncClubData()` llama a `SyncService.syncAll()` tras crear club — propaga a Dashboard (clubName/memberCount), Staff, Perfil
+- BACKUP 2.0: Drive API v3 vía REST (no `googleapis` package pesado) — usa `GoogleSignInAccount.authHeaders` para auth + `http` para requests
+- BACKUP 2.0: Multipart upload con metadata (checksum + version como `appProperties`) para verificación futura
+- BACKUP 2.0: BackupService.restoreBackup() valida checksum del JSON completo antes de importar — si falla, no restaura y muestra error
+- Logs: 🟢 Club creado / 🔵 Club sincronizado / 🟠 Verificando integridad / 🔴 Error / 🔴 Backup corrupto
+
+## Next Steps
+- (ninguno — todas las fases completadas)
 
 ## Relevant Files
-### UX 1.0A — NameFormatter
-- `lib/core/utils/name_formatter.dart`: fullName, displayName, shortName, matchName, avatarInitial, formatDisplayName, formatShortName, formatInitial
-- ~40 archivos actualizados en todas las features
+### CLUB 3.1
+- `lib/features/teams/data/club_service.dart` — validación + duplicados + logs
+- `lib/features/teams/presentation/viewmodels/club_viewmodel.dart` — error handling + syncClubData
+- `lib/features/teams/presentation/views/create_club_screen.dart` — validaciones inline
+- `lib/features/teams/data/club_sync_service.dart` — sync methods reales
+- `lib/features/settings/presentation/views/club_section.dart` — botón Crear Club independiente
 
-### DASHBOARD 3.2 — Visual
-- `lib/features/dashboard/presentation/views/dashboard_screen.dart`: logs 🔵🟢🔴
-- `lib/features/dashboard/presentation/widgets/dashboard_skeleton.dart`: shimmer animado
-- `lib/features/dashboard/presentation/widgets/animated_section.dart`: fade+slide, easeOutQuint
-- `lib/features/dashboard/presentation/widgets/header_section.dart`: constrainedBox, primary color
-- `lib/features/dashboard/presentation/widgets/main_card_section.dart`: BoxShadow, countdown mejorado
-- `lib/features/dashboard/presentation/widgets/quick_summary_grid.dart`: BoxShadow, emoji 24px
-- `lib/features/dashboard/presentation/widgets/team_status_section.dart`: BoxShadow, iconos 24px
-- `lib/features/dashboard/presentation/widgets/last_match_banner.dart`: BoxShadow, decoración sutil
-- `lib/features/dashboard/presentation/widgets/quick_access_row.dart`: press animation scale
-- `lib/features/dashboard/presentation/widgets/recent_activity_timeline.dart`: iconos 40px, spacing
+### BACKUP 2.0
+- `lib/features/settings/data/google_drive_service.dart` — Drive API REST (sign-in, upload, download, verify)
+- `lib/features/settings/data/backup_service.dart` — Drive upload/restore + checksum SHA-256 validation
+- `lib/features/settings/presentation/views/drive_backup_section.dart` — UI de Google Drive
+- `lib/features/settings/presentation/views/settings_screen.dart` — integración en settings
 
-### BACKUP 2.0 — Settings
-- `lib/features/settings/data/backup_service.dart`: export/import SharedPreferences vía `appSettings` en JSON
-- `lib/features/estadisticas/data/local_db/database_service.dart`: exportToJson/importFromJson (sin cambios, solo usado por BackupService)
-
-### DATABASE 1.0 — Auditoría
-- `DATABASE_AUDIT.md`: Reporte completo de 19 modelos auditados, 6 bugs corregidos
-
-**flutter analyze: 0 errores, 0 warnings** (8 warnings pre-existentes en archivos no modificados)
+**flutter analyze: 0 errores, 0 warnings**

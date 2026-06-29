@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../core/services/club_data_service.dart';
 import '../../../../core/services/log_service.dart';
+import '../../../../core/config.dart';
+import '../../../sync/data/sync_service.dart';
 import '../../../notifications/data/notification_service.dart';
 import '../../../estadisticas/data/local_db/database_service.dart';
 import '../../../estadisticas/data/models/player.dart';
@@ -183,9 +185,30 @@ class ClubViewModel extends ChangeNotifier {
       final id = await _clubService.createClub(name, description: description, photoUrl: photoUrl);
       setCurrentClub(id);
       ClubSyncService.instance.logClubCreated(name, clubId: id);
+      LogService.instance.auto('🟢 Club creado: $name (ID: $id)', source: 'ClubViewModel');
+      if (AppConfig.useFirebase) {
+        await syncClubData(id);
+      }
       return null;
+    } on Exception catch (e) {
+      final msg = e.toString().replaceFirst('Exception: ', '');
+      LogService.instance.error('🔴 Error al crear club: $msg', source: 'ClubViewModel');
+      return msg;
     } catch (e) {
-      return 'Error al crear el club';
+      LogService.instance.error('🔴 Error inesperado al crear club: $e', source: 'ClubViewModel');
+      return 'Error inesperado al crear el club';
+    }
+  }
+
+  Future<void> syncClubData(String clubId) async {
+    try {
+      final profileId = _profileId;
+      if (profileId == null) return;
+      await SyncService.instance.syncAll(profileId, clubId);
+      ClubSyncService.instance.logClubSynced(currentClub?.name ?? clubId, clubId: clubId);
+      LogService.instance.system('🔵 Club sincronizado: ${currentClub?.name ?? clubId}', source: 'ClubViewModel');
+    } catch (e) {
+      LogService.instance.error('🔴 Error al sincronizar club: $e', source: 'ClubViewModel');
     }
   }
 

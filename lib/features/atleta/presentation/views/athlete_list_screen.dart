@@ -3,11 +3,12 @@ import 'package:provider/provider.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../../../../core/widgets_globales/route_transitions.dart';
 import '../../../estadisticas/data/models/models.dart';
+import '../../../categories/presentation/viewmodels/category_viewmodel.dart';
+import '../../../categories/presentation/views/category_screen.dart';
 import '../viewmodels/athlete_viewmodel.dart';
 import 'athlete_form_screen.dart';
 import 'athlete_detail_screen.dart';
 import 'athlete_trash_screen.dart';
-import 'category_manager_screen.dart';
 import '../../../../core/utils/name_formatter.dart';
 
 class AthleteListScreen extends StatefulWidget {
@@ -238,7 +239,12 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
               backgroundColor: AppColors.surface,
               side: BorderSide.none,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-              onPressed: () => context.pushSlide(const CategoryManagerScreen()),
+              onPressed: () => context.pushSlide(
+                ChangeNotifierProvider<CategoryViewModel>(
+                  create: (_) => CategoryViewModel(),
+                  child: const CategoryScreen(),
+                ),
+              ),
             ),
           ),
         ],

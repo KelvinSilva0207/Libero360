@@ -58,6 +58,12 @@ class CategoryService {
 
   List<String> getAllNames() => _categories.map((c) => c.name).toList();
 
+  bool nameExists(String name, {int? excludeId}) {
+    return _categories.any((c) =>
+      c.name.toLowerCase() == name.toLowerCase() &&
+      (excludeId == null || c.id != excludeId));
+  }
+
   String calculate(int age) {
     for (final cat in _categories) {
       if (cat.matchesAge(age)) return cat.name;

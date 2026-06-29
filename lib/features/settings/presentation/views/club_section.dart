@@ -81,6 +81,9 @@ class ClubSection extends StatelessWidget {
           _actionButton(context, Icons.person_add_alt_1_rounded, 'Invitar miembros',
               () => Navigator.push(context, MaterialPageRoute(builder: (_) => const InviteMemberScreen()))),
           const SizedBox(height: 8),
+          _actionButton(context, Icons.add_circle_rounded, 'Crear club',
+              () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateClubScreen()))),
+          const SizedBox(height: 8),
           _actionButton(context, Icons.swap_horiz_rounded, 'Cambiar de club',
               () => _showClubSwitcher(context)),
         ],
@@ -158,14 +161,7 @@ class ClubSection extends StatelessWidget {
                 .toList(),
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.push(ctx, MaterialPageRoute(builder: (_) => const CreateClubScreen()));
-            },
-            child: Text('Crear club', style: TextStyle(color: cs.primary)),
-          ),
-        ],
+        actions: [],
       ),
     );
   }

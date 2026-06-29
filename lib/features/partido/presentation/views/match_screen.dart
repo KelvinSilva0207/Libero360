@@ -429,13 +429,15 @@ class _MatchScreenState extends State<MatchScreen>
       builder: (ctx) => PlayerActionSheet(
         player: player,
         onAction: (action) {
-          _actionEvents.add(PlayerActionEvent(
+          final event = PlayerActionEvent(
             playerNumber: player.numero ?? 0,
             playerName: name,
             type: action,
             setNumber: vm.setActual,
             rotationIndex: _rotationManager.rotationIndex,
-          ));
+          );
+          _actionEvents.add(event);
+          vm.registrarAccionJugador(event);
           _lastActionType = action;
           _lastActionPlayer = name;
           _lastActionKey = ++_actionAnimCounter;
@@ -886,7 +888,7 @@ class _MatchScreenState extends State<MatchScreen>
           ),
           _buildServiceHistoryButton(context, vm),
           _buildTimelineButton(context, vm),
-          QuickStatsWidget(),
+          QuickStatsWidget(matchId: vm.match?.id ?? 0),
           const SizedBox(height: 24),
         ],
       ),

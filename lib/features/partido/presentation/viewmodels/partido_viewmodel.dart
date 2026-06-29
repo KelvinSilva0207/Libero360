@@ -2,6 +2,7 @@ import 'dart:collection';
 import 'package:flutter/foundation.dart';
 import '../../../estadisticas/data/models/models.dart';
 import '../../data/match_config.dart';
+import '../../data/player_action.dart';
 import '../../data/substitution_record.dart';
 import '../../data/timeout_event.dart';
 import '../controllers/match_controller.dart';
@@ -136,6 +137,9 @@ class PartidoViewModel extends ChangeNotifier {
   Future<void> finalizarPartido() => _controller.finalizarPartido();
 
   Future<void> eliminarPartido() => _controller.eliminarPartido();
+
+  Future<void> registrarAccionJugador(PlayerActionEvent action, {bool esLocal = true}) =>
+      _controller.registrarAccionJugador(action, esLocal: esLocal);
 
   @override
   void dispose() {

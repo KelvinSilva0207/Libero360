@@ -1,4 +1,5 @@
 import '../../../core/services/category_service.dart';
+import '../../../core/services/log_service.dart';
 import '../../asistencia/data/medical_leave_repository.dart';
 import '../../estadisticas/data/local_db/database_service.dart';
 import '../../estadisticas/data/models/models.dart';
@@ -13,7 +14,8 @@ class DashboardRepository {
   final MedicalLeaveRepository _medicalRepo = MedicalLeaveRepository.instance;
   final CategoryService _catService = CategoryService.instance;
 
-  Future<DashboardData> load({String? profileId, String? clubName, int clubMemberCount = 0, Set<String>? categoryFilter}) async {
+  Future<DashboardData> load({String? profileId, String? clubName, int clubMemberCount = 0, Set<String>? categoryFilter, String? category}) async {
+    LogService.instance.auto('🟡 Repository — DashboardRepository.load iniciado');
     await _db.initialize();
     await _catService.load();
 
@@ -32,7 +34,7 @@ class DashboardRepository {
     final medicalLeaveCount = activeLeaves.length;
     final athletesOnLeave = activeLeaves.map((l) => l.playerId).toSet();
 
-    final teamInfo = _buildTeamInfo(clubName: clubName, clubMemberCount: clubMemberCount);
+    final teamInfo = _buildTeamInfo(clubName: clubName, clubMemberCount: clubMemberCount, category: category, players: players);
     final nextTraining = _findNextTraining(attendance);
     final nextMatch = _findNextMatch(matches);
     final athleteOfMonth = _buildAthleteOfMonth(players, rankings);
@@ -41,6 +43,9 @@ class DashboardRepository {
     final lastMatch = _buildLastMatch(matches);
     final recentActivity = _buildRecentActivity(matches, players, attendance, athletesOnLeave);
 
+    final mvpPlayer = rankings.isNotEmpty ? rankings.first.player : null;
+
+    LogService.instance.auto('🟡 Repository — DashboardData construido: ${quickSummary.athleteCount} atletas, ${quickSummary.matchCount} partidos');
     return DashboardData(
       teamInfo: teamInfo,
       nextTraining: nextTraining,
@@ -50,16 +55,25 @@ class DashboardRepository {
       teamStatus: teamStatus,
       lastMatch: lastMatch,
       recentActivity: recentActivity,
+      mvpPlayer: mvpPlayer,
     );
   }
 
-  TeamInfo _buildTeamInfo({String? clubName, int clubMemberCount = 0}) {
+  TeamInfo _buildTeamInfo({String? clubName, int clubMemberCount = 0, String? category, List<Player>? players}) {
     return TeamInfo(
       name: clubName ?? 'Club Águilas',
-      category: 'Masculino',
-      ageGroup: 'U17',
+      category: category ?? 'Masculino',
+      ageGroup: _deriveAgeGroup(players),
       memberCount: clubMemberCount,
     );
+  }
+
+  String _deriveAgeGroup(List<Player>? players) {
+    if (players == null || players.isEmpty) return 'U17';
+    final cats = players.map((p) => p.categoria).toSet().where((c) => c.isNotEmpty).toList()..sort();
+    if (cats.isEmpty) return 'U17';
+    if (cats.length == 1) return cats.first;
+    return '${cats.first} - ${cats.last}';
   }
 
   NextEvent? _findNextTraining(List<AttendanceRecord> attendance) {
@@ -153,7 +167,7 @@ class DashboardRepository {
 
     return TeamStatus(
       medicalRestCount: medicalRest,
-      absenceCount: (recentAbsences ~/ 10).clamp(0, 99),
+      absenceCount: recentAbsences.clamp(0, 999),
       winStreak: streak,
       currentMvp: currentMvp,
     );

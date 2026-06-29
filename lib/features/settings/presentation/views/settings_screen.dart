@@ -14,6 +14,7 @@ import 'staff_section.dart';
 import 'notifications_section.dart';
 import 'profiles_section.dart';
 import 'sync_section.dart';
+import 'drive_backup_section.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -95,6 +96,11 @@ class _SettingsBody extends StatelessWidget {
                           context, Icons.cloud_sync_rounded, 'Sincronización'),
                       const SizedBox(height: 8),
                       const SyncSection(),
+                      const SizedBox(height: 8),
+                      _sectionHeader(
+                          context, Icons.drive_folder_upload_rounded, 'Google Drive'),
+                      const SizedBox(height: 8),
+                      const DriveBackupSection(),
                       const SizedBox(height: 8),
                       _sectionHeader(
                           context, Icons.storage_rounded, 'Base de Datos'),

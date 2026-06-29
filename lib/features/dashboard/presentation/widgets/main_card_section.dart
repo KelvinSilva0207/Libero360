@@ -6,12 +6,16 @@ class MainCardSection extends StatelessWidget {
   final NextEvent? nextTraining;
   final NextEvent? nextMatch;
   final bool isDark;
+  final VoidCallback? onTrainingTap;
+  final VoidCallback? onMatchTap;
 
   const MainCardSection({
     super.key,
     this.nextTraining,
     this.nextMatch,
     required this.isDark,
+    this.onTrainingTap,
+    this.onMatchTap,
   });
 
   @override
@@ -93,7 +97,7 @@ class MainCardSection extends StatelessWidget {
                 SizedBox(
                   width: double.infinity,
                   child: TextButton(
-                    onPressed: () {},
+                    onPressed: nextMatch != null ? onMatchTap : onTrainingTap,
                     style: TextButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,

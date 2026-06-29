@@ -124,9 +124,33 @@ class AthleteOfMonthCard extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 20),
                   child: Center(
-                    child: Text(
-                      'No hay datos suficientes',
-                      style: TextStyle(color: textSec, fontSize: 14),
+                    child: Column(
+                      children: [
+                        Container(
+                          width: 56,
+                          height: 56,
+                          decoration: BoxDecoration(
+                            color: isDark ? AppColors.surfaceLight : AppColors.lightSurface,
+                            borderRadius: BorderRadius.circular(28),
+                          ),
+                          child: const Icon(Icons.person_off_rounded, 
+                              size: 28, color: AppColors.textTertiary),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Sin datos este mes',
+                          style: TextStyle(
+                            color: textPri,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'No hay suficientes partidos para calcular',
+                          style: TextStyle(color: textSec, fontSize: 12),
+                        ),
+                      ],
                     ),
                   ),
                 ),

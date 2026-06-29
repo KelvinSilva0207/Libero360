@@ -71,6 +71,9 @@ class Player {
   Posicion posicionSecundaria = Posicion.sinDefinir;
   DateTime fechaIngreso = DateTime.now();
 
+  // Category override field
+  String? categoriaPersonalizada;
+
   // Soft delete fields
   bool isDeleted = false;
   DateTime? deletedAt;
@@ -97,6 +100,7 @@ class Player {
     ManoDominante manoDominante = ManoDominante.derecha,
     Posicion posicionSecundaria = Posicion.sinDefinir,
     DateTime? fechaIngreso,
+    String? categoria,
   }) {
     final fn = firstNames ?? nombre ?? '';
     final ln = lastNames ?? '';
@@ -119,6 +123,7 @@ class Player {
       ..manoDominante = manoDominante
       ..posicionSecundaria = posicionSecundaria
       ..fechaIngreso = fechaIngreso ?? DateTime.now()
+      ..categoriaPersonalizada = categoria
       ..createdAt = DateTime.now();
   }
 
@@ -152,7 +157,7 @@ class Player {
   }
 
   String get categoria {
-    return CategoryCalculator.calculate(edad);
+    return categoriaPersonalizada ?? CategoryCalculator.calculate(edad);
   }
 
   String get sexoLabel {
@@ -209,6 +214,7 @@ class Player {
     'statusReason': statusReason ?? '',
     'statusStartDate': statusStartDate?.millisecondsSinceEpoch,
     'statusEndDate': statusEndDate?.millisecondsSinceEpoch,
+    'categoriaPersonalizada': categoriaPersonalizada ?? '',
     'isDeleted': isDeleted ? 1 : 0,
     'deletedAt': deletedAt?.millisecondsSinceEpoch,
     'deletedBy': deletedBy ?? '',
@@ -242,6 +248,7 @@ class Player {
     ..statusReason = (map['statusReason'] as String?)?.isNotEmpty == true ? map['statusReason'] as String? : null
     ..statusStartDate = map['statusStartDate'] != null ? DateTime.fromMillisecondsSinceEpoch(map['statusStartDate'] as int) : null
     ..statusEndDate = map['statusEndDate'] != null ? DateTime.fromMillisecondsSinceEpoch(map['statusEndDate'] as int) : null
+    ..categoriaPersonalizada = (map['categoriaPersonalizada'] as String?)?.isNotEmpty == true ? map['categoriaPersonalizada'] as String : null
     ..isDeleted = (map['isDeleted'] as int? ?? 0) == 1
     ..deletedAt = map['deletedAt'] != null ? DateTime.fromMillisecondsSinceEpoch(map['deletedAt'] as int) : null
     ..deletedBy = (map['deletedBy'] as String?)?.isNotEmpty == true ? map['deletedBy'] as String? : null
@@ -275,6 +282,7 @@ class Player {
     ManoDominante? manoDominante,
     Posicion? posicionSecundaria,
     DateTime? fechaIngreso,
+    String? categoriaPersonalizada,
     bool? isDeleted,
     DateTime? deletedAt,
     String? deletedBy,
@@ -308,6 +316,7 @@ class Player {
       ..manoDominante = manoDominante ?? this.manoDominante
       ..posicionSecundaria = posicionSecundaria ?? this.posicionSecundaria
       ..fechaIngreso = fechaIngreso ?? this.fechaIngreso
+      ..categoriaPersonalizada = categoriaPersonalizada ?? this.categoriaPersonalizada
       ..isDeleted = isDeleted ?? this.isDeleted
       ..deletedAt = deletedAt ?? this.deletedAt
       ..deletedBy = deletedBy ?? this.deletedBy

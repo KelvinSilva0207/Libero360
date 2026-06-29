@@ -1,3 +1,5 @@
+import '../../estadisticas/data/models/player.dart' show Player;
+
 class DashboardData {
   final TeamInfo teamInfo;
   final NextEvent? nextTraining;
@@ -7,6 +9,7 @@ class DashboardData {
   final TeamStatus teamStatus;
   final LastMatch? lastMatch;
   final List<ActivityItem> recentActivity;
+  final Player? mvpPlayer;
 
   const DashboardData({
     required this.teamInfo,
@@ -17,6 +20,7 @@ class DashboardData {
     required this.teamStatus,
     this.lastMatch,
     required this.recentActivity,
+    this.mvpPlayer,
   });
 }
 

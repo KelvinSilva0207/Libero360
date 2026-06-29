@@ -1,23 +1,37 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:crypto/crypto.dart' show sha256;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/services/log_service.dart';
 import '../../../features/estadisticas/data/local_db/database_service.dart';
+import 'google_drive_service.dart';
 
 class BackupMetadata {
   final DateTime? lastBackup;
   final String? connectedAccount;
   final bool isRestoring;
   final bool isBackingUp;
+  final bool isDriveConnected;
+  final DateTime? driveLastBackup;
+  final int? driveFileSize;
+  final String? driveAppVersion;
+  final String? driveChecksum;
+  final String? driveAccountEmail;
 
   const BackupMetadata({
     this.lastBackup,
     this.connectedAccount,
     this.isRestoring = false,
     this.isBackingUp = false,
+    this.isDriveConnected = false,
+    this.driveLastBackup,
+    this.driveFileSize,
+    this.driveAppVersion,
+    this.driveChecksum,
+    this.driveAccountEmail,
   });
 
   BackupMetadata copyWith({
@@ -25,12 +39,24 @@ class BackupMetadata {
     String? connectedAccount,
     bool? isRestoring,
     bool? isBackingUp,
+    bool? isDriveConnected,
+    DateTime? driveLastBackup,
+    int? driveFileSize,
+    String? driveAppVersion,
+    String? driveChecksum,
+    String? driveAccountEmail,
   }) =>
       BackupMetadata(
         lastBackup: lastBackup ?? this.lastBackup,
         connectedAccount: connectedAccount ?? this.connectedAccount,
         isRestoring: isRestoring ?? this.isRestoring,
         isBackingUp: isBackingUp ?? this.isBackingUp,
+        isDriveConnected: isDriveConnected ?? this.isDriveConnected,
+        driveLastBackup: driveLastBackup ?? this.driveLastBackup,
+        driveFileSize: driveFileSize ?? this.driveFileSize,
+        driveAppVersion: driveAppVersion ?? this.driveAppVersion,
+        driveChecksum: driveChecksum ?? this.driveChecksum,
+        driveAccountEmail: driveAccountEmail ?? this.driveAccountEmail,
       );
 }
 
@@ -40,6 +66,7 @@ class BackupService {
 
   final DatabaseService _db = DatabaseService.instance;
   final LogService _log = LogService.instance;
+  final GoogleDriveService _drive = GoogleDriveService.instance;
   BackupMetadata _metadata = const BackupMetadata();
 
   BackupMetadata get metadata => _metadata;
@@ -67,6 +94,15 @@ class BackupService {
     _metadata = _metadata.copyWith(
       lastBackup: lastDateStr != null ? DateTime.tryParse(lastDateStr) : null,
       connectedAccount: prefs.getString(_connectedAccountKey),
+    );
+    await _drive.refreshMetadata();
+    _metadata = _metadata.copyWith(
+      isDriveConnected: _drive.isConnected,
+      driveLastBackup: _drive.metadata.lastBackup,
+      driveFileSize: _drive.metadata.fileSize,
+      driveAppVersion: _drive.metadata.appVersion,
+      driveChecksum: _drive.metadata.checksum,
+      driveAccountEmail: _drive.account?.email,
     );
   }
 
@@ -103,6 +139,30 @@ class BackupService {
       _metadata = _metadata.copyWith(lastBackup: DateTime.now());
       await _log.system('🟢 EXPORT VERIFIED — Respaldo creado: libero360_backup_$date.json', source: 'BackupService');
       await _log.system('🔵 BACKUP SETTINGS — ${settings.length} preferencias respaldadas', source: 'BackupService');
+
+      final extractedChecksum = data['checksum'] as String?;
+      if (_drive.isConnected) {
+        await _log.system('🔵 Subiendo respaldo a Google Drive...', source: 'BackupService');
+        final driveErr = await _drive.uploadBackup(
+          enrichedJson,
+          checksum: extractedChecksum,
+          appVersion: _appVersion,
+        );
+        if (driveErr != null) {
+          await _log.error('🔴 Error al subir a Drive: $driveErr', source: 'BackupService');
+        } else {
+          await _log.auto('🟢 Backup subido a Drive', source: 'BackupService');
+          _metadata = _metadata.copyWith(
+            isDriveConnected: true,
+            driveLastBackup: DateTime.now(),
+            driveFileSize: enrichedJson.length,
+            driveAppVersion: _appVersion,
+            driveChecksum: extractedChecksum,
+            driveAccountEmail: _drive.account?.email,
+          );
+        }
+      }
+
       return file.path;
     } catch (e) {
       await _log.error('🔴 EXPORT FAILED — Error al crear respaldo: $e', source: 'BackupService');
@@ -112,11 +172,28 @@ class BackupService {
     }
   }
 
-  Future<bool> restoreBackup({String? filePath}) async {
+  Future<bool> restoreBackup({String? filePath, bool fromDrive = false}) async {
     _metadata = _metadata.copyWith(isRestoring: true);
     try {
       String jsonStr;
-      if (filePath != null) {
+
+      if (fromDrive) {
+        await _log.system('🔵 Descargando respaldo desde Google Drive...', source: 'BackupService');
+        final driveJson = await _drive.downloadBackup();
+        if (driveJson == null) {
+          await _log.error('🔴 No se pudo descargar respaldo de Drive', source: 'BackupService');
+          return false;
+        }
+        await _log.system('🟠 Verificando integridad del respaldo...', source: 'BackupService');
+        final driveData = jsonDecode(driveJson) as Map<String, dynamic>;
+        final driveChecksum = driveData['checksum'] as String?;
+        final ok = await _drive.verifyIntegrity(driveJson, expectedChecksum: driveChecksum);
+        if (!ok) {
+          await _log.error('🔴 Backup corrupto — No se importará', source: 'BackupService');
+          return false;
+        }
+        jsonStr = driveJson;
+      } else if (filePath != null) {
         final file = File(filePath);
         jsonStr = await file.readAsString();
       } else {
@@ -130,15 +207,28 @@ class BackupService {
       }
 
       final data = jsonDecode(jsonStr) as Map<String, dynamic>;
-      final settings = data.remove(_settingsSectionKey) as Map<String, dynamic>?;
+      final storedChecksum = data['checksum'] as String?;
 
-      // Re-encode DB data without settings for import
+      if (storedChecksum != null) {
+        final extractedData = {...data};
+        extractedData.remove('checksum');
+        extractedData.remove(_settingsSectionKey);
+        final reEncoded = const JsonEncoder.withIndent('  ').convert(extractedData);
+        final computedChecksum = _sha256(reEncoded);
+        if (computedChecksum != storedChecksum) {
+          await _log.error('🔴 Backup corrupto — Checksum no coincide. No se importará.', source: 'BackupService');
+          return false;
+        }
+        await _log.system('🟠 Checksum verificado correctamente', source: 'BackupService');
+      }
+
+      final settings = data.remove(_settingsSectionKey) as Map<String, dynamic>?;
       final dbJson = const JsonEncoder.withIndent('  ').convert(data);
 
       await _db.initialize();
-      final ok = await _db.importFromJson(dbJson);
+      final importOk = await _db.importFromJson(dbJson);
 
-      if (ok) {
+      if (importOk) {
         if (settings != null && settings.isNotEmpty) {
           final prefs = await SharedPreferences.getInstance();
           for (final entry in settings.entries) {
@@ -155,16 +245,14 @@ class BackupService {
             }
           }
           await _log.system('🟢 SETTINGS RESTORED — ${settings.length} preferencias restauradas', source: 'BackupService');
-        } else {
-          await _log.system('🔴 SETTINGS NOT FOUND — Usando valores por defecto', source: 'BackupService');
         }
-        await _log.system('🟢 BACKUP VERIFIED — Respaldo restaurado correctamente', source: 'BackupService');
+        await _log.auto('🟢 Backup restaurado correctamente', source: 'BackupService');
       } else {
-        await _log.error('🔴 DATA LOSS DETECTED — Error al restaurar: formato inválido', source: 'BackupService');
+        await _log.error('🔴 Error al restaurar: formato inválido', source: 'BackupService');
       }
-      return ok;
+      return importOk;
     } catch (e) {
-      await _log.error('🔴 DATA LOSS DETECTED — Error al restaurar respaldo: $e', source: 'BackupService');
+      await _log.error('🔴 Error al restaurar respaldo: $e', source: 'BackupService');
       return false;
     } finally {
       _metadata = _metadata.copyWith(isRestoring: false);
@@ -179,5 +267,9 @@ class BackupService {
       await prefs.remove(_connectedAccountKey);
     }
     _metadata = _metadata.copyWith(connectedAccount: email);
+  }
+
+  String _sha256(String input) {
+    return sha256.convert(utf8.encode(input)).toString();
   }
 }

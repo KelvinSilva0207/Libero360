@@ -5,116 +5,92 @@ import '../../data/dashboard_model.dart';
 class TeamStatusSection extends StatelessWidget {
   final TeamStatus status;
   final bool isDark;
+  final VoidCallback? onMedicalTap;
+  final VoidCallback? onAbsenceTap;
+  final VoidCallback? onStreakTap;
+  final VoidCallback? onMvpTap;
 
   const TeamStatusSection({
     super.key,
     required this.status,
     required this.isDark,
+    this.onMedicalTap,
+    this.onAbsenceTap,
+    this.onStreakTap,
+    this.onMvpTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final bg = isDark ? AppColors.surface : AppColors.lightCard;
     final borderClr = isDark ? AppColors.border : AppColors.lightBorder;
-    final textPri = isDark ? Colors.white : AppColors.textPrimary;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: bg,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: borderClr),
-            boxShadow: [
-              BoxShadow(
-                color: isDark ? Colors.black.withValues(alpha: 0.3) : Colors.black.withValues(alpha: 0.06),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _sectionLabel('Estado del Equipo', isDark),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(child: _statusTile(
-                    icon: '⚠',
-                    label: 'Reposo médico',
-                    value: '${status.medicalRestCount} atletas',
-                    color: AppColors.error,
-                    textPri: textPri,
-                  )),
-                  const SizedBox(width: 10),
-                  Expanded(child: _statusTile(
-                    icon: '🚫',
-                    label: 'Ausencias',
-                    value: '${status.absenceCount} atletas',
-                    color: AppColors.warning,
-                    textPri: textPri,
-                  )),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(child: _statusTile(
-                    icon: '🔥',
-                    label: 'Racha',
-                    value: '${status.winStreak} victorias consecutivas',
-                    color: AppColors.accent,
-                    textPri: textPri,
-                  )),
-                  const SizedBox(width: 10),
-                  Expanded(child: _statusTile(
-                    icon: '⭐',
-                    label: 'MVP actual',
-                    value: status.currentMvp ?? 'N/A',
-                    color: AppColors.primary,
-                    textPri: textPri,
-                  )),
-                ],
-                ),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: borderClr),
+          boxShadow: [
+            BoxShadow(
+              color: isDark ? Colors.black.withValues(alpha: 0.3) : Colors.black.withValues(alpha: 0.06),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _sectionLabel('Estado del Equipo', isDark),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(child: _StatusTileWidget(
+                  icon: '⚠',
+                  label: 'Reposo médico',
+                  value: '${status.medicalRestCount} atletas',
+                  color: AppColors.error,
+                  isDark: isDark,
+                  onTap: onMedicalTap,
+                )),
+                const SizedBox(width: 10),
+                Expanded(child: _StatusTileWidget(
+                  icon: '🚫',
+                  label: 'Ausencias',
+                  value: '${status.absenceCount} atletas',
+                  color: AppColors.warning,
+                  isDark: isDark,
+                  onTap: onAbsenceTap,
+                )),
               ],
             ),
-          ),
-      );
-  }
-
-  Widget _statusTile({
-    required String icon,
-    required String label,
-    required String value,
-    required Color color,
-    required Color textPri,
-  }) {
-    final textSec = isDark ? AppColors.textSecondary : AppColors.textTertiary;
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(icon, style: const TextStyle(fontSize: 24)),
-          const SizedBox(height: 10),
-          Text(value,
-              style: TextStyle(
-                fontWeight: FontWeight.w700,
-                fontSize: 13,
-                color: textPri,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis),
-          const SizedBox(height: 2),
-          Text(label,
-              style: TextStyle(fontSize: 11, color: textSec)),
-        ],
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(child: _StatusTileWidget(
+                  icon: '🔥',
+                  label: 'Racha',
+                  value: '${status.winStreak} victorias consecutivas',
+                  color: AppColors.accent,
+                  isDark: isDark,
+                  onTap: onStreakTap,
+                )),
+                const SizedBox(width: 10),
+                Expanded(child: _StatusTileWidget(
+                  icon: '⭐',
+                  label: 'MVP actual',
+                  value: status.currentMvp ?? 'N/A',
+                  color: AppColors.primary,
+                  isDark: isDark,
+                  onTap: onMvpTap,
+                )),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -127,6 +103,81 @@ class TeamStatusSection extends StatelessWidget {
         fontWeight: FontWeight.w700,
         color: isDark ? AppColors.textSecondary : AppColors.textTertiary,
         letterSpacing: 1.5,
+      ),
+    );
+  }
+}
+
+class _StatusTileWidget extends StatefulWidget {
+  final String icon;
+  final String label;
+  final String value;
+  final Color color;
+  final bool isDark;
+  final VoidCallback? onTap;
+
+  const _StatusTileWidget({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.color,
+    required this.isDark,
+    this.onTap,
+  });
+
+  @override
+  State<_StatusTileWidget> createState() => _StatusTileWidgetState();
+}
+
+class _StatusTileWidgetState extends State<_StatusTileWidget> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final textPri = widget.isDark ? Colors.white : AppColors.textPrimary;
+    final textSec = widget.isDark ? AppColors.textSecondary : AppColors.textTertiary;
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          transform: _isHovered ? Matrix4.diagonal3Values(1.03, 1.03, 1.0) : Matrix4.identity(),
+          transformAlignment: Alignment.center,
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: widget.color.withValues(alpha: _isHovered ? 0.18 : 0.1),
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: _isHovered
+                ? [BoxShadow(
+                    color: widget.color.withValues(alpha: 0.2),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  )]
+                : null,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(widget.icon, style: const TextStyle(fontSize: 24)),
+              const SizedBox(height: 10),
+              Text(widget.value,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                    color: textPri,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis),
+              const SizedBox(height: 2),
+              Text(widget.label,
+                  style: TextStyle(fontSize: 11, color: textSec)),
+            ],
+          ),
+        ),
       ),
     );
   }

@@ -44,7 +44,6 @@ class _StatRecorderWidgetState extends State<StatRecorderWidget> {
   final StatEventRepository _repository = StatEventRepository();
   
   Player? _jugadorSeleccionado;
-  bool _isLoading = false;
 
   // Colores del tema
   static const Color _primaryDark = Color(0xFF002B5B);
@@ -472,7 +471,7 @@ class _StatRecorderWidgetState extends State<StatRecorderWidget> {
   Future<void> _registrarAccion(TipoAccion tipo, ResultadoAccion resultado) async {
     if (_jugadorSeleccionado == null) return;
 
-    setState(() => _isLoading = true);
+    setState(() {});
 
     try {
       final match = await DatabaseService.instance.getMatchById(widget.matchId);
@@ -501,12 +500,12 @@ class _StatRecorderWidgetState extends State<StatRecorderWidget> {
     } catch (e) {
       widget.onError?.call('Error al registrar: $e');
     } finally {
-      setState(() => _isLoading = false);
+      setState(() {});
     }
   }
 
   Future<void> _registrarError() async {
-    setState(() => _isLoading = true);
+    setState(() {});
 
     try {
       final evento = await _repository.registrarErrorContrario(
@@ -520,7 +519,7 @@ class _StatRecorderWidgetState extends State<StatRecorderWidget> {
     } catch (e) {
       widget.onError?.call('Error al registrar: $e');
     } finally {
-      setState(() => _isLoading = false);
+      setState(() {});
     }
   }
 

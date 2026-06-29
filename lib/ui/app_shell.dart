@@ -1,17 +1,15 @@
 import 'package:flutter/material.dart';
 
 import 'package:provider/provider.dart';
-import '../core/services/log_service.dart';
 import '../core/themes/app_colors.dart';
 import '../features/auth/presentation/viewmodels/auth_viewmodel.dart';
 import '../features/atleta/atleta.dart';
 import '../features/asistencia/asistencia.dart' show AttendanceScreen;
-import '../features/partido/presentation/views/match_start_dialog.dart';
+import '../features/partido/presentation/views/match_list_screen.dart';
 import '../features/statistics/presentation/views/statistics_screen.dart';
 import '../features/admin/presentation/views/admin_screen.dart';
 import '../features/teams/teams.dart';
 import '../features/notifications/notifications.dart';
-import '../features/cancha/presentation/views/court_screen.dart';
 import '../features/profiles/profiles.dart';
 import '../features/dashboard/dashboard.dart';
 
@@ -36,7 +34,7 @@ class _AppShellState extends State<AppShell> {
     _screens.addAll([
       const DashboardScreen(),
       const AthleteListScreen(),
-      _MatchLauncherPlaceholder(),
+      const MatchListScreen(),
       const StatisticsScreen(),
       const AttendanceScreen(),
       const AdminScreen(),
@@ -464,71 +462,6 @@ class _AppShellState extends State<AppShell> {
       case ClubRole.asistente:
         return 'Asistente';
     }
-  }
-}
-
-class _MatchLauncherPlaceholder extends StatefulWidget {
-  @override
-  State<_MatchLauncherPlaceholder> createState() => _MatchLauncherPlaceholderState();
-}
-
-class _MatchLauncherPlaceholderState extends State<_MatchLauncherPlaceholder> {
-  bool _logged = false;
-
-  @override
-  void initState() {
-    super.initState();
-    if (!_logged) {
-      _logged = true;
-      LogService.instance.auto('PARTIDO: legacy cleanup complete');
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.sports_volleyball_rounded, size: 48, color: colors.onSurfaceVariant),
-            const SizedBox(height: 16),
-            Text('Partidos', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            Text('Inicia o gestiona tus partidos', style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13)),
-            const SizedBox(height: 24),
-            FilledButton.icon(
-              onPressed: () => showDialog(
-                context: context,
-                builder: (_) => const MatchStartDialog(),
-              ),
-              icon: const Icon(Icons.play_arrow_rounded, size: 16),
-              label: const Text('Nuevo Partido'),
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.accent,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-              ),
-            ),
-            const SizedBox(height: 16),
-            OutlinedButton.icon(
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const CourtScreen()),
-              ),
-              icon: const Icon(Icons.grid_view_rounded, size: 16),
-              label: const Text('Cancha de práctica'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: colors.onSurface,
-                side: BorderSide(color: colors.outlineVariant),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }
 

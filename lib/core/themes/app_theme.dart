@@ -190,6 +190,113 @@ class AppTheme {
         color: AppColors.accent,
         circularTrackColor: AppColors.border,
       ),
+      tabBarTheme: const TabBarThemeData(
+        labelColor: AppColors.accent,
+        unselectedLabelColor: AppColors.textTertiary,
+        indicatorColor: AppColors.accent,
+        labelStyle: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+        unselectedLabelStyle: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+      ),
+      sliderTheme: SliderThemeData(
+        activeTrackColor: AppColors.accent,
+        inactiveTrackColor: AppColors.border,
+        thumbColor: AppColors.accent,
+        overlayColor: AppColors.accent.withValues(alpha: 0.12),
+        activeTickMarkColor: AppColors.textOnAccent,
+        inactiveTickMarkColor: AppColors.textTertiary,
+        valueIndicatorColor: AppColors.accent,
+        valueIndicatorTextStyle: const TextStyle(color: AppColors.textOnAccent, fontSize: 13, fontWeight: FontWeight.w600),
+      ),
+      dropdownMenuTheme: DropdownMenuThemeData(
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: AppColors.surfaceDark,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.border)),
+          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.border)),
+          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primary, width: 1.5)),
+        ),
+        menuStyle: MenuStyle(
+          backgroundColor: WidgetStatePropertyAll(AppColors.surfaceLight),
+          shape: WidgetStatePropertyAll(RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+        ),
+      ),
+      listTileTheme: const ListTileThemeData(
+        tileColor: Colors.transparent,
+        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+        titleTextStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: AppColors.textPrimary),
+        subtitleTextStyle: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+        leadingAndTrailingTextStyle: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+        iconColor: AppColors.textTertiary,
+      ),
+      bottomAppBarTheme: const BottomAppBarThemeData(
+        color: AppColors.surface,
+        elevation: 2,
+      ),
+      tooltipTheme: TooltipThemeData(
+        decoration: BoxDecoration(
+          color: AppColors.surfaceLight,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        textStyle: const TextStyle(color: AppColors.textPrimary, fontSize: 12),
+      ),
+      datePickerTheme: DatePickerThemeData(
+        backgroundColor: AppColors.surface,
+        surfaceTintColor: AppColors.surface,
+        headerBackgroundColor: AppColors.primary,
+        headerForegroundColor: AppColors.textOnPrimary,
+        dayForegroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return AppColors.textOnPrimary;
+          return AppColors.textPrimary;
+        }),
+        dayBackgroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return AppColors.accent;
+          return Colors.transparent;
+        }),
+        todayForegroundColor: WidgetStatePropertyAll(AppColors.accent),
+        todayBorder: const BorderSide(color: AppColors.accent),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: AppColors.surfaceDark,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.border)),
+        ),
+      ),
+      timePickerTheme: TimePickerThemeData(
+        backgroundColor: AppColors.surface,
+        hourMinuteColor: AppColors.surfaceLight,
+        hourMinuteTextColor: AppColors.textPrimary,
+        dayPeriodColor: AppColors.surfaceLight,
+        dayPeriodTextColor: AppColors.textPrimary,
+        dialBackgroundColor: AppColors.surfaceLight,
+        dialHandColor: AppColors.accent,
+        dialTextColor: AppColors.textPrimary,
+        entryModeIconColor: AppColors.accent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      ),
+      expansionTileTheme: const ExpansionTileThemeData(
+        iconColor: AppColors.textTertiary,
+        collapsedIconColor: AppColors.textTertiary,
+        collapsedShape: Border(),
+        shape: Border(),
+        tilePadding: EdgeInsets.symmetric(horizontal: 16),
+        childrenPadding: EdgeInsets.zero,
+      ),
+      checkboxTheme: CheckboxThemeData(
+        fillColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return AppColors.accent;
+          return Colors.transparent;
+        }),
+        checkColor: WidgetStatePropertyAll(AppColors.textOnAccent),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+        side: const BorderSide(color: AppColors.border),
+      ),
+      menuTheme: MenuThemeData(
+        style: MenuStyle(
+          backgroundColor: WidgetStatePropertyAll(AppColors.surfaceLight),
+          shape: WidgetStatePropertyAll(RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+        ),
+      ),
     );
   }
 
@@ -375,6 +482,113 @@ class AppTheme {
       progressIndicatorTheme: const ProgressIndicatorThemeData(
         color: AppColors.accent,
         circularTrackColor: AppColors.lightBorder,
+      ),
+      tabBarTheme: const TabBarThemeData(
+        labelColor: AppColors.accent,
+        unselectedLabelColor: AppColors.lightTextTertiary,
+        indicatorColor: AppColors.accent,
+        labelStyle: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+        unselectedLabelStyle: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+      ),
+      sliderTheme: SliderThemeData(
+        activeTrackColor: AppColors.accent,
+        inactiveTrackColor: AppColors.lightBorder,
+        thumbColor: AppColors.accent,
+        overlayColor: AppColors.accent.withValues(alpha: 0.12),
+        activeTickMarkColor: Colors.white,
+        inactiveTickMarkColor: AppColors.lightTextTertiary,
+        valueIndicatorColor: AppColors.accent,
+        valueIndicatorTextStyle: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+      ),
+      dropdownMenuTheme: DropdownMenuThemeData(
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: AppColors.lightBackground,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.lightBorder)),
+          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.lightBorder)),
+          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primary, width: 1.5)),
+        ),
+        menuStyle: MenuStyle(
+          backgroundColor: WidgetStatePropertyAll(AppColors.lightCard),
+          shape: WidgetStatePropertyAll(RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+        ),
+      ),
+      listTileTheme: const ListTileThemeData(
+        tileColor: Colors.transparent,
+        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+        titleTextStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: AppColors.lightTextPrimary),
+        subtitleTextStyle: TextStyle(fontSize: 13, color: AppColors.lightTextSecondary),
+        leadingAndTrailingTextStyle: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.lightTextPrimary),
+        iconColor: AppColors.lightTextTertiary,
+      ),
+      bottomAppBarTheme: const BottomAppBarThemeData(
+        color: AppColors.lightCard,
+        elevation: 2,
+      ),
+      tooltipTheme: TooltipThemeData(
+        decoration: BoxDecoration(
+          color: AppColors.lightSurfaceDark,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        textStyle: const TextStyle(color: AppColors.lightTextPrimary, fontSize: 12),
+      ),
+      datePickerTheme: DatePickerThemeData(
+        backgroundColor: AppColors.lightCard,
+        surfaceTintColor: AppColors.lightCard,
+        headerBackgroundColor: AppColors.primary,
+        headerForegroundColor: Colors.white,
+        dayForegroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return Colors.white;
+          return AppColors.lightTextPrimary;
+        }),
+        dayBackgroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return AppColors.accent;
+          return Colors.transparent;
+        }),
+        todayForegroundColor: WidgetStatePropertyAll(AppColors.accent),
+        todayBorder: const BorderSide(color: AppColors.accent),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: AppColors.lightBackground,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.lightBorder)),
+        ),
+      ),
+      timePickerTheme: TimePickerThemeData(
+        backgroundColor: AppColors.lightCard,
+        hourMinuteColor: AppColors.lightSurface,
+        hourMinuteTextColor: AppColors.lightTextPrimary,
+        dayPeriodColor: AppColors.lightSurface,
+        dayPeriodTextColor: AppColors.lightTextPrimary,
+        dialBackgroundColor: AppColors.lightSurface,
+        dialHandColor: AppColors.accent,
+        dialTextColor: AppColors.lightTextPrimary,
+        entryModeIconColor: AppColors.accent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      ),
+      expansionTileTheme: const ExpansionTileThemeData(
+        iconColor: AppColors.lightTextTertiary,
+        collapsedIconColor: AppColors.lightTextTertiary,
+        collapsedShape: Border(),
+        shape: Border(),
+        tilePadding: EdgeInsets.symmetric(horizontal: 16),
+        childrenPadding: EdgeInsets.zero,
+      ),
+      checkboxTheme: CheckboxThemeData(
+        fillColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return AppColors.accent;
+          return Colors.transparent;
+        }),
+        checkColor: WidgetStatePropertyAll(Colors.white),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+        side: const BorderSide(color: AppColors.lightBorder),
+      ),
+      menuTheme: MenuThemeData(
+        style: MenuStyle(
+          backgroundColor: WidgetStatePropertyAll(AppColors.lightCard),
+          shape: WidgetStatePropertyAll(RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+        ),
       ),
     );
   }

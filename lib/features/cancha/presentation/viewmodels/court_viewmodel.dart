@@ -3,6 +3,7 @@ import '../../data/court_models.dart';
 import '../../../estadisticas/data/local_db/database_service.dart';
 import '../../../estadisticas/data/models/player.dart';
 import '../../../partido/data/match_event.dart';
+import '../../../partido/data/court_state.dart';
 
 class CourtViewModel extends ChangeNotifier {
   final DatabaseService _db = DatabaseService.instance;
@@ -174,6 +175,21 @@ class CourtViewModel extends ChangeNotifier {
         .map((p) => p.player.id)
         .toSet();
     return _allPlayers.where((p) => !assignedIds.contains(p.id)).toList();
+  }
+
+  CourtState toCourtState() {
+    const visualToZone = [4, 3, 2, 5, 6, 1];
+    final zones = List.generate(6, (i) {
+      final zoneNum = visualToZone[i];
+      final assignment = _positions[i];
+      return CourtZone(
+        zoneNumber: zoneNum,
+        athleteNumber: assignment?.effectiveNumber,
+        isLibero: assignment?.player.posicion.index == 4,
+        isServing: zoneNum == 1 && _isServing,
+      );
+    });
+    return CourtState(zones: zones);
   }
 
   void resetLineup() {

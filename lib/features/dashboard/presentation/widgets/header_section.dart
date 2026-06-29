@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/themes/app_colors.dart';
-import '../../../profiles/presentation/widgets/profile_selector.dart';
+import '../../../profiles/presentation/widgets/compact_profile_selector.dart';
 import '../../../notifications/presentation/views/notification_bell.dart';
 import '../../data/dashboard_model.dart';
 
@@ -49,6 +49,9 @@ class HeaderSection extends StatelessWidget {
                   ),
                 ),
               ),
+              const SizedBox(width: 8),
+              const CompactProfileSelector(),
+              const SizedBox(width: 4),
               const NotificationBell(),
               const SizedBox(width: 4),
               _iconButton(Icons.settings_rounded, onSettings),
@@ -97,10 +100,7 @@ class HeaderSection extends StatelessWidget {
                   ],
                 ),
               ),
-              const Padding(
-                padding: EdgeInsets.only(left: 4),
-                child: ProfileSelector(),
-              ),
+              const SizedBox.shrink(),
             ],
           ),
         ],
@@ -109,15 +109,20 @@ class HeaderSection extends StatelessWidget {
   }
 
   Widget _iconButton(IconData icon, VoidCallback onTap) {
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceLight : AppColors.lightSurface,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: IconButton(
-        icon: Icon(icon, size: 20,
-            color: isDark ? AppColors.textSecondary : AppColors.textTertiary),
-        onPressed: onTap,
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: Container(
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.surfaceLight : AppColors.lightSurface,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: IconButton(
+          icon: Icon(icon, size: 20,
+              color: isDark ? AppColors.textSecondary : AppColors.textTertiary),
+          onPressed: onTap,
+          hoverColor: AppColors.primary.withValues(alpha: 0.1),
+          splashRadius: 20,
+        ),
       ),
     );
   }

@@ -8,6 +8,7 @@ import '../../../../core/themes/app_colors.dart';
 import '../../../../core/utils/category_calculator.dart';
 import '../../../../core/utils/cedula_formatter.dart';
 import '../../../estadisticas/data/models/models.dart';
+import '../../../categories/presentation/widgets/category_selector.dart';
 import '../viewmodels/athlete_viewmodel.dart';
 import '../../../../core/utils/name_formatter.dart';
 
@@ -37,6 +38,7 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
   ManoDominante _manoDominante = ManoDominante.derecha;
   bool _esCapitan = false;
   EstadoSalud _estadoSalud = EstadoSalud.disponible;
+  String? _categoriaOverride;
   bool _saving = false;
   bool _hasCamera = false;
   File? _fotoFile;
@@ -66,6 +68,7 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
       _manoDominante = p.manoDominante;
       _esCapitan = p.esCapitan;
       _estadoSalud = p.estadoSalud;
+      _categoriaOverride = p.categoriaPersonalizada;
     }
   }
 
@@ -198,6 +201,7 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
         manoDominante: _manoDominante,
         posicionSecundaria: _posicionSecundaria,
         fechaIngreso: _fechaIngreso,
+        categoria: _categoriaOverride,
       );
 
       if (_isEditing) {
@@ -329,7 +333,11 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
                 const SizedBox(height: 12),
                 _buildManoDropdown(),
                 const SizedBox(height: 12),
-                _buildCategoryField(),
+                CategorySelector(
+                  selectedCategory: _categoriaOverride,
+                  onChanged: (v) => setState(() => _categoriaOverride = v),
+                  label: 'Categoría (opcional)',
+                ),
                 const SizedBox(height: 12),
                 _buildSwitchRow(Icons.star, '¿Es Capitán?', _esCapitan, (v) {
                   setState(() => _esCapitan = v);
@@ -735,27 +743,6 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
             onChanged: onChanged,
             activeColor: AppColors.accent,
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCategoryField() {
-    final edad = _edadCalculada;
-    final cat = CategoryCalculator.calculate(edad);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceLight,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.category, color: AppColors.primary, size: 20),
-          const SizedBox(width: 12),
-          const Text('Categoría', style: TextStyle(color: Colors.white54, fontSize: 14)),
-          const Spacer(),
-          _ageChip(cat, AppColors.accent),
         ],
       ),
     );

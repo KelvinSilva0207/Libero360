@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/themes/app_colors.dart';
-import '../../data/profile_model.dart';
 import '../viewmodels/profile_viewmodel.dart';
 import '../views/create_profile_screen.dart';
 

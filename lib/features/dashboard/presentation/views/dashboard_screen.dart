@@ -8,10 +8,16 @@ import '../../../auth/presentation/viewmodels/auth_viewmodel.dart';
 import '../../../profiles/presentation/viewmodels/profile_viewmodel.dart';
 import '../../../teams/presentation/viewmodels/club_viewmodel.dart';
 import '../../../teams/data/team_models.dart' show ClubRole;
-import '../../../asistencia/asistencia.dart';
-import '../../../admin/presentation/views/admin_screen.dart';
+import '../../../asistencia/presentation/views/athlete_list_screen.dart' as asis_athlete;
 import '../../../estadisticas/presentation/views/play_by_play_screen.dart';
+import '../../../admin/presentation/views/admin_screen.dart';
 import '../../../atleta/presentation/viewmodels/athlete_viewmodel.dart';
+import '../../../atleta/presentation/views/athlete_list_screen.dart' as atleta_athlete;
+import '../../../atleta/presentation/views/athlete_detail_screen.dart';
+import '../../../asistencia/presentation/views/attendance_analytics_screen.dart';
+import '../../../asistencia/presentation/views/attendance_screen.dart';
+import '../../../statistics/presentation/views/statistics_screen.dart';
+import '../../../partido/presentation/views/match_list_screen.dart';
 import '../viewmodels/dashboard_viewmodel.dart';
 import '../widgets/header_section.dart';
 import '../widgets/main_card_section.dart';
@@ -35,8 +41,6 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   bool _initialized = false;
-  bool _didLogReady = false;
-  bool _didLogError = false;
 
   @override
   void didChangeDependencies() {
@@ -58,137 +62,354 @@ class _DashboardScreenState extends State<DashboardScreen> {
       profileId: profileVm.currentProfile?.id,
       clubName: clubVm.currentClub?.name,
       clubMemberCount: clubVm.memberCount,
+      category: profileVm.currentProfile?.category,
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = context.watch<ThemeNotifier>().isDark;
-    final vm = context.watch<DashboardViewModel>();
-    final user = context.watch<AuthViewModel>().user;
-    final profile = context.watch<ProfileViewModel>().currentProfile;
-    final userName = NameFormatter.formatDisplayName(user?.nombre ?? 'Usuario');
-
-    if (vm.data != null && !_didLogReady) {
-      _didLogReady = true;
-      LogService.instance.auto('🟢 DASHBOARD READY — ${vm.data!.quickSummary.athleteCount} atletas, ${vm.data!.quickSummary.matchCount} partidos');
-    }
-    if (vm.error != null && !_didLogError) {
-      _didLogError = true;
-      LogService.instance.error('🔴 DASHBOARD ERROR — ${vm.error}');
-    }
-
     final bg = isDark ? AppColors.background : AppColors.lightBackground;
 
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: bg,
       body: SafeArea(
-        child: vm.loading && vm.data == null
-            ? DashboardSkeleton(isDark: isDark)
-            : vm.error != null && vm.data == null
-                ? _errorState(vm, isDark)
-                : RefreshIndicator(
-                    onRefresh: () => vm.refresh(profileId: profile?.id),
-                    child: CustomScrollView(
-                      physics: const BouncingScrollPhysics(),
-                      slivers: [
-                        _sectionBuilder(0, 'Header', HeaderSection(
-                          userName: userName,
-                          teamInfo: vm.data!.teamInfo,
-                          isDark: isDark,
-                          onSettings: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) => const AdminScreen()),
-                          ),
-                          roleLabel: _roleLabel(context.read<ClubViewModel>().myRole),
-                        )),
-                        _sectionCardBuilder(1, 'MainCard', MainCardSection(
-                          nextTraining: vm.data!.nextTraining,
-                          nextMatch: vm.data!.nextMatch,
-                          isDark: isDark,
-                        )),
-                        _sectionCardBuilder(2, 'AthleteOfMonth', AthleteOfMonthCard(
-                          athlete: vm.data!.athleteOfMonth,
-                          isDark: isDark,
-                        )),
-                        _sectionCardBuilder(3, 'QuickSummary', QuickSummaryGrid(
-                          summary: vm.data!.quickSummary,
-                          isDark: isDark,
-                        )),
-                        _sectionCardBuilder(4, 'TeamStatus', TeamStatusSection(
-                          status: vm.data!.teamStatus,
-                          isDark: isDark,
-                        )),
-                        _sectionCardBuilder(5, 'LastMatch', LastMatchBanner(
-                          lastMatch: vm.data!.lastMatch,
-                          isDark: isDark,
-                        )),
-                        _sectionBuilder(6, 'ActivityTimeline', RecentActivityTimeline(
-                          activities: vm.data!.recentActivity,
-                          isDark: isDark,
-                        )),
-                        _sectionCardBuilder(7, 'QuickAccess', QuickAccessRow(isDark: isDark)),
-                        if (vm.data!.quickSummary.athleteCount == 0)
-                          _sectionBuilder(8, 'EmptyRegister', _emptyState(isDark, 'registerAthlete')),
-                        if (vm.data!.quickSummary.athleteCount > 0 &&
-                            vm.data!.quickSummary.matchCount == 0)
-                          _sectionBuilder(8, 'EmptyMatch', _emptyState(isDark, 'createMatch')),
-                        const SliverToBoxAdapter(
-                          child: SizedBox(height: 32),
-                        ),
-                      ],
-                    ),
-                  ),
+        child: Stack(
+          children: [
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              switchInCurve: Curves.easeOut,
+              switchOutCurve: Curves.easeIn,
+              child: _buildBody(isDark),
+            ),
+            _buildRefreshingIndicator(isDark),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _sectionBuilder(int index, String label, Widget child) {
-    try {
-      LogService.instance.auto('🔵 DASHBOARD RENDER — $label');
-      return SliverToBoxAdapter(
-        child: AnimatedSection(index: index, child: child),
-      );
-    } catch (e) {
-      LogService.instance.error('🔴 DASHBOARD RENDER FALLÓ — $label — $e');
-      return _errorFallback(label);
+  Widget _buildBody(bool isDark) {
+    final vm = context.watch<DashboardViewModel>();
+    if (vm.loading && vm.data == null) {
+      return DashboardSkeleton(isDark: isDark, key: const ValueKey('skeleton'));
     }
+    if (vm.error != null && vm.data == null) {
+      return _errorState(isDark, key: const ValueKey('error'));
+    }
+    return _buildDashboard(isDark, key: const ValueKey('dashboard'));
   }
 
-  Widget _sectionCardBuilder(int index, String label, Widget child) {
-    try {
-      LogService.instance.auto('🔵 DASHBOARD RENDER — $label');
-      return SliverToBoxAdapter(
-        child: AnimatedCard(child: AnimatedSection(index: index, child: child)),
-      );
-    } catch (e) {
-      LogService.instance.error('🔴 DASHBOARD RENDER FALLÓ — $label — $e');
-      return _errorFallback(label);
-    }
+  Widget _buildDashboard(bool isDark, {Key? key}) {
+    return RefreshIndicator(
+      onRefresh: () => context.read<DashboardViewModel>().refresh(
+        profileId: context.read<ProfileViewModel>().currentProfile?.id,
+      ),
+      child: CustomScrollView(
+        key: key,
+        physics: const BouncingScrollPhysics(),
+        slivers: [
+          _buildHeaderSection(isDark),
+          _buildMainCardSection(isDark),
+          _buildAthleteOfMonthSection(isDark),
+          _buildQuickSummarySection(isDark),
+          _buildTeamStatusSection(isDark),
+          _buildLastMatchSection(isDark),
+          _buildActivityTimelineSection(isDark),
+          _buildQuickAccessSection(isDark),
+          _buildEmptyStates(isDark),
+          const SliverToBoxAdapter(child: SizedBox(height: 32)),
+        ],
+      ),
+    );
   }
 
-  Widget _errorFallback(String label) {
-    return SliverToBoxAdapter(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.orange.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.orange.withValues(alpha: 0.4)),
+  Widget _buildRefreshingIndicator(bool isDark) {
+    return ValueListenableBuilder<int>(
+      valueListenable: context.read<DashboardViewModel>().skeletonSection,
+      builder: (_, __, ___) {
+        final refreshing = context.read<DashboardViewModel>().isRefreshing;
+        if (!refreshing) return const SizedBox.shrink();
+        return Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.9),
+              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white.withValues(alpha: 0.9),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Actualizando...',
+                  style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.9)),
+                ),
+              ],
+            ),
           ),
-          child: Row(
-            children: [
-              const Icon(Icons.error_outline_rounded, color: Colors.orange, size: 20),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text('Error en $label',
-                    style: const TextStyle(color: Colors.orange, fontSize: 13)),
+        );
+      },
+    );
+  }
+
+  Widget _buildHeaderSection(bool isDark) {
+    return ValueListenableBuilder<int>(
+      valueListenable: context.read<DashboardViewModel>().headerSection,
+      builder: (_, __, ___) {
+        final vm = context.read<DashboardViewModel>();
+        final data = vm.data;
+        if (data == null) return const SizedBox.shrink();
+        final user = context.read<AuthViewModel>().user;
+        final userName = NameFormatter.formatDisplayName(user?.nombre ?? 'Usuario');
+        LogService.instance.auto('🔵 sección reconstruida — Header');
+        return SliverToBoxAdapter(
+          child: AnimatedSection(
+            index: 0,
+            child: HeaderSection(
+              userName: userName,
+              teamInfo: data.teamInfo,
+              isDark: isDark,
+              onSettings: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AdminScreen()),
               ),
-            ],
+              roleLabel: _roleLabel(context.read<ClubViewModel>().myRole),
+            ),
           ),
+        );
+      },
+    );
+  }
+
+  Widget _buildMainCardSection(bool isDark) {
+    return ValueListenableBuilder<int>(
+      valueListenable: context.read<DashboardViewModel>().mainCardSection,
+      builder: (_, __, ___) {
+        final data = context.read<DashboardViewModel>().data;
+        if (data == null) return const SizedBox.shrink();
+        LogService.instance.auto('🔵 sección reconstruida — MainCard');
+        return SliverToBoxAdapter(
+          child: AnimatedSection(
+            index: 1,
+            child: AnimatedCard(
+              child: MainCardSection(
+                nextTraining: data.nextTraining,
+                nextMatch: data.nextMatch,
+                isDark: isDark,
+                onTrainingTap: () => context.pushSlide(const AttendanceScreen()),
+                onMatchTap: () => context.pushSlide(const MatchListScreen()),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildAthleteOfMonthSection(bool isDark) {
+    return ValueListenableBuilder<int>(
+      valueListenable: context.read<DashboardViewModel>().athleteOfMonthSection,
+      builder: (_, __, ___) {
+        final data = context.read<DashboardViewModel>().data;
+        if (data == null) return const SizedBox.shrink();
+        LogService.instance.auto('🔵 sección reconstruida — AthleteOfMonth');
+        return SliverToBoxAdapter(
+          child: AnimatedSection(
+            index: 2,
+            child: AnimatedCard(
+              child: AthleteOfMonthCard(
+                athlete: data.athleteOfMonth,
+                isDark: isDark,
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildQuickSummarySection(bool isDark) {
+    return ValueListenableBuilder<int>(
+      valueListenable: context.read<DashboardViewModel>().quickSummarySection,
+      builder: (_, __, ___) {
+        final data = context.read<DashboardViewModel>().data;
+        if (data == null) return const SizedBox.shrink();
+        LogService.instance.auto('🔵 sección reconstruida — QuickSummary');
+        return SliverToBoxAdapter(
+          child: AnimatedSection(
+            index: 3,
+            child: AnimatedCard(
+              child: QuickSummaryGrid(
+                summary: data.quickSummary,
+                isDark: isDark,
+                onAthleteTap: () => context.pushSlide(const atleta_athlete.AthleteListScreen()),
+                onMatchTap: () => context.pushSlide(const MatchListScreen()),
+                onWinRateTap: () => context.pushSlide(const StatisticsScreen()),
+                onTrainingTap: () => context.pushSlide(const AttendanceScreen()),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildTeamStatusSection(bool isDark) {
+    return ValueListenableBuilder<int>(
+      valueListenable: context.read<DashboardViewModel>().teamStatusSection,
+      builder: (_, __, ___) {
+        final data = context.read<DashboardViewModel>().data;
+        if (data == null) return const SizedBox.shrink();
+        LogService.instance.auto('🔵 sección reconstruida — TeamStatus');
+        return SliverToBoxAdapter(
+          child: AnimatedSection(
+            index: 4,
+            child: AnimatedCard(
+              child: TeamStatusSection(
+                status: data.teamStatus,
+                isDark: isDark,
+                onMedicalTap: () => context.pushSlide(const asis_athlete.AthleteListScreen()),
+                onAbsenceTap: () => context.pushSlide(const AttendanceAnalyticsScreen()),
+                onStreakTap: () => context.pushSlide(const MatchListScreen()),
+                onMvpTap: () {
+                  final player = data.mvpPlayer;
+                  if (player != null) {
+                    context.pushSlide(AthleteDetailScreen(player: player));
+                  }
+                },
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildLastMatchSection(bool isDark) {
+    return ValueListenableBuilder<int>(
+      valueListenable: context.read<DashboardViewModel>().lastMatchSection,
+      builder: (_, __, ___) {
+        final data = context.read<DashboardViewModel>().data;
+        if (data == null) return const SizedBox.shrink();
+        LogService.instance.auto('🔵 sección reconstruida — LastMatch');
+        return SliverToBoxAdapter(
+          child: AnimatedSection(
+            index: 5,
+            child: AnimatedCard(
+              child: LastMatchBanner(
+                lastMatch: data.lastMatch,
+                isDark: isDark,
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildActivityTimelineSection(bool isDark) {
+    return ValueListenableBuilder<int>(
+      valueListenable: context.read<DashboardViewModel>().activityTimelineSection,
+      builder: (_, __, ___) {
+        final data = context.read<DashboardViewModel>().data;
+        if (data == null) return const SizedBox.shrink();
+        LogService.instance.auto('🔵 sección reconstruida — ActivityTimeline');
+        return SliverToBoxAdapter(
+          child: AnimatedSection(
+            index: 6,
+            child: RecentActivityTimeline(
+              activities: data.recentActivity,
+              isDark: isDark,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildQuickAccessSection(bool isDark) {
+    return ValueListenableBuilder<int>(
+      valueListenable: context.read<DashboardViewModel>().quickAccessSection,
+      builder: (_, __, ___) {
+        LogService.instance.auto('🔵 sección reconstruida — QuickAccess');
+        return SliverToBoxAdapter(
+          child: AnimatedSection(
+            index: 7,
+            child: QuickAccessRow(isDark: isDark),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildEmptyStates(bool isDark) {
+    final vm = context.read<DashboardViewModel>();
+    final data = vm.data;
+    if (data == null) return const SliverToBoxAdapter(child: SizedBox.shrink());
+    return SliverToBoxAdapter(
+      child: Column(
+        children: [
+          if (data.quickSummary.athleteCount == 0)
+            _emptyCard(isDark, 'registerAthlete'),
+          if (data.quickSummary.athleteCount > 0 && data.quickSummary.matchCount == 0)
+            _emptyCard(isDark, 'createMatch'),
+        ],
+      ),
+    );
+  }
+
+  Widget _emptyCard(bool isDark, String type) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.surface : AppColors.lightCard,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: isDark ? AppColors.border : AppColors.lightBorder),
+        ),
+        child: Column(
+          children: [
+            Text(type == 'registerAthlete' ? '👥' : '🏐', style: const TextStyle(fontSize: 40)),
+            const SizedBox(height: 12),
+            Text(
+              type == 'registerAthlete' ? 'Aún no has registrado atletas' : 'No hay partidos registrados',
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: isDark ? Colors.white : AppColors.textPrimary),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              type == 'registerAthlete' ? 'Comienza agregando tu primer atleta al equipo' : 'Crea tu primer partido para ver estadísticas',
+              style: TextStyle(fontSize: 12, color: isDark ? AppColors.textSecondary : AppColors.textTertiary),
+            ),
+            const SizedBox(height: 16),
+            TextButton.icon(
+              onPressed: type == 'registerAthlete'
+                  ? () => context.pushSlide(const asis_athlete.AthleteListScreen())
+                  : () => context.pushSlide(const PlayByPlayScreen()),
+              icon: Icon(type == 'registerAthlete' ? Icons.person_add_rounded : Icons.sports_volleyball_rounded, size: 18),
+              label: Text(type == 'registerAthlete' ? 'Registrar atleta' : 'Crear partido'),
+              style: TextButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -203,10 +424,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
     };
   }
 
-  Widget _errorState(DashboardViewModel vm, bool isDark) {
+  Widget _errorState(bool isDark, {Key? key}) {
+    final vm = context.read<DashboardViewModel>();
     final textPri = isDark ? Colors.white : AppColors.textPrimary;
     final textSec = isDark ? AppColors.textSecondary : AppColors.textTertiary;
     return Center(
+      key: key,
       child: Padding(
         padding: const EdgeInsets.all(32),
         child: Column(
@@ -218,7 +441,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Text('Error al cargar',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: textPri)),
             const SizedBox(height: 8),
-            Text(vm.error!, style: TextStyle(fontSize: 12, color: textSec),
+            Text(vm.error ?? '', style: TextStyle(fontSize: 12, color: textSec),
                 textAlign: TextAlign.center),
             const SizedBox(height: 20),
             TextButton.icon(
@@ -230,88 +453,5 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
       ),
     );
-  }
-
-  Widget _emptyState(bool isDark, String type) {
-    final textPri = isDark ? Colors.white : AppColors.textPrimary;
-    final textSec = isDark ? AppColors.textSecondary : AppColors.textTertiary;
-    final bg = isDark ? AppColors.surface : AppColors.lightCard;
-    final borderClr = isDark ? AppColors.border : AppColors.lightBorder;
-
-    if (type == 'registerAthlete') {
-      return Padding(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: bg,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: borderClr),
-          ),
-          child: Column(
-            children: [
-              const Text('👥', style: TextStyle(fontSize: 40)),
-              const SizedBox(height: 12),
-              Text('Aún no has registrado atletas',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: textPri)),
-              const SizedBox(height: 4),
-              Text('Comienza agregando tu primer atleta al equipo',
-                  style: TextStyle(fontSize: 12, color: textSec)),
-              const SizedBox(height: 16),
-              TextButton.icon(
-                onPressed: () => context.pushSlide(const AthleteFormScreen()),
-                icon: const Icon(Icons.person_add_rounded, size: 18),
-                label: const Text('Registrar atleta'),
-                style: TextButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    if (type == 'createMatch') {
-      return Padding(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: bg,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: borderClr),
-          ),
-          child: Column(
-            children: [
-              const Text('🏐', style: TextStyle(fontSize: 40)),
-              const SizedBox(height: 12),
-              Text('No hay partidos registrados',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: textPri)),
-              const SizedBox(height: 4),
-              Text('Crea tu primer partido para ver estadísticas',
-                  style: TextStyle(fontSize: 12, color: textSec)),
-              const SizedBox(height: 16),
-              TextButton.icon(
-                onPressed: () => context.pushSlide(const PlayByPlayScreen()),
-                icon: const Icon(Icons.sports_volleyball_rounded, size: 18),
-                label: const Text('Crear partido'),
-                style: TextButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    return const SizedBox.shrink();
   }
 }

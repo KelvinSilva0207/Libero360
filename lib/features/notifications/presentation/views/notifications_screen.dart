@@ -69,17 +69,19 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
           Expanded(
             child: vm.loading
                 ? Center(child: CircularProgressIndicator(color: cs.primary))
-                : TabBarView(
-                    controller: _tabCtrl,
-                    children: lists.map((list) {
-                      if (list.isEmpty) return _emptyState(cs);
-                      return ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        itemCount: list.length,
-                        itemBuilder: (_, i) => _notifTile(context, vm, list[i], cs),
-                      );
-                    }).toList(),
-                  ),
+                : vm.error != null
+                    ? _errorState(cs, vm)
+                    : TabBarView(
+                        controller: _tabCtrl,
+                        children: lists.map((list) {
+                          if (list.isEmpty) return _emptyState(cs);
+                          return ListView.builder(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            itemCount: list.length,
+                            itemBuilder: (_, i) => _notifTile(context, vm, list[i], cs),
+                          );
+                        }).toList(),
+                      ),
           ),
         ],
       ),
@@ -126,6 +128,19 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
     if (category == null) return notifications;
     return notifications.where((n) => n.type.category == category).toList();
   }
+
+  Widget _errorState(ColorScheme cs, NotificationViewModel vm) => Center(
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.cloud_off_rounded, size: 64, color: cs.onSurface.withValues(alpha: 0.15)),
+        const SizedBox(height: 16),
+        Text('Error al cargar notificaciones', style: TextStyle(color: cs.onSurface.withValues(alpha: 0.4), fontSize: 16)),
+        const SizedBox(height: 8),
+        Text(vm.error ?? '', style: TextStyle(color: cs.onSurface.withValues(alpha: 0.3), fontSize: 12)),
+      ],
+    ),
+  );
 
   Widget _emptyState(ColorScheme cs) => Center(
     child: Column(

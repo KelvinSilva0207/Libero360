@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../viewmodels/club_viewmodel.dart';
+import 'create_club_screen.dart';
 
 class ClubSwitcher extends StatelessWidget {
   const ClubSwitcher({super.key});
@@ -10,12 +11,42 @@ class ClubSwitcher extends StatelessWidget {
     final vm = context.watch<ClubViewModel>();
 
     if (vm.myClubs.isEmpty) {
-      return const SizedBox.shrink();
+      return InkWell(
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const CreateClubScreen()),
+        ),
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1A1F3D),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.add_circle_outline, color: Color(0xFFFF8C00), size: 18),
+              SizedBox(width: 6),
+              Text('Crear club', style: TextStyle(color: Colors.white, fontSize: 14)),
+            ],
+          ),
+        ),
+      );
     }
 
     return PopupMenuButton<String>(
       color: const Color(0xFF1A1F3D),
-      onSelected: (clubId) => vm.setCurrentClub(clubId),
+      onSelected: (value) {
+        if (value == '__create__') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const CreateClubScreen()),
+          );
+        } else {
+          vm.setCurrentClub(value);
+        }
+      },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
@@ -57,6 +88,17 @@ class ClubSwitcher extends StatelessWidget {
                     )),
               ],
             ),
+          ),
+        ),
+        const PopupMenuDivider(),
+        const PopupMenuItem(
+          value: '__create__',
+          child: Row(
+            children: [
+              Icon(Icons.add_circle_outline, color: Color(0xFFFF8C00), size: 18),
+              SizedBox(width: 8),
+              Text('Crear club', style: TextStyle(color: Colors.white)),
+            ],
           ),
         ),
       ],

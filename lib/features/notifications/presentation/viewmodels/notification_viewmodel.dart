@@ -9,6 +9,7 @@ class NotificationViewModel extends ChangeNotifier {
   List<AppNotification> _notifications = [];
   int _unreadCount = 0;
   bool _loading = true;
+  String? _error;
   bool _initialized = false;
   StreamSubscription? _notifSub;
   StreamSubscription? _unreadSub;
@@ -16,14 +17,12 @@ class NotificationViewModel extends ChangeNotifier {
   List<AppNotification> get notifications => _notifications;
   int get unreadCount => _unreadCount;
   bool get loading => _loading;
+  String? get error => _error;
 
   void init(String clubId) {
-    if (_initialized && _service.currentClubId == clubId) {
-      return;
-    }
+    if (_initialized && _service.currentClubId == clubId) return;
 
     if (_initialized && _service.currentClubId != clubId) {
-      print("🟡 NOTIF: cambiando de club ${_service.currentClubId} → $clubId");
       _notifSub?.cancel();
       _unreadSub?.cancel();
       _service.setCurrentClub(clubId);
@@ -31,27 +30,42 @@ class NotificationViewModel extends ChangeNotifier {
       return;
     }
 
-    print("🔵 NOTIF: inicializando club $clubId");
     _initialized = true;
     _service.setCurrentClub(clubId);
     _listen();
   }
 
   void _listen() {
-    print("🟢 NOTIF: streams re-suscritos para club ${_service.currentClubId}");
-    try {
-      _notifSub = _service.notificationsStream().listen((list) {
-        _notifications = list;
+    final stream = _service.notificationsStream();
+    _notifSub = stream.listen((list) {
+      _notifications = list;
+      _loading = false;
+      notifyListeners();
+    }, onError: (e) {
+      _error = e.toString();
+      _loading = false;
+      notifyListeners();
+    }, onDone: () {
+      if (_loading) {
         _loading = false;
         notifyListeners();
-      });
-      _unreadSub = _service.unreadCountStream().listen((count) {
-        _unreadCount = count;
+      }
+    });
+
+    final unreadStream = _service.unreadCountStream();
+    _unreadSub = unreadStream.listen((count) {
+      _unreadCount = count;
+      notifyListeners();
+    }, onError: (e) {
+      _error = e.toString();
+      _loading = false;
+      notifyListeners();
+    }, onDone: () {
+      if (_unreadSub != null) {
+        _unreadCount = 0;
         notifyListeners();
-      });
-    } catch (e) {
-      print("🔴 NOTIF: error al escuchar notificaciones — $e");
-    }
+      }
+    });
   }
 
   Future<void> markAsRead(String notifId) async {

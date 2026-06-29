@@ -94,16 +94,23 @@ class ClubViewModel extends ChangeNotifier {
     _myClubsSub = _clubService.myClubsStream().listen((clubs) {
       _myClubs = clubs;
       if (_currentClub == null && clubs.isNotEmpty) {
+        _loading = false;
+        notifyListeners();
         setCurrentClub(clubs.first.id);
       } else if (_currentClub != null &&
           !clubs.any((c) => c.id == _currentClub!.id)) {
         _currentClub = null;
         _members = [];
+        _loading = false;
         notifyListeners();
       } else {
         _loading = false;
         notifyListeners();
       }
+    }, onError: (e) {
+      _error = e.toString();
+      _loading = false;
+      notifyListeners();
     });
   }
 
@@ -120,16 +127,24 @@ class ClubViewModel extends ChangeNotifier {
         notifyListeners();
         _initDataStreams();
       }
+    }, onError: (e) {
+      _error = e.toString();
+      _loading = false;
+      notifyListeners();
     });
 
     _membersSub = _clubService.membersStream(clubId).listen((members) {
       _members = members;
       notifyListeners();
+    }, onError: (e) {
+      LogService.instance.error('🔴 Error en membersStream: $e', source: 'ClubViewModel');
     });
 
     _invitationsSub = _invitationService.myInvitationsStream().listen((inv) {
       _invitations = inv;
       notifyListeners();
+    }, onError: (e) {
+      LogService.instance.error('🔴 Error en invitationsStream: $e', source: 'ClubViewModel');
     });
   }
 

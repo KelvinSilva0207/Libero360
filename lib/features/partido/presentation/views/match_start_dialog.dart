@@ -134,12 +134,8 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
         child: Container(
           constraints: const BoxConstraints(maxHeight: 640, maxWidth: 480),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [AppColors.surface, Color(0xFF141838)],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ),
-            border: Border.all(color: Colors.white12),
+            color: Theme.of(context).colorScheme.surface,
+            border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -165,15 +161,16 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
   }
 
   Widget _buildHeader() {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Colors.white10)),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: cs.outlineVariant)),
       ),
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.close, color: Colors.white54, size: 20),
+            icon: Icon(Icons.close, color: cs.onSurfaceVariant, size: 20),
             onPressed: () => Navigator.of(context).pop(),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
@@ -182,8 +179,8 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
           Expanded(
             child: Text(
               'Nuevo Partido',
-              style: const TextStyle(
-                  color: Colors.white,
+              style: TextStyle(
+                  color: cs.onSurface,
                   fontSize: 16,
                   fontWeight: FontWeight.bold),
             ),
@@ -195,6 +192,7 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
   }
 
   Widget _buildStepIndicator() {
+    final cs = Theme.of(context).colorScheme;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [0, 1, 2].map((i) {
@@ -210,7 +208,7 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
                 ? AppColors.accent
                 : (isDone
                     ? AppColors.accent.withValues(alpha: 0.5)
-                    : Colors.white24),
+                    : cs.onSurface.withValues(alpha: 0.38)),
           ),
         );
       }).toList(),
@@ -236,11 +234,11 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
                 fontWeight: FontWeight.bold,
                 letterSpacing: 1.5),
           ),
-          const SizedBox(height: 6),
-          const Text(
-            'Ingresa los nombres o deja en blanco para usar valores por defecto',
+          SizedBox(height: 6),
+          Text(
+            'Ingrese los nombres de los equipos que se enfrentarán en el partido. Seleccione el tipo de partido (Amistoso, Liga, Torneo o Práctica).',
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.white38, fontSize: 11),
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6), fontSize: 11),
           ),
           const SizedBox(height: 24),
           _buildField(_localCtrl, 'Equipo Local', Icons.shield),
@@ -264,7 +262,7 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
             label: const Text('Siguiente'),
             style: FilledButton.styleFrom(
               backgroundColor: AppColors.accent,
-              foregroundColor: Colors.white,
+              foregroundColor: Theme.of(context).colorScheme.onPrimary,
               padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12)),
@@ -276,18 +274,19 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
   }
 
   Widget _buildField(TextEditingController ctrl, String label, IconData icon) {
+    final cs = Theme.of(context).colorScheme;
     return TextField(
       controller: ctrl,
-      style: const TextStyle(color: Colors.white, fontSize: 14),
+      style: TextStyle(color: cs.onSurface, fontSize: 14),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(color: Colors.white54, fontSize: 13),
+        labelStyle: TextStyle(color: cs.onSurfaceVariant, fontSize: 13),
         prefixIcon: Padding(
           padding: const EdgeInsetsDirectional.only(start: 12, end: 8),
           child: Icon(icon, color: AppColors.primary, size: 20),
         ),
         filled: true,
-        fillColor: AppColors.surfaceLight,
+        fillColor: cs.surfaceContainerHighest,
         border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
         focusedBorder: OutlineInputBorder(
@@ -300,19 +299,20 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
   }
 
   Widget _buildTipoDropdown() {
+    final cs = Theme.of(context).colorScheme;
     return DropdownButtonFormField<TipoPartido>(
       value: _tipoPartido,
-      dropdownColor: AppColors.surfaceLight,
-      style: const TextStyle(color: Colors.white, fontSize: 14),
+      dropdownColor: cs.surfaceContainerHighest,
+      style: TextStyle(color: cs.onSurface, fontSize: 14),
       decoration: InputDecoration(
         labelText: 'Tipo de Partido',
-        labelStyle: const TextStyle(color: Colors.white54, fontSize: 13),
+        labelStyle: TextStyle(color: cs.onSurfaceVariant, fontSize: 13),
         prefixIcon: const Padding(
           padding: EdgeInsetsDirectional.only(start: 12, end: 8),
           child: Icon(Icons.category, color: AppColors.primary, size: 20),
         ),
         filled: true,
-        fillColor: AppColors.surfaceLight,
+        fillColor: cs.surfaceContainerHighest,
         border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
         contentPadding: const EdgeInsets.symmetric(vertical: 14),
@@ -365,8 +365,8 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
                     icon: const Icon(Icons.arrow_back, size: 16),
                     label: const Text('Atrás'),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.white70,
-                      side: const BorderSide(color: Colors.white24),
+                      foregroundColor: Theme.of(context).colorScheme.onSurfaceVariant,
+                      side: BorderSide(color: Theme.of(context).colorScheme.outline),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
@@ -382,7 +382,7 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
                     label: const Text('Seleccionar Atletas'),
                     style: FilledButton.styleFrom(
                       backgroundColor: AppColors.accent,
-                      foregroundColor: Colors.white,
+                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
@@ -398,19 +398,20 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
   }
 
   Widget _buildFormatSelector() {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: AppColors.surfaceLight,
+        color: cs.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         children: [
-          const Icon(Icons.format_list_numbered,
+          Icon(Icons.format_list_numbered,
               color: AppColors.primary, size: 20),
           const SizedBox(width: 8),
-          const Text('Formato:',
-              style: TextStyle(color: Colors.white70, fontSize: 13)),
+          Text('Formato:',
+              style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
           const Spacer(),
           _formatChip(MatchFormat.bestOf3, '3 sets'),
           const SizedBox(width: 8),
@@ -421,6 +422,7 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
   }
 
   Widget _formatChip(MatchFormat fmt, String label) {
+    final cs = Theme.of(context).colorScheme;
     final selected = _formato == fmt;
     return GestureDetector(
       onTap: () {
@@ -436,11 +438,11 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
           color: selected ? AppColors.accent : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-              color: selected ? AppColors.accent : Colors.white24),
+              color: selected ? AppColors.accent : cs.outline),
         ),
         child: Text(label,
             style: TextStyle(
-              color: selected ? Colors.white : Colors.white54,
+              color: selected ? cs.onPrimary : cs.onSurfaceVariant,
               fontWeight: FontWeight.bold,
               fontSize: 13,
             )),
@@ -449,19 +451,20 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
   }
 
   Widget _buildCategoriaDropdown() {
+    final cs = Theme.of(context).colorScheme;
     return DropdownButtonFormField<Categoria>(
       value: _categoria,
-      dropdownColor: AppColors.surfaceLight,
-      style: const TextStyle(color: Colors.white, fontSize: 14),
+      dropdownColor: cs.surfaceContainerHighest,
+      style: TextStyle(color: cs.onSurface, fontSize: 14),
       decoration: InputDecoration(
         labelText: 'Categoría',
-        labelStyle: const TextStyle(color: Colors.white54, fontSize: 13),
+        labelStyle: TextStyle(color: cs.onSurfaceVariant, fontSize: 13),
         prefixIcon: const Padding(
           padding: EdgeInsetsDirectional.only(start: 12, end: 8),
           child: Icon(Icons.sports_volleyball, color: AppColors.primary, size: 20),
         ),
         filled: true,
-        fillColor: AppColors.surfaceLight,
+        fillColor: cs.surfaceContainerHighest,
         border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
         contentPadding: const EdgeInsets.symmetric(vertical: 14),
@@ -480,22 +483,23 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
   }
 
   Widget _buildServiceSection() {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.surfaceLight,
+        color: cs.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.sports_kabaddi, color: AppColors.primary, size: 18),
-              SizedBox(width: 6),
+              const Icon(Icons.sports_kabaddi, color: AppColors.primary, size: 18),
+              const SizedBox(width: 6),
               Text('Servicio',
                   style: TextStyle(
-                      color: Colors.white70,
+                      color: cs.onSurfaceVariant,
                       fontSize: 13,
                       fontWeight: FontWeight.w600)),
             ],
@@ -503,8 +507,8 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
           const SizedBox(height: 10),
           Row(
             children: [
-              const Text('SET 1:',
-                  style: TextStyle(color: Colors.white54, fontSize: 12)),
+              Text('SET 1:',
+                  style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
               const SizedBox(width: 8),
               _serviceToggle(true),
               const SizedBox(width: 6),
@@ -512,8 +516,8 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
             ],
           ),
           const SizedBox(height: 10),
-          const Text('Rotación automática para los siguientes sets:',
-              style: TextStyle(color: Colors.white38, fontSize: 11)),
+          Text('Rotación automática para los siguientes sets:',
+              style: TextStyle(color: cs.onSurface.withValues(alpha: 0.6), fontSize: 11)),
           const SizedBox(height: 6),
           Wrap(
             spacing: 6,
@@ -550,6 +554,7 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
   }
 
   Widget _serviceToggle(bool isLocal) {
+    final cs = Theme.of(context).colorScheme;
     final selected = _localServesSet1 == isLocal;
     // also sync _serviceOrder[0]
     return GestureDetector(
@@ -574,7 +579,7 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
           border: Border.all(
             color: selected
                 ? (isLocal ? Colors.blue : Colors.orange)
-                : Colors.white24,
+                : cs.outline,
           ),
         ),
         child: Text(
@@ -582,7 +587,7 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
           style: TextStyle(
             color: selected
                 ? (isLocal ? Colors.lightBlue : Colors.orangeAccent)
-                : Colors.white38,
+                : cs.onSurface.withValues(alpha: 0.6),
             fontSize: 12,
             fontWeight: selected ? FontWeight.bold : FontWeight.normal,
           ),
@@ -592,22 +597,23 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
   }
 
   Widget _buildTimeoutSection() {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.surfaceLight,
+        color: cs.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.timer_outlined, color: AppColors.primary, size: 18),
-              SizedBox(width: 6),
+              const Icon(Icons.timer_outlined, color: AppColors.primary, size: 18),
+              const SizedBox(width: 6),
               Text('Tiempos Muertos',
                   style: TextStyle(
-                      color: Colors.white70,
+                      color: cs.onSurfaceVariant,
                       fontSize: 13,
                       fontWeight: FontWeight.w600)),
             ],
@@ -615,8 +621,8 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
           const SizedBox(height: 10),
           Row(
             children: [
-              const Text('Cantidad por set:',
-                  style: TextStyle(color: Colors.white54, fontSize: 12)),
+              Text('Cantidad por set:',
+                  style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
               const Spacer(),
               _timeoutStepper(
                   _categoria.timeoutsPerSet, (v) => _categoria = _categoria),
@@ -625,12 +631,12 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
           const SizedBox(height: 6),
           Row(
             children: [
-              const Text('Duración (seg):',
-                  style: TextStyle(color: Colors.white54, fontSize: 12)),
+              Text('Duración (seg):',
+                  style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
               const Spacer(),
               Text('${_categoria.timeoutDurationSeconds}s',
-                  style: const TextStyle(
-                      color: Colors.white,
+                  style: TextStyle(
+                      color: cs.onSurface,
                       fontSize: 14,
                       fontWeight: FontWeight.bold)),
             ],
@@ -638,7 +644,7 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
           const SizedBox(height: 4),
           Text(
             'Valores predeterminados para ${_categoria.name.toUpperCase()}',
-            style: const TextStyle(color: Colors.white24, fontSize: 10),
+            style: TextStyle(color: cs.onSurface.withValues(alpha: 0.38), fontSize: 10),
           ),
         ],
       ),
@@ -646,6 +652,7 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
   }
 
   Widget _timeoutStepper(int value, void Function(int) onChanged) {
+    final cs = Theme.of(context).colorScheme;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -654,8 +661,8 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
         }),
         const SizedBox(width: 8),
         Text('$value',
-            style: const TextStyle(
-                color: Colors.white,
+            style: TextStyle(
+                color: cs.onSurface,
                 fontSize: 14,
                 fontWeight: FontWeight.bold)),
         const SizedBox(width: 8),
@@ -667,20 +674,22 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
   }
 
   Widget _stepperBtn(IconData icon, VoidCallback onTap) {
+    final cs = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(4),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.1),
+          color: cs.onSurface.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(4),
         ),
-        child: Icon(icon, color: Colors.white54, size: 16),
+        child: Icon(icon, color: cs.onSurfaceVariant, size: 16),
       ),
     );
   }
 
   Widget _buildMatchCategoryFilter() {
+    final cs = Theme.of(context).colorScheme;
     final cats = _catService.getAllNames();
     return SizedBox(
       height: 36,
@@ -690,10 +699,10 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
           Padding(
             padding: const EdgeInsets.only(right: 6),
             child: FilterChip(
-              label: Text('Todos', style: TextStyle(fontSize: 11, color: _matchCategoryFilter.isEmpty ? Colors.white : Colors.white54)),
+              label: Text('Todos', style: TextStyle(fontSize: 11, color: _matchCategoryFilter.isEmpty ? cs.onSurface : cs.onSurfaceVariant)),
               selected: _matchCategoryFilter.isEmpty,
               selectedColor: AppColors.accent.withValues(alpha: 0.3),
-              backgroundColor: AppColors.surfaceLight,
+              backgroundColor: cs.surfaceContainerHighest,
               side: BorderSide.none,
               visualDensity: VisualDensity.compact,
               onSelected: (_) => setState(() => _matchCategoryFilter.clear()),
@@ -702,10 +711,10 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
           ...cats.map((cat) => Padding(
             padding: const EdgeInsets.only(right: 6),
             child: FilterChip(
-              label: Text(cat, style: TextStyle(fontSize: 11, color: _matchCategoryFilter.contains(cat) ? Colors.white : Colors.white54)),
+              label: Text(cat, style: TextStyle(fontSize: 11, color: _matchCategoryFilter.contains(cat) ? cs.onSurface : cs.onSurfaceVariant)),
               selected: _matchCategoryFilter.contains(cat),
               selectedColor: AppColors.accent.withValues(alpha: 0.3),
-              backgroundColor: AppColors.surfaceLight,
+              backgroundColor: cs.surfaceContainerHighest,
               side: BorderSide.none,
               visualDensity: VisualDensity.compact,
               onSelected: (_) => setState(() {
@@ -725,6 +734,7 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
   // ========== STEP 3 – Athletes ==========
 
   Widget _buildStep3() {
+    final cs = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
       child: Column(
@@ -746,14 +756,14 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
             decoration: BoxDecoration(
               color: _selectedIds.length >= 6
                   ? Colors.green.withValues(alpha: 0.15)
-                  : Colors.white.withValues(alpha: 0.05),
+                  : cs.onSurface.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
               'Atletas seleccionados: ${_selectedIds.length}',
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: _selectedIds.length >= 6 ? Colors.green : Colors.white54,
+                color: _selectedIds.length >= 6 ? Colors.green : cs.onSurfaceVariant,
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
               ),
@@ -763,24 +773,24 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
           _buildMatchCategoryFilter(),
           const SizedBox(height: 8),
           TextField(
-            style: const TextStyle(color: Colors.white, fontSize: 13),
+            style: TextStyle(color: cs.onSurface, fontSize: 13),
             decoration: InputDecoration(
               hintText: 'Buscar por nombre, cédula o número...',
-              hintStyle: const TextStyle(color: Colors.white24, fontSize: 12),
-              prefixIcon: const Padding(
-                padding: EdgeInsetsDirectional.only(start: 12, end: 8),
-                child: Icon(Icons.search, color: Colors.white24, size: 18),
+              hintStyle: TextStyle(color: cs.onSurface.withValues(alpha: 0.38), fontSize: 12),
+              prefixIcon: Padding(
+                padding: const EdgeInsetsDirectional.only(start: 12, end: 8),
+                child: Icon(Icons.search, color: cs.onSurface.withValues(alpha: 0.38), size: 18),
               ),
               suffixIcon: _filter.isNotEmpty
                   ? IconButton(
-                      icon: const Icon(Icons.clear, color: Colors.white38, size: 16),
+                      icon: Icon(Icons.clear, color: cs.onSurface.withValues(alpha: 0.6), size: 16),
                       onPressed: () => setState(() => _filter = ''),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
                     )
                   : null,
               filled: true,
-              fillColor: AppColors.surfaceLight,
+              fillColor: cs.surfaceContainerHighest,
               border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                   borderSide: BorderSide.none),
@@ -791,7 +801,7 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
           const SizedBox(height: 8),
           Flexible(
             child: _loadingPlayers
-                ? const Center(
+                ? Center(
                     child: CircularProgressIndicator(color: AppColors.accent))
                 : _allPlayers.isEmpty
                     ? _emptyState()
@@ -806,8 +816,8 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
                   icon: const Icon(Icons.arrow_back, size: 16),
                   label: const Text('Atrás'),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.white70,
-                    side: const BorderSide(color: Colors.white24),
+                    foregroundColor: cs.onSurfaceVariant,
+                    side: BorderSide(color: cs.outline),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12)),
@@ -827,7 +837,7 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
                   ),
                   style: FilledButton.styleFrom(
                     backgroundColor: AppColors.accent,
-                    foregroundColor: Colors.white,
+                    foregroundColor: cs.onPrimary,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12)),
@@ -842,17 +852,18 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
   }
 
   Widget _emptyState() {
+    final cs = Theme.of(context).colorScheme;
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.people_outline, color: Colors.white24, size: 48),
+          Icon(Icons.people_outline, color: cs.onSurface.withValues(alpha: 0.38), size: 48),
           const SizedBox(height: 8),
-          const Text('No hay atletas registrados',
-              style: TextStyle(color: Colors.white54, fontSize: 14)),
+          Text('No hay atletas registrados',
+              style: TextStyle(color: cs.onSurfaceVariant, fontSize: 14)),
           const SizedBox(height: 4),
-          const Text('Agrega atletas desde la sección Atletas',
-              style: TextStyle(color: Colors.white38, fontSize: 12)),
+          Text('Agrega atletas desde la sección Atletas',
+              style: TextStyle(color: cs.onSurface.withValues(alpha: 0.6), fontSize: 12)),
         ],
       ),
     );
@@ -868,11 +879,12 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
   }
 
   Widget _playerTile(Player p) {
+    final cs = Theme.of(context).colorScheme;
     final selected = _selectedIds.contains(p.id);
     return Container(
       margin: const EdgeInsets.only(bottom: 5),
       decoration: BoxDecoration(
-        color: AppColors.surfaceLight,
+        color: cs.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
           color: selected
@@ -899,9 +911,9 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
                 backgroundColor:
                     selected ? AppColors.accent : AppColors.primary,
                 child: Text('${p.numero}',
-                    style: const TextStyle(
+                    style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: cs.onPrimary,
                         fontSize: 12)),
               ),
               const SizedBox(width: 8),
@@ -910,8 +922,8 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(NameFormatter.playerDisplayName(p),
-                        style: const TextStyle(
-                            color: Colors.white,
+                        style: TextStyle(
+                            color: cs.onSurface,
                             fontWeight: FontWeight.w500,
                             fontSize: 13)),
                     const SizedBox(height: 1),
@@ -919,7 +931,7 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
                       children: [
                         Text('Cédula: ${p.cedula}',
                             style:
-                                const TextStyle(color: Colors.white38, fontSize: 10)),
+                                TextStyle(color: cs.onSurface.withValues(alpha: 0.6), fontSize: 10)),
                         const SizedBox(width: 6),
                         Container(
                           padding:
@@ -949,8 +961,8 @@ class _MatchStartDialogState extends State<MatchStartDialog> {
                   }
                 }),
                 activeColor: AppColors.accent,
-                checkColor: Colors.white,
-                side: const BorderSide(color: Colors.white24),
+                checkColor: cs.onPrimary,
+                side: BorderSide(color: cs.outline),
                 materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 visualDensity: VisualDensity.compact,
               ),

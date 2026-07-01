@@ -126,13 +126,13 @@ class _CreateClubScreenState extends State<CreateClubScreen> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 child: _creating
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 24,
                         height: 24,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        child: CircularProgressIndicator(strokeWidth: 2, color: cs.onPrimary),
                       )
-                    : const Text('Crear club',
-                        style: TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold)),
+                    : Text('Crear club',
+                        style: TextStyle(fontSize: 16, color: cs.onPrimary, fontWeight: FontWeight.bold)),
               ),
             ),
           ],
@@ -153,7 +153,7 @@ class _CreateClubScreenState extends State<CreateClubScreen> {
     final photoError = _validatePhotoUrl(photoUrl);
     if (photoError != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(photoError), backgroundColor: Colors.red),
+        SnackBar(content: Text(photoError), backgroundColor: cs.error),
       );
       return;
     }

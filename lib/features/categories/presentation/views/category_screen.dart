@@ -25,17 +25,17 @@ class _CategoryScreenState extends State<CategoryScreen> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: cs.surface,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
-        title: const Text('Categorías', style: TextStyle(color: Colors.white)),
+        backgroundColor: cs.surfaceContainerHighest,
+        title: Text('Categorías', style: TextStyle(color: cs.onSurface)),
         actions: [
           Consumer<CategoryViewModel>(
             builder: (_, vm, __) => Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
-                  icon: Icon(Icons.search, color: vm.hasFilter ? AppColors.accent : Colors.white54),
+                  icon: Icon(Icons.search, color: vm.hasFilter ? AppColors.accent : cs.onSurfaceVariant),
                   onPressed: () => _showSearch(context, vm),
                 ),
                 IconButton(
@@ -79,11 +79,11 @@ class _CategoryScreenState extends State<CategoryScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.category_outlined, color: Colors.white24, size: 48),
+                  Icon(Icons.category_outlined, color: cs.onSurface.withValues(alpha: 0.38), size: 48),
                   const SizedBox(height: 12),
                   Text(
                     vm.hasFilter ? 'Sin resultados' : 'Sin categorías',
-                    style: const TextStyle(color: Colors.white54),
+                    style: TextStyle(color: cs.onSurfaceVariant),
                   ),
                   const SizedBox(height: 16),
                   FilledButton.icon(
@@ -111,7 +111,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: cs.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.border),
       ),
@@ -131,10 +131,10 @@ class _CategoryScreenState extends State<CategoryScreen> {
             ),
           ),
         ),
-        title: Text(cat.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500)),
+        title: Text(cat.name, style: TextStyle(color: cs.onSurface, fontWeight: FontWeight.w500)),
         subtitle: Row(
           children: [
-            Text('${cat.minAge}-${cat.maxAge} años', style: const TextStyle(color: Colors.white54, fontSize: 12)),
+            Text('${cat.minAge}-${cat.maxAge} años', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
             if (cat.isDefault) ...[
               const SizedBox(width: 8),
               Container(
@@ -155,7 +155,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             IconButton(
-              icon: const Icon(Icons.edit_outlined, color: Colors.white38, size: 18),
+              icon: Icon(Icons.edit_outlined, color: cs.onSurface.withValues(alpha: 0.6), size: 18),
               onPressed: cat.isDefault ? null : () => _edit(vm, cat),
             ),
             IconButton(
@@ -209,13 +209,13 @@ class _CategoryScreenState extends State<CategoryScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        title: const Text('Eliminar categoría', style: TextStyle(color: Colors.white)),
+        backgroundColor: cs.surfaceContainerHighest,
+        title: Text('Eliminar categoría', style: TextStyle(color: cs.onSurface)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('¿Eliminar "${cat.name}"?', style: const TextStyle(color: Colors.white70)),
+            Text('¿Eliminar "${cat.name}"?', style: TextStyle(color: cs.onSurface.withValues(alpha: 0.7))),
             if (athleteCount > 0) ...[
               const SizedBox(height: 8),
               Container(
@@ -243,7 +243,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancelar', style: TextStyle(color: Colors.white54)),
+            child: Text('Cancelar', style: TextStyle(color: cs.onSurfaceVariant)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
@@ -289,13 +289,14 @@ class _CategorySearchDelegate extends SearchDelegate<void> {
 
   @override
   ThemeData appBarTheme(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Theme.of(context).copyWith(
-      appBarTheme: const AppBarTheme(
-        backgroundColor: AppColors.surface,
-        iconTheme: IconThemeData(color: Colors.white),
+      appBarTheme: AppBarTheme(
+        backgroundColor: cs.surfaceContainerHighest,
+        iconTheme: IconThemeData(color: cs.onSurface),
       ),
-      inputDecorationTheme: const InputDecorationTheme(
-        hintStyle: TextStyle(color: Colors.white38),
+      inputDecorationTheme: InputDecorationTheme(
+        hintStyle: TextStyle(color: cs.onSurface.withValues(alpha: 0.6)),
         border: InputBorder.none,
       ),
     );
@@ -303,10 +304,11 @@ class _CategorySearchDelegate extends SearchDelegate<void> {
 
   @override
   List<Widget>? buildActions(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return [
       if (query.isNotEmpty)
         IconButton(
-          icon: const Icon(Icons.clear, color: Colors.white54),
+          icon: Icon(Icons.clear, color: cs.onSurfaceVariant),
           onPressed: () => query = '',
         ),
     ];
@@ -314,8 +316,9 @@ class _CategorySearchDelegate extends SearchDelegate<void> {
 
   @override
   Widget buildLeading(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return IconButton(
-      icon: const Icon(Icons.arrow_back, color: Colors.white),
+      icon: Icon(Icons.arrow_back, color: cs.onSurface),
       onPressed: () => close(context, null),
     );
   }
@@ -330,18 +333,19 @@ class _CategorySearchDelegate extends SearchDelegate<void> {
   }
 
   Widget _buildList(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final categories = vm.filtered;
     if (categories.isEmpty) {
-      return const Center(
-        child: Text('Sin resultados', style: TextStyle(color: Colors.white38, fontSize: 14)),
+      return Center(
+        child: Text('Sin resultados', style: TextStyle(color: cs.onSurface.withValues(alpha: 0.6), fontSize: 14)),
       );
     }
     return ListView(
       padding: const EdgeInsets.all(16),
       children: categories.map((cat) => ListTile(
-        title: Text(cat.name, style: const TextStyle(color: Colors.white)),
-        subtitle: Text('${cat.minAge}-${cat.maxAge} años', style: const TextStyle(color: Colors.white38)),
-        trailing: Text('#${cat.sortOrder}', style: const TextStyle(color: Colors.white24)),
+        title: Text(cat.name, style: TextStyle(color: cs.onSurface)),
+        subtitle: Text('${cat.minAge}-${cat.maxAge} años', style: TextStyle(color: cs.onSurface.withValues(alpha: 0.6))),
+        trailing: Text('#${cat.sortOrder}', style: TextStyle(color: cs.onSurface.withValues(alpha: 0.38))),
       )).toList(),
     );
   }

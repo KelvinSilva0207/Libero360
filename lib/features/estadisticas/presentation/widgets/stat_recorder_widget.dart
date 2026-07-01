@@ -68,6 +68,7 @@ class _StatRecorderWidgetState extends State<StatRecorderWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -82,16 +83,16 @@ class _StatRecorderWidgetState extends State<StatRecorderWidget> {
       ),
       child: Column(
         children: [
-          _buildHeader(),
+          _buildHeader(cs),
           Expanded(child: _buildCancha()),
-          _buildBotonesAccion(),
+          _buildBotonesAccion(cs),
           const SizedBox(height: 16),
         ],
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(ColorScheme cs) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -113,7 +114,7 @@ class _StatRecorderWidgetState extends State<StatRecorderWidget> {
                 Text(
                   'REGISTRO DE ESTADÍSTICAS',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: cs.onSurface,
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 1.2,
@@ -139,12 +140,12 @@ class _StatRecorderWidgetState extends State<StatRecorderWidget> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.person, color: Colors.white, size: 16),
+                  Icon(Icons.person, color: cs.onPrimary, size: 16),
                   const SizedBox(width: 4),
                   Text(
                     _jugadorSeleccionado?.numero?.toString() ?? '—',
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: cs.onPrimary,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -157,6 +158,7 @@ class _StatRecorderWidgetState extends State<StatRecorderWidget> {
   }
 
   Widget _buildCancha() {
+    final cs = Theme.of(context).colorScheme;
     return LayoutBuilder(
       builder: (context, constraints) {
         return Stack(
@@ -164,7 +166,7 @@ class _StatRecorderWidgetState extends State<StatRecorderWidget> {
             // Líneas de la cancha
             CustomPaint(
               size: Size(constraints.maxWidth, constraints.maxHeight),
-              painter: _StatsCourtPainter(),
+              painter: _StatsCourtPainter(cs.onSurface),
             ),
             // Jugadores
             ...List.generate(
@@ -179,7 +181,7 @@ class _StatRecorderWidgetState extends State<StatRecorderWidget> {
                   top: posicion.dy * constraints.maxHeight - 35,
                   child: GestureDetector(
                     onTap: () => _seleccionarJugador(jugador),
-                    child: _buildJugadorWidget(jugador, isSelected),
+                    child: _buildJugadorWidget(jugador, isSelected, cs),
                   ),
                 );
               },
@@ -190,7 +192,7 @@ class _StatRecorderWidgetState extends State<StatRecorderWidget> {
     );
   }
 
-  Widget _buildJugadorWidget(Player jugador, bool isSelected) {
+  Widget _buildJugadorWidget(Player jugador, bool isSelected, ColorScheme cs) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       width: 70,
@@ -218,7 +220,7 @@ class _StatRecorderWidgetState extends State<StatRecorderWidget> {
           Text(
             '${jugador.numero}',
             style: TextStyle(
-              color: Colors.white,
+              color: cs.onSurface,
               fontSize: 24,
               fontWeight: FontWeight.bold,
             ),
@@ -226,7 +228,7 @@ class _StatRecorderWidgetState extends State<StatRecorderWidget> {
           Text(
             _getPosicionCorta(jugador.posicion),
             style: TextStyle(
-              color: isSelected ? Colors.white70 : _primaryLight,
+              color: isSelected ? cs.onSurface.withValues(alpha: 0.7) : _primaryLight,
               fontSize: 10,
             ),
           ),
@@ -246,7 +248,7 @@ class _StatRecorderWidgetState extends State<StatRecorderWidget> {
     }
   }
 
-  Widget _buildBotonesAccion() {
+  Widget _buildBotonesAccion(ColorScheme cs) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
@@ -267,8 +269,8 @@ class _StatRecorderWidgetState extends State<StatRecorderWidget> {
                     radius: 20,
                     child: Text(
                       _jugadorSeleccionado?.numero?.toString() ?? '—',
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: cs.onPrimary,
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
                       ),
@@ -281,8 +283,8 @@ class _StatRecorderWidgetState extends State<StatRecorderWidget> {
                       children: [
                         Text(
                           NameFormatter.playerDisplayName(_jugadorSeleccionado!),
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: cs.onSurface,
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
                           ),
@@ -318,7 +320,7 @@ class _StatRecorderWidgetState extends State<StatRecorderWidget> {
               _buildBotonAccion(
                 icon: Icons.sports_volleyball,
                 label: 'ATAQUE ≈',
-                color: Colors.grey,
+                color: cs.onSurfaceVariant,
                 onTap: _jugadorSeleccionado != null
                     ? () => _registrarAccion(TipoAccion.ataque, ResultadoAccion.neutral)
                     : null,
@@ -343,7 +345,7 @@ class _StatRecorderWidgetState extends State<StatRecorderWidget> {
               _buildBotonAccion(
                 icon: Icons.wifi_tethering,
                 label: 'SAQUE ≈',
-                color: Colors.grey,
+                color: cs.onSurfaceVariant,
                 onTap: _jugadorSeleccionado != null
                     ? () => _registrarAccion(TipoAccion.saque, ResultadoAccion.neutral)
                     : null,
@@ -368,7 +370,7 @@ class _StatRecorderWidgetState extends State<StatRecorderWidget> {
               _buildBotonAccion(
                 icon: Icons.block,
                 label: 'BLOQUEO ≈',
-                color: Colors.grey,
+                color: cs.onSurfaceVariant,
                 onTap: _jugadorSeleccionado != null
                     ? () => _registrarAccion(TipoAccion.bloqueo, ResultadoAccion.neutral)
                     : null,
@@ -384,7 +386,7 @@ class _StatRecorderWidgetState extends State<StatRecorderWidget> {
               _buildBotonAccion(
                 icon: Icons.error_outline,
                 label: 'ERROR',
-                color: Colors.grey,
+                color: cs.onSurfaceVariant,
                 onTap: () => _registrarError(),
               ),
             ],
@@ -399,8 +401,10 @@ class _StatRecorderWidgetState extends State<StatRecorderWidget> {
     required String label,
     required Color color,
     VoidCallback? onTap,
+    ColorScheme? cs,
   }) {
     final isEnabled = onTap != null;
+    final effectiveCs = cs ?? Theme.of(context).colorScheme;
     
     return Material(
       color: Colors.transparent,
@@ -413,12 +417,12 @@ class _StatRecorderWidgetState extends State<StatRecorderWidget> {
           decoration: BoxDecoration(
             color: isEnabled 
                 ? color.withOpacity(0.2)
-                : Colors.grey.withOpacity(0.1),
+                : effectiveCs.onSurfaceVariant.withOpacity(0.1),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isEnabled 
                   ? color.withOpacity(0.5)
-                  : Colors.grey.withOpacity(0.3),
+                  : effectiveCs.onSurfaceVariant.withOpacity(0.3),
               width: 1,
             ),
           ),
@@ -429,7 +433,7 @@ class _StatRecorderWidgetState extends State<StatRecorderWidget> {
                 icon,
                 color: isEnabled 
                     ? color
-                    : Colors.grey,
+                    : effectiveCs.onSurfaceVariant,
                 size: 28,
               ),
               const SizedBox(height: 4),
@@ -437,8 +441,8 @@ class _StatRecorderWidgetState extends State<StatRecorderWidget> {
                 label,
                 style: TextStyle(
                   color: isEnabled 
-                      ? Colors.white
-                      : Colors.grey,
+                      ? effectiveCs.onSurface
+                      : effectiveCs.onSurfaceVariant,
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
                 ),
@@ -524,6 +528,7 @@ class _StatRecorderWidgetState extends State<StatRecorderWidget> {
   }
 
   void _mostrarFeedback(bool esPositivo, {bool esError = false}) {
+    final cs = Theme.of(context).colorScheme;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -532,7 +537,7 @@ class _StatRecorderWidgetState extends State<StatRecorderWidget> {
               esError 
                   ? Icons.error_outline 
                   : (esPositivo ? Icons.check_circle : Icons.cancel),
-              color: Colors.white,
+              color: cs.onSurface,
             ),
             const SizedBox(width: 8),
             Text(
@@ -543,7 +548,7 @@ class _StatRecorderWidgetState extends State<StatRecorderWidget> {
           ],
         ),
         backgroundColor: esError 
-            ? Colors.grey 
+            ? cs.onSurfaceVariant 
             : (esPositivo ? Colors.green : Colors.red),
         duration: const Duration(seconds: 1),
         behavior: SnackBarBehavior.floating,
@@ -554,15 +559,18 @@ class _StatRecorderWidgetState extends State<StatRecorderWidget> {
 }
 
 class _StatsCourtPainter extends CustomPainter {
+  final Color onSurface;
+  _StatsCourtPainter(this.onSurface);
+
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.3)
+      ..color = onSurface.withValues(alpha: 0.3)
       ..strokeWidth = 2
       ..style = PaintingStyle.stroke;
 
     final redPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.5)
+      ..color = onSurface.withValues(alpha: 0.5)
       ..strokeWidth = 3
       ..style = PaintingStyle.stroke;
 
@@ -579,7 +587,7 @@ class _StatsCourtPainter extends CustomPainter {
     );
 
     final dashPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.3)
+      ..color = onSurface.withValues(alpha: 0.3)
       ..strokeWidth = 1;
 
     for (double x = 20; x < size.width - 20; x += 20) {

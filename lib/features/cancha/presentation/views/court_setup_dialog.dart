@@ -112,7 +112,7 @@ class _CourtSetupDialogState extends State<CourtSetupDialog> {
                     child: Text(
                       _isComplete ? 'Iniciar cancha' : '$_filledCount/6 seleccionadas',
                       style: TextStyle(
-                        color: _isComplete ? Colors.white : colors.onSurfaceVariant,
+                        color: _isComplete ? colors.onPrimary : colors.onSurfaceVariant,
                       ),
                     ),
                   ),
@@ -156,7 +156,7 @@ class _CourtSetupDialogState extends State<CourtSetupDialog> {
                   child: Text(
                     '${index + 1}',
                     style: TextStyle(
-                      color: player != null ? Colors.white : colors.onSurfaceVariant,
+                      color: player != null ? colors.onPrimary : colors.onSurfaceVariant,
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
                     ),

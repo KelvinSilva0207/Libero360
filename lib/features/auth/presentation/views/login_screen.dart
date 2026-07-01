@@ -38,25 +38,26 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _showForgotPassword(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        title: const Row(
+        backgroundColor: cs.surface,
+        title: Row(
           children: [
-            Icon(Icons.lock_reset_rounded, color: AppColors.accent, size: 22),
-            SizedBox(width: 8),
-            Text('Restablecer contraseña', style: TextStyle(color: Colors.white, fontSize: 16)),
+            Icon(Icons.lock_reset_rounded, color: cs.primary, size: 22),
+            const SizedBox(width: 8),
+            Text('Restablecer contraseña', style: TextStyle(color: cs.onSurface, fontSize: 16)),
           ],
         ),
-        content: const Text(
+        content: Text(
           'Contacta al administrador para restablecer tu contraseña.',
-          style: TextStyle(color: Colors.white70, fontSize: 13),
+          style: TextStyle(color: cs.onSurface.withValues(alpha: 0.7), fontSize: 13),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Entendido', style: TextStyle(color: AppColors.accent)),
+            child: Text('Entendido', style: TextStyle(color: cs.primary)),
           ),
         ],
       ),
@@ -64,25 +65,26 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _showSocialInfo(BuildContext context, String provider) {
+    final cs = Theme.of(context).colorScheme;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        title: const Row(
+        backgroundColor: cs.surface,
+        title: Row(
           children: [
-            Icon(Icons.info_outline_rounded, color: AppColors.accent, size: 22),
-            SizedBox(width: 8),
-            Text('Inicio de sesión', style: TextStyle(color: Colors.white, fontSize: 16)),
+            Icon(Icons.info_outline_rounded, color: cs.primary, size: 22),
+            const SizedBox(width: 8),
+            Text('Inicio de sesión', style: TextStyle(color: cs.onSurface, fontSize: 16)),
           ],
         ),
         content: Text(
           'La opción "$provider" estará disponible en la próxima actualización.',
-          style: const TextStyle(color: Colors.white70, fontSize: 13),
+          style: TextStyle(color: cs.onSurface.withValues(alpha: 0.7), fontSize: 13),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Entendido', style: TextStyle(color: AppColors.accent)),
+            child: Text('Entendido', style: TextStyle(color: cs.primary)),
           ),
         ],
       ),
@@ -106,6 +108,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Scaffold(
       body: Container(
         width: double.infinity,
@@ -140,7 +143,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                         style: TextStyle(
                                           fontSize: 24,
                                           fontWeight: FontWeight.bold,
-                                          color: Colors.white.withValues(alpha: 0.9),
+                                          color: cs.onSurface.withValues(alpha: 0.9),
                                         ),
                                       ),
                                     ),
@@ -224,7 +227,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      Text('¿No tienes cuenta? ', style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 13)),
+                                      Text('¿No tienes cuenta? ', style: TextStyle(color: cs.onSurface.withValues(alpha: 0.5), fontSize: 13)),
                                       GestureDetector(
                                         onTap: () => Navigator.pushNamed(context, '/register'),
                                         child: const Text('Regístrate', style: TextStyle(color: AppColors.accent, fontSize: 13, fontWeight: FontWeight.w600)),
@@ -239,8 +242,8 @@ class _LoginScreenState extends State<LoginScreen> {
                               Container(
                                 width: double.infinity,
                                 height: double.infinity,
-                                color: const Color(0xCC0A0E21),
-                                child: const Column(
+                                color: cs.surface.withValues(alpha: 0.85),
+                                child: Column(
                                   mainAxisSize: MainAxisSize.min,
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
@@ -248,11 +251,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                       width: 28, height: 28,
                                       child: CircularProgressIndicator(
                                         strokeWidth: 2.5,
-                                        color: Color(0xFFFF8C00),
+                                        color: cs.primary,
                                       ),
                                     ),
-                                    SizedBox(height: 16),
-                                    Text('Iniciando sesión...', style: TextStyle(color: Colors.white54, fontSize: 14)),
+                                    const SizedBox(height: 16),
+                                    Text('Iniciando sesión...', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 14)),
                                   ],
                                 ),
                               ),
@@ -269,14 +272,15 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildDivider() {
+    final cs = Theme.of(context).colorScheme;
     return Row(
       children: [
-        Expanded(child: Container(height: 1, color: AppColors.border)),
+        Expanded(child: Container(height: 1, color: cs.outlineVariant)),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Text('O continúa con', style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 12)),
+          child: Text('O continúa con', style: TextStyle(color: cs.onSurface.withValues(alpha: 0.4), fontSize: 12)),
         ),
-        Expanded(child: Container(height: 1, color: AppColors.border)),
+        Expanded(child: Container(height: 1, color: cs.outlineVariant)),
       ],
     );
   }

@@ -90,12 +90,13 @@ class _CategoryEditorDialogState extends State<CategoryEditorDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final isEditing = widget.existing != null;
     return AlertDialog(
-      backgroundColor: AppColors.surface,
+      backgroundColor: cs.surfaceContainerHighest,
       title: Text(
         isEditing ? 'Editar categoría' : 'Nueva categoría',
-        style: const TextStyle(color: Colors.white),
+        style: TextStyle(color: cs.onSurface),
       ),
       content: SingleChildScrollView(
         child: Column(
@@ -112,7 +113,7 @@ class _CategoryEditorDialogState extends State<CategoryEditorDialog> {
                 ),
                 child: Text(
                   _error!,
-                  style: const TextStyle(color: Colors.red, fontSize: 12),
+                  style: TextStyle(color: Colors.red, fontSize: 12),
                 ),
               ),
             _field('Nombre', _nameCtrl),
@@ -128,24 +129,25 @@ class _CategoryEditorDialogState extends State<CategoryEditorDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancelar', style: TextStyle(color: Colors.white54)),
+          child: Text('Cancelar', style: TextStyle(color: cs.onSurfaceVariant)),
         ),
         TextButton(
           onPressed: _save,
-          child: const Text('Guardar', style: TextStyle(color: AppColors.accent)),
+          child: Text('Guardar', style: TextStyle(color: AppColors.accent)),
         ),
       ],
     );
   }
 
   Widget _field(String label, TextEditingController ctrl, {bool numeric = false}) {
+    final cs = Theme.of(context).colorScheme;
     return TextField(
       controller: ctrl,
       keyboardType: numeric ? TextInputType.number : TextInputType.text,
-      style: const TextStyle(color: Colors.white),
+      style: TextStyle(color: cs.onSurface),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(color: Colors.white54),
+        labelStyle: TextStyle(color: cs.onSurfaceVariant),
         filled: true,
         fillColor: AppColors.surfaceLight,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),

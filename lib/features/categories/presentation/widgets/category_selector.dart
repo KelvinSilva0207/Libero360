@@ -17,6 +17,7 @@ class CategorySelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return FutureBuilder<List<CategoryConfig>>(
       future: _loadCategories(),
       builder: (context, snapshot) {
@@ -26,10 +27,10 @@ class CategorySelector extends StatelessWidget {
         return DropdownButtonFormField<String>(
           value: selectedCategory,
           dropdownColor: AppColors.surfaceLight,
-          style: const TextStyle(color: Colors.white),
+          style: TextStyle(color: cs.onSurface),
           decoration: InputDecoration(
             labelText: displayLabel,
-            labelStyle: const TextStyle(color: Colors.white54),
+            labelStyle: TextStyle(color: cs.onSurfaceVariant),
             prefixIcon: const Padding(
               padding: EdgeInsetsDirectional.only(start: 12, end: 8),
               child: Icon(Icons.category, color: AppColors.primary, size: 20),
@@ -40,14 +41,14 @@ class CategorySelector extends StatelessWidget {
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
             contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
           ),
-          items: [
-            const DropdownMenuItem(
+            items: [
+            DropdownMenuItem(
               value: null,
-              child: Text('Auto (según edad)', style: TextStyle(color: Colors.white54, fontSize: 13)),
+              child: Text('Auto (según edad)', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
             ),
             ...categories.map((c) => DropdownMenuItem(
               value: c.name,
-              child: Text(c.name, style: const TextStyle(color: Colors.white)),
+              child: Text(c.name, style: TextStyle(color: cs.onSurface)),
             )),
           ],
           onChanged: onChanged,

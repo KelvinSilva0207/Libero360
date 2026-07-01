@@ -20,7 +20,7 @@ class MedicalLeaveSection extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: cs.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.border),
       ),
@@ -31,7 +31,7 @@ class MedicalLeaveSection extends StatelessWidget {
             children: [
               const Icon(Icons.healing_rounded, color: AppColors.accent, size: 16),
               const SizedBox(width: 8),
-              const Expanded(child: Text('Reposo M\u00e9dico', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold))),
+              Expanded(child: Text('Reposo M\u00e9dico', style: TextStyle(color: cs.onSurface, fontSize: 15, fontWeight: FontWeight.bold))),
               IconButton(
                 icon: const Icon(Icons.add_rounded, color: AppColors.accent, size: 20),
                 onPressed: () => Navigator.push(
@@ -65,7 +65,7 @@ class MedicalLeaveSection extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.03),
+        color: cs.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(10),
       ),
       child: Center(
@@ -108,7 +108,7 @@ class MedicalLeaveSection extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          Text(l.reason, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500)),
+          Text(l.reason, style: TextStyle(color: cs.onSurface, fontSize: 13, fontWeight: FontWeight.w500)),
           const SizedBox(height: 4),
           Text('Desde ${_fmt(l.startDate)}${l.endDate != null ? ' hasta ${_fmt(l.endDate!)}' : ''}',
               style: const TextStyle(color: AppColors.textSecondary, fontSize: 11)),
@@ -144,7 +144,7 @@ class MedicalLeaveSection extends StatelessWidget {
         children: [
           Container(width: 8, height: 8, decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle)),
           const SizedBox(width: 8),
-          Expanded(child: Text(l.reason, style: const TextStyle(color: Colors.white, fontSize: 12))),
+          Expanded(child: Text(l.reason, style: TextStyle(color: cs.onSurface, fontSize: 12))),
           Text(statusLabel, style: TextStyle(color: statusColor, fontSize: 10, fontWeight: FontWeight.w600)),
         ],
       ),

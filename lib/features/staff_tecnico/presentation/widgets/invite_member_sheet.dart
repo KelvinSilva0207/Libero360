@@ -129,8 +129,8 @@ class _InviteMemberSheetState extends State<InviteMemberSheet> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 child: _submitting
-                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : const Text('Enviar invitación', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: cs.onPrimary))
+                    : Text('Enviar invitación', style: TextStyle(color: cs.onPrimary, fontWeight: FontWeight.bold)),
               ),
             ),
             const SizedBox(height: 16),

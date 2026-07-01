@@ -9,10 +9,11 @@ class RadarChartCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: cs.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border),
       ),
@@ -24,7 +25,7 @@ class RadarChartCard extends StatelessWidget {
               Icon(Icons.radar, color: AppColors.accent, size: 16),
               SizedBox(width: 8),
               Text('Radar de Habilidades',
-                style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
+                style: TextStyle(color: cs.onSurface, fontSize: 15, fontWeight: FontWeight.bold)),
             ],
           ),
           const SizedBox(height: 16),
@@ -46,10 +47,10 @@ class RadarChartCard extends StatelessWidget {
                 borderData: FlBorderData(show: false),
                 radarBorderData: BorderSide(color: AppColors.border, width: 0.5),
                 titlePositionPercentageOffset: 0.15,
-                titleTextStyle: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w500),
+                titleTextStyle: TextStyle(color: cs.onSurface.withValues(alpha: 0.7), fontSize: 12, fontWeight: FontWeight.w500),
                 getTitle: (index, _) => RadarChartTitle(text: skills[index].name),
                 tickCount: 4,
-                ticksTextStyle: const TextStyle(color: Colors.white38, fontSize: 10),
+                ticksTextStyle: TextStyle(color: cs.onSurface.withValues(alpha: 0.6), fontSize: 10),
                 tickBorderData: BorderSide(color: AppColors.border, width: 0.3),
               ),
             ),
@@ -70,7 +71,7 @@ class RadarChartCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 4),
                 Text('${s.name} ${s.value.toStringAsFixed(0)}%',
-                  style: const TextStyle(color: Colors.white54, fontSize: 11)),
+                  style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11)),
               ],
             )).toList(),
           ),
@@ -92,13 +93,14 @@ class BarChartCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final values = [data.positives, data.regulars, data.negatives];
     final maxVal = values.reduce((a, b) => a > b ? a : b);
     final maxY = maxVal.toDouble();
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: cs.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border),
       ),
@@ -109,7 +111,7 @@ class BarChartCard extends StatelessWidget {
             children: [
               Icon(Icons.bar_chart_rounded, color: AppColors.accent, size: 16),
               SizedBox(width: 8),
-              Text('Acciones', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
+              Text('Acciones', style: TextStyle(color: cs.onSurface, fontSize: 15, fontWeight: FontWeight.bold)),
             ],
           ),
           const SizedBox(height: 16),
@@ -133,7 +135,7 @@ class BarChartCard extends StatelessWidget {
                         return Padding(
                           padding: const EdgeInsets.only(top: 6),
                           child: Text(labels[idx],
-                            style: const TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.w500)),
+                            style: TextStyle(color: cs.onSurfaceVariant, fontSize: 10, fontWeight: FontWeight.w500)),
                         );
                       },
                     ),
@@ -178,12 +180,13 @@ class PieChartCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final total = data.total;
     final winRate = total > 0 ? (data.wins / total) * 100 : 0.0;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: cs.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border),
       ),
@@ -195,7 +198,7 @@ class PieChartCard extends StatelessWidget {
               Icon(Icons.pie_chart_rounded, color: AppColors.accent, size: 16),
               SizedBox(width: 8),
               Text('Victorias / Derrotas',
-                style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
+                style: TextStyle(color: cs.onSurface, fontSize: 15, fontWeight: FontWeight.bold)),
             ],
           ),
           const SizedBox(height: 16),
@@ -231,9 +234,9 @@ class PieChartCard extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text('${winRate.toStringAsFixed(0)}%',
-                      style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
-                    const Text('Victorias',
-                      style: TextStyle(color: Colors.white54, fontSize: 11)),
+                      style: TextStyle(color: cs.onSurface, fontSize: 22, fontWeight: FontWeight.bold)),
+                    Text('Victorias',
+                      style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11)),
                   ],
                 ),
               ],
@@ -243,12 +246,12 @@ class PieChartCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _legend(const Color(0xFF22C55E), '${data.wins} G'),
+              _legend(const Color(0xFF22C55E), '${data.wins} G', context),
               const SizedBox(width: 16),
-              _legend(const Color(0xFFEF4444), '${data.losses} P'),
+              _legend(const Color(0xFFEF4444), '${data.losses} P', context),
               if (data.draws > 0) ...[
                 const SizedBox(width: 16),
-                _legend(const Color(0xFF8B5CF6), '${data.draws} E'),
+                _legend(const Color(0xFF8B5CF6), '${data.draws} E', context),
               ],
             ],
           ),
@@ -257,13 +260,14 @@ class PieChartCard extends StatelessWidget {
     );
   }
 
-  Widget _legend(Color color, String label) {
+  Widget _legend(Color color, String label, BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
         const SizedBox(width: 4),
-        Text(label, style: const TextStyle(color: Colors.white54, fontSize: 11)),
+        Text(label, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11)),
       ],
     );
   }
@@ -275,10 +279,11 @@ class LineChartCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: cs.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border),
       ),
@@ -290,14 +295,14 @@ class LineChartCard extends StatelessWidget {
               Icon(Icons.trending_up_rounded, color: AppColors.accent, size: 16),
               SizedBox(width: 8),
               Text('Últimos 10 Partidos',
-                style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
+                style: TextStyle(color: cs.onSurface, fontSize: 15, fontWeight: FontWeight.bold)),
             ],
           ),
           const SizedBox(height: 16),
           if (points.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 32),
-              child: Center(child: Text('Sin datos', style: TextStyle(color: Colors.white38))),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 32),
+              child: Center(child: Text('Sin datos', style: TextStyle(color: cs.onSurface.withValues(alpha: 0.6)))),
             )
           else
             SizedBox(
@@ -323,7 +328,7 @@ class LineChartCard extends StatelessWidget {
                           return Padding(
                             padding: const EdgeInsets.only(top: 6),
                             child: Text('${idx + 1}',
-                              style: const TextStyle(color: Colors.white38, fontSize: 9)),
+                              style: TextStyle(color: cs.onSurface.withValues(alpha: 0.6), fontSize: 9)),
                           );
                         },
                       ),
@@ -368,10 +373,11 @@ class MatchHistoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: cs.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border),
       ),
@@ -383,23 +389,23 @@ class MatchHistoryCard extends StatelessWidget {
               Icon(Icons.history_rounded, color: AppColors.accent, size: 16),
               SizedBox(width: 8),
               Text('Historial de Partidos',
-                style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
+                style: TextStyle(color: cs.onSurface, fontSize: 15, fontWeight: FontWeight.bold)),
             ],
           ),
           const SizedBox(height: 16),
           if (history.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 24),
-              child: Center(child: Text('Sin partidos registrados', style: TextStyle(color: Colors.white38))),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 24),
+              child: Center(child: Text('Sin partidos registrados', style: TextStyle(color: cs.onSurface.withValues(alpha: 0.6)))),
             )
           else
-            ...history.map((m) => _matchRow(m)),
+            ...history.map((m) => _matchRow(m, cs)),
         ],
       ),
     );
   }
 
-  Widget _matchRow(MatchPerformance m) {
+  Widget _matchRow(MatchPerformance m, ColorScheme cs) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Container(
@@ -415,7 +421,7 @@ class MatchHistoryCard extends StatelessWidget {
             Row(
               children: [
                 Text(m.competition,
-                  style: const TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.w600)),
+                  style: TextStyle(color: cs.onSurfaceVariant, fontSize: 10, fontWeight: FontWeight.w600)),
                 const Spacer(),
                 if (m.isMvp)
                   Container(
@@ -446,7 +452,7 @@ class MatchHistoryCard extends StatelessWidget {
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text('${m.rival} ${m.setsFor}-${m.setsAgainst}',
-                    style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+                    style: TextStyle(color: cs.onSurface, fontSize: 13, fontWeight: FontWeight.w600)),
                 ),
                 Text(
                   m.performanceScore >= 0 ? '+${m.performanceScore.toStringAsFixed(0)}' : m.performanceScore.toStringAsFixed(0),
@@ -460,7 +466,7 @@ class MatchHistoryCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               '${m.positiveActions}P · ${m.regularActions}R · ${m.negativeActions}N',
-              style: const TextStyle(color: Colors.white38, fontSize: 10),
+              style: TextStyle(color: cs.onSurface.withValues(alpha: 0.6), fontSize: 10),
             ),
           ],
         ),
@@ -475,10 +481,11 @@ class RankingSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: cs.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border),
       ),
@@ -490,25 +497,25 @@ class RankingSection extends StatelessWidget {
               Icon(Icons.leaderboard_rounded, color: AppColors.accent, size: 16),
               SizedBox(width: 8),
               Text('Ranking del Equipo',
-                style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
+                style: TextStyle(color: cs.onSurface, fontSize: 15, fontWeight: FontWeight.bold)),
             ],
           ),
           const SizedBox(height: 16),
-          _rankingGroup('MVP del Equipo', Icons.emoji_events, AppColors.accent, rankings.mvp.take(3).toList()),
+          _rankingGroup('MVP del Equipo', Icons.emoji_events, AppColors.accent, rankings.mvp.take(3).toList(), cs),
           const SizedBox(height: 12),
-          _rankingGroup('Mejor Atacante', Icons.flash_on, AppColors.primary, rankings.bestAttackers.take(3).toList()),
+          _rankingGroup('Mejor Atacante', Icons.flash_on, AppColors.primary, rankings.bestAttackers.take(3).toList(), cs),
           const SizedBox(height: 12),
-          _rankingGroup('Mejor Defensa', Icons.shield, const Color(0xFF22C55E), rankings.bestDefenders.take(3).toList()),
+          _rankingGroup('Mejor Defensa', Icons.shield, const Color(0xFF22C55E), rankings.bestDefenders.take(3).toList(), cs),
           const SizedBox(height: 12),
-          _rankingGroup('Mejor Servicio', Icons.sports_volleyball, const Color(0xFF3B82F6), rankings.bestServers.take(3).toList()),
+          _rankingGroup('Mejor Servicio', Icons.sports_volleyball, const Color(0xFF3B82F6), rankings.bestServers.take(3).toList(), cs),
           const SizedBox(height: 12),
-          _rankingGroup('Más Constante', Icons.auto_graph, const Color(0xFF8B5CF6), rankings.mostConsistent.take(3).toList()),
+          _rankingGroup('Más Constante', Icons.auto_graph, const Color(0xFF8B5CF6), rankings.mostConsistent.take(3).toList(), cs),
         ],
       ),
     );
   }
 
-  Widget _rankingGroup(String title, IconData icon, Color color, List<TeamRankingItem> items) {
+  Widget _rankingGroup(String title, IconData icon, Color color, List<TeamRankingItem> items, ColorScheme cs) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -537,14 +544,14 @@ class RankingSection extends StatelessWidget {
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Center(
-                    child: Text('${item.numero ?? '-'}',
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 10)),
+                      child: Text('${item.numero ?? '-'}',
+                        style: TextStyle(color: cs.onSurface, fontWeight: FontWeight.bold, fontSize: 10)),
                   ),
                 ),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(item.playerName,
-                    style: const TextStyle(color: Colors.white, fontSize: 13)),
+                    style: TextStyle(color: cs.onSurface, fontSize: 13)),
                 ),
                 Text(item.score.toStringAsFixed(0),
                   style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.bold)),

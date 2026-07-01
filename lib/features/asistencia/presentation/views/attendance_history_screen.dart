@@ -182,10 +182,10 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        _statChip(cs, '${summary.absentCount} ausentes', Colors.redAccent.withValues(alpha: 0.2), Colors.redAccent),
+                        _statChip(cs, '${summary.absentCount} ausentes', cs.error.withValues(alpha: 0.2), cs.error),
                         const SizedBox(width: 6),
                         if (summary.medicalRestCount > 0)
-                          _statChip(cs, '${summary.medicalRestCount} reposo', Colors.orange.withValues(alpha: 0.2), Colors.orange),
+                          _statChip(cs, '${summary.medicalRestCount} reposo', cs.primary.withValues(alpha: 0.2), cs.primary),
                       ],
                     ),
                   ],
@@ -259,16 +259,16 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                           width: 72,
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           decoration: BoxDecoration(
-                            color: isSelected ? AppColors.accent : Colors.transparent,
+                            color: isSelected ? Theme.of(context).colorScheme.primary : Colors.transparent,
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: isSelected ? AppColors.accent : Colors.grey.withValues(alpha: 0.3)),
+                            border: Border.all(color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.outlineVariant),
                           ),
                           child: Text(
                             ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
                              'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'][i],
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                              color: isSelected ? Colors.white : null,
+                              color: isSelected ? Theme.of(context).colorScheme.onPrimary : null,
                               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                               fontSize: 12,
                             ),

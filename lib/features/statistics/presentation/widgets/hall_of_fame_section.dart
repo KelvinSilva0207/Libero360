@@ -17,6 +17,7 @@ class HallOfFameSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final vm = context.watch<AthleteOfMonthViewModel>();
 
     return Column(
@@ -25,7 +26,7 @@ class HallOfFameSection extends StatelessWidget {
         _SectionHeader(isDark: isDark),
         const SizedBox(height: 12),
         _CategoryFilter(
-          categories: AthleteOfMonthViewModel.categorias,
+          categories: vm.categorias,
           selected: vm.selectedCategory,
           isDark: isDark,
           onSelected: vm.setCategory,
@@ -85,6 +86,7 @@ class _CategoryFilter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final bg = isDark ? AppColors.surface : AppColors.lightCard;
     final border = isDark ? AppColors.border : AppColors.lightBorder;
 
@@ -131,23 +133,21 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(32),
-      child: Column(
-        children: [
-          Icon(Icons.emoji_events_outlined,
-              size: 48, color: _sec(isDark).withValues(alpha: 0.3)),
-          const SizedBox(height: 12),
-          Text('Aún no hay datos de ranking',
-              style: TextStyle(color: _sec(isDark), fontSize: 14)),
-          Text('Finaliza partidos para generar estadísticas',
-              style: TextStyle(color: _sec(isDark), fontSize: 12)),
-        ],
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 40),
+        child: Column(
+          children: [
+            Icon(Icons.emoji_events_outlined, size: 48,
+                color: isDark ? AppColors.textTertiary : AppColors.lightTextTertiary),
+            const SizedBox(height: 12),
+            Text('Sin datos en este período',
+                style: TextStyle(color: isDark ? AppColors.textSecondary : AppColors.lightTextSecondary, fontSize: 14)),
+          ],
+        ),
       ),
     );
   }
-
-  Color _sec(bool d) => d ? AppColors.textSecondary : AppColors.lightTextSecondary;
 }
 
 class _RankingRow extends StatelessWidget {
@@ -163,69 +163,65 @@ class _RankingRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = athlete.player;
-    final bg = isDark ? AppColors.surface : AppColors.lightCard;
-    final border = isDark ? AppColors.border : AppColors.lightBorder;
-
-    final medalColors = {
-      1: AppColors.accent,
-      2: Colors.grey.shade400,
-      3: Colors.brown.shade300,
-    };
+    final cs = Theme.of(context).colorScheme;
+    final textPri = isDark ? cs.onSurface : AppColors.textPrimary;
+    final textSec = isDark ? AppColors.textSecondary : AppColors.textTertiary;
+    final medal = rank == 1 ? '🥇' : (rank == 2 ? '🥈' : (rank == 3 ? '🥉' : '$rank.'));
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(
-          color: rank == 1
-              ? AppColors.accent.withValues(alpha: 0.06)
-              : bg,
-          borderRadius: BorderRadius.circular(12),
-          border: rank == 1
-              ? Border.all(color: AppColors.accent.withValues(alpha: 0.3), width: 1)
-              : Border.all(color: border, width: 0.5),
-        ),
-        child: Row(
-          children: [
-            SizedBox(
-              width: 28,
-              child: medalColors.containsKey(rank)
-                  ? Icon(Icons.emoji_events, color: medalColors[rank], size: 18)
-                  : Text('$rank',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: isDark ? AppColors.textSecondary : AppColors.lightTextSecondary,
-                        fontSize: 12, fontWeight: FontWeight.w600,
-                      )),
-            ),
-            const SizedBox(width: 10),
-            CircleAvatar(
-              radius: 16,
-              backgroundColor: AppColors.accent.withValues(alpha: 0.15),
-              backgroundImage: p.fotoUrl != null ? NetworkImage(p.fotoUrl!) : null,
-              child: p.fotoUrl == null
-                  ? Text(NameFormatter.avatarInitial(p),
-                      style: const TextStyle(color: AppColors.accent, fontSize: 12))
-                  : null,
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                NameFormatter.playerDisplayName(p),
-                style: TextStyle(
-                  color: isDark ? AppColors.textPrimary : AppColors.lightTextPrimary,
-                  fontSize: 13, fontWeight: FontWeight.w500,
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 32,
+            child: Text(medal, style: TextStyle(
+              fontSize: rank <= 3 ? 20 : 14,
+              fontWeight: FontWeight.w800,
+              color: rank <= 3 ? null : textPri,
+            )),
+          ),
+          const SizedBox(width: 10),
+          CircleAvatar(
+            radius: 18,
+            backgroundColor: AppColors.primary.withValues(alpha: 0.2),
+            backgroundImage: athlete.player.fotoUrl != null
+                ? NetworkImage(athlete.player.fotoUrl!)
+                : null,
+            child: athlete.player.fotoUrl == null
+                ? Text(
+                    NameFormatter.playerShortName(athlete.player)
+                        .substring(0, 1),
+                    style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
+                  )
+                : null,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  NameFormatter.playerDisplayName(athlete.player),
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: textPri),
                 ),
-              ),
+                Text(
+                  '${athlete.player.posicionLabel ?? ''} · ${athlete.score.toStringAsFixed(1)} pts',
+                  style: TextStyle(color: textSec, fontSize: 11),
+                ),
+              ],
             ),
-            Text(athlete.score.toStringAsFixed(0),
-                style: TextStyle(
-                  color: AppColors.accent,
-                  fontSize: 14, fontWeight: FontWeight.bold,
-                )),
-          ],
-        ),
+          ),
+          if (athlete.mvpCount > 0)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: AppColors.accent.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text('${athlete.mvpCount}x MVP',
+                  style: TextStyle(fontSize: 10, color: AppColors.accent, fontWeight: FontWeight.w700)),
+            ),
+        ],
       ),
     );
   }

@@ -21,8 +21,9 @@ class _SettingsDrawerState extends State<SettingsDrawer>
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Drawer(
-      backgroundColor: AppColors.surface,
+      backgroundColor: cs.surfaceContainerHighest,
       width: min(320, MediaQuery.of(context).size.width * 0.85),
       child: SafeArea(
         child: Column(
@@ -122,6 +123,7 @@ class _SettingsDrawerState extends State<SettingsDrawer>
   }
 
   Future<void> _importarDatos() async {
+    final cs = Theme.of(context).colorScheme;
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
@@ -133,22 +135,22 @@ class _SettingsDrawerState extends State<SettingsDrawer>
       final confirm = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
-          backgroundColor: AppColors.surface,
-          title: const Row(
+          backgroundColor: cs.surfaceContainerHighest,
+          title: Row(
             children: [
-              Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 22),
-              SizedBox(width: 8),
-              Text('Importar datos', style: TextStyle(color: Colors.white, fontSize: 16)),
+              const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 22),
+              const SizedBox(width: 8),
+              Text('Importar datos', style: TextStyle(color: cs.onSurface, fontSize: 16)),
             ],
           ),
-          content: const Text(
+          content: Text(
             'Se reemplazarán TODOS los datos actuales.\n\n¿Estás seguro?',
-            style: TextStyle(color: Colors.white70, fontSize: 13),
+            style: TextStyle(color: cs.onSurface.withValues(alpha: 0.7), fontSize: 13),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancelar', style: TextStyle(color: Colors.white54)),
+              child: Text('Cancelar', style: TextStyle(color: cs.onSurfaceVariant)),
             ),
             TextButton(
               onPressed: () => Navigator.pop(ctx, true),
@@ -183,18 +185,19 @@ class _SettingsDrawerState extends State<SettingsDrawer>
   }
 
   void _showInfoDialog(String title, String message) {
+    final cs = Theme.of(context).colorScheme;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
+        backgroundColor: cs.surfaceContainerHighest,
         title: Row(
           children: [
             const Icon(Icons.info_outline_rounded, color: AppColors.accent, size: 22),
             const SizedBox(width: 8),
-            Text(title, style: const TextStyle(color: Colors.white, fontSize: 16)),
+            Text(title, style: TextStyle(color: cs.onSurface, fontSize: 16)),
           ],
         ),
-        content: Text(message, style: const TextStyle(color: Colors.white70, fontSize: 13)),
+        content: Text(message, style: TextStyle(color: cs.onSurface.withValues(alpha: 0.7), fontSize: 13)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
@@ -206,27 +209,28 @@ class _SettingsDrawerState extends State<SettingsDrawer>
   }
 
   void _showSetDurationDialog() {
+    final cs = Theme.of(context).colorScheme;
     final ctrl = TextEditingController(text: '25');
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        title: const Row(
+        backgroundColor: cs.surfaceContainerHighest,
+        title: Row(
           children: [
-            Icon(Icons.timer_rounded, color: AppColors.accent, size: 22),
+            const Icon(Icons.timer_rounded, color: AppColors.accent, size: 22),
             const SizedBox(width: 8),
-            Text('Duración de sets', style: TextStyle(color: Colors.white, fontSize: 16)),
+            Text('Duración de sets', style: TextStyle(color: cs.onSurface, fontSize: 16)),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Puntos para ganar un set:', style: TextStyle(color: Colors.white70, fontSize: 13)),
+            Text('Puntos para ganar un set:', style: TextStyle(color: cs.onSurface.withValues(alpha: 0.7), fontSize: 13)),
             const SizedBox(height: 8),
             TextField(
               controller: ctrl,
               keyboardType: TextInputType.number,
-              style: const TextStyle(color: Colors.white, fontSize: 16),
+              style: TextStyle(color: cs.onSurface, fontSize: 16),
               decoration: InputDecoration(
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
                 filled: true,
@@ -240,7 +244,7 @@ class _SettingsDrawerState extends State<SettingsDrawer>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar', style: TextStyle(color: Colors.white54)),
+            child: Text('Cancelar', style: TextStyle(color: cs.onSurfaceVariant)),
           ),
           TextButton(
             onPressed: () {
@@ -257,6 +261,7 @@ class _SettingsDrawerState extends State<SettingsDrawer>
   }
 
   Widget _buildHeader() {
+    final cs = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
       child: Row(
@@ -272,13 +277,13 @@ class _SettingsDrawerState extends State<SettingsDrawer>
               ),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(Icons.settings_rounded, color: Colors.white, size: 20),
+            child: Icon(Icons.settings_rounded, color: cs.onPrimary, size: 20),
           ),
           const SizedBox(width: 12),
-          const Text(
+          Text(
             'Configuración',
             style: TextStyle(
-              color: Colors.white,
+              color: cs.onSurface,
               fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
@@ -340,6 +345,7 @@ class _SettingsDrawerState extends State<SettingsDrawer>
   }
 
   Widget _buildTile(IconData icon, String title, String subtitle, {VoidCallback? onTap}) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
       decoration: BoxDecoration(
@@ -349,9 +355,9 @@ class _SettingsDrawerState extends State<SettingsDrawer>
       child: ListTile(
         dense: true,
         leading: Icon(icon, size: 18, color: AppColors.textSecondary),
-        title: Text(title, style: const TextStyle(color: Colors.white, fontSize: 14)),
+        title: Text(title, style: TextStyle(color: cs.onSurface, fontSize: 14)),
         subtitle: Text(subtitle, style: const TextStyle(color: AppColors.textTertiary, fontSize: 11)),
-        trailing: const Icon(Icons.chevron_right_rounded, color: Colors.white24, size: 18),
+        trailing: Icon(Icons.chevron_right_rounded, color: cs.onSurface.withValues(alpha: 0.38), size: 18),
         onTap: onTap ?? () {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Función no disponible en esta versión'), backgroundColor: AppColors.primary),
@@ -362,6 +368,7 @@ class _SettingsDrawerState extends State<SettingsDrawer>
   }
 
   Widget _buildActionTile(IconData icon, String title, String subtitle, VoidCallback onTap) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
       decoration: BoxDecoration(
@@ -371,15 +378,16 @@ class _SettingsDrawerState extends State<SettingsDrawer>
       child: ListTile(
         dense: true,
         leading: Icon(icon, size: 18, color: AppColors.textSecondary),
-        title: Text(title, style: const TextStyle(color: Colors.white, fontSize: 14)),
+        title: Text(title, style: TextStyle(color: cs.onSurface, fontSize: 14)),
         subtitle: Text(subtitle, style: const TextStyle(color: AppColors.textTertiary, fontSize: 11)),
-        trailing: const Icon(Icons.chevron_right_rounded, color: Colors.white24, size: 18),
+        trailing: Icon(Icons.chevron_right_rounded, color: cs.onSurface.withValues(alpha: 0.38), size: 18),
         onTap: onTap,
       ),
     );
   }
 
   Widget _buildSwitchTile(IconData icon, String title, bool value, ValueChanged<bool> onChanged) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
       decoration: BoxDecoration(
@@ -389,7 +397,7 @@ class _SettingsDrawerState extends State<SettingsDrawer>
       child: ListTile(
         dense: true,
         leading: Icon(icon, size: 18, color: AppColors.textSecondary),
-        title: Text(title, style: const TextStyle(color: Colors.white, fontSize: 14)),
+        title: Text(title, style: TextStyle(color: cs.onSurface, fontSize: 14)),
         trailing: Switch(
           value: value,
           activeColor: AppColors.accent,

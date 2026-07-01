@@ -98,8 +98,7 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
   }
 
   Future<void> _pickDate() async {
-    LogService.instance.system('DATE PICKER OPEN — fechaNacimiento: $_fechaNacimiento',
-        source: 'AthleteFormScreen');
+    final cs = Theme.of(context).colorScheme;
     final picked = await showDatePicker(
       context: context,
       initialDate: _fechaNacimiento,
@@ -113,25 +112,19 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
         data: Theme.of(context).copyWith(
           colorScheme: Theme.of(context).colorScheme.copyWith(
             primary: AppColors.accent,
-            onPrimary: Colors.white,
+            onPrimary: cs.onPrimary,
           ),
         ),
         child: child!,
       ),
     );
     if (picked != null && mounted) {
-      LogService.instance.auto('DATE SELECTED — fechaNacimiento: $picked',
-          source: 'AthleteFormScreen');
       setState(() => _fechaNacimiento = picked);
-    } else if (mounted) {
-      LogService.instance.error('DATE CANCELLED — fechaNacimiento',
-          source: 'AthleteFormScreen');
     }
   }
 
   Future<void> _pickIngresoDate() async {
-    LogService.instance.system('DATE PICKER OPEN — fechaIngreso: $_fechaIngreso',
-        source: 'AthleteFormScreen');
+    final cs = Theme.of(context).colorScheme;
     final picked = await showDatePicker(
       context: context,
       initialDate: _fechaIngreso,
@@ -145,35 +138,21 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
         data: Theme.of(context).copyWith(
           colorScheme: Theme.of(context).colorScheme.copyWith(
             primary: AppColors.accent,
-            onPrimary: Colors.white,
+            onPrimary: cs.onPrimary,
           ),
         ),
         child: child!,
       ),
     );
     if (picked != null && mounted) {
-      LogService.instance.auto('DATE SELECTED — fechaIngreso: $picked',
-          source: 'AthleteFormScreen');
       setState(() => _fechaIngreso = picked);
-    } else if (mounted) {
-      LogService.instance.error('DATE CANCELLED — fechaIngreso',
-          source: 'AthleteFormScreen');
     }
   }
 
   Future<void> _pickImage(ImageSource source) async {
-    final isCamera = source == ImageSource.camera;
-    if (isCamera) {
-      LogService.instance.system('CAMERA OPEN', source: 'AthleteFormScreen');
-    }
     final picked = await _picker.pickImage(source: source, imageQuality: 85, maxWidth: 600);
     if (picked != null) {
-      if (isCamera) {
-        LogService.instance.auto('PHOTO CAPTURED', source: 'AthleteFormScreen');
-      }
       setState(() => _fotoFile = File(picked.path));
-    } else if (isCamera) {
-      LogService.instance.error('CAMERA CANCELLED', source: 'AthleteFormScreen');
     }
   }
 
@@ -182,8 +161,6 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
     setState(() => _saving = true);
 
     try {
-      LogService.instance.system('ATHLETE: update started — ${_isEditing ? "edit" : "new"}', source: 'AthleteFormScreen');
-
       final alt = double.tryParse(_alturaCtrl.text.trim().replaceAll(',', '.'));
       final player = Player.create(
         firstNames: _firstNamesCtrl.text.trim(),
@@ -211,7 +188,6 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
         player.profileId = e.profileId;
         player.clubId = e.clubId;
         player.createdAt = e.createdAt;
-        // Preserve status/restriction fields not in Player.create()
         player.atletaStatus = e.atletaStatus;
         player.statusReason = e.statusReason;
         player.statusStartDate = e.statusStartDate;
@@ -227,7 +203,6 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
       final ok = await vm.save(player);
       if (mounted) {
         if (ok) {
-          LogService.instance.auto('ATHLETE: update success — ${NameFormatter.playerDisplayName(player)}', source: 'AthleteFormScreen');
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(_isEditing ? 'Atleta actualizado correctamente' : 'Atleta registrado'),
@@ -236,7 +211,6 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
           );
           Navigator.pop(context, true);
         } else {
-          LogService.instance.error('ATHLETE: update failed — ${vm.error}', source: 'AthleteFormScreen');
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: const Text('No fue posible guardar los cambios'),
@@ -246,7 +220,6 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
         }
       }
     } catch (e) {
-      LogService.instance.error('ATHLETE: update failed — $e', source: 'AthleteFormScreen');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('No fue posible guardar los cambios'), backgroundColor: Colors.red),
@@ -259,15 +232,16 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final isEditing = _isEditing;
     return Scaffold(
-      backgroundColor: AppColors.surfaceDark,
+      backgroundColor: cs.surface,
       appBar: AppBar(
-        backgroundColor: AppColors.surfaceLight,
+        backgroundColor: cs.surfaceContainerHighest,
         title: Text(isEditing ? 'Editar Atleta' : 'Nuevo Atleta',
-          style: const TextStyle(color: Colors.white)),
+          style: TextStyle(color: cs.onSurface)),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: Icon(Icons.arrow_back, color: cs.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -282,16 +256,16 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
                 _buildTextField(_firstNamesCtrl, 'Nombres', Icons.person, validator: (v) {
                   if (v == null || v.trim().isEmpty) return 'Ingrese los nombres';
                   return null;
-                }),
+                }, cs: cs),
                 const SizedBox(height: 12),
                 _buildTextField(_lastNamesCtrl, 'Apellidos', Icons.person_outline_rounded, validator: (v) {
                   if (v == null || v.trim().isEmpty) return 'Ingrese los apellidos';
                   return null;
-                }),
+                }, cs: cs),
                 const SizedBox(height: 12),
-                _buildSexoDropdown(),
+                _buildSexoDropdown(cs),
                 const SizedBox(height: 12),
-                _buildBirthDateField(),
+                _buildBirthDateField(cs),
                 const SizedBox(height: 12),
                 _buildTextField(
                   _cedulaCtrl, 'Cédula', Icons.badge,
@@ -305,33 +279,36 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
                     if (!CedulaFormatter.isValid(v)) return 'Cédula inválida';
                     return null;
                   },
+                  cs: cs,
                 ),
                 const SizedBox(height: 12),
-                _buildDateField('Fecha de Ingreso', _fechaIngreso, Icons.assignment_ind, _pickIngresoDate, null),
-              ], delay: Duration.zero),
+                _buildDateField('Fecha de Ingreso', _fechaIngreso, Icons.assignment_ind, _pickIngresoDate, null, cs),
+              ], delay: Duration.zero, cs: cs),
               const SizedBox(height: 24),
               _animatedSection(Icons.sports_volleyball, 'INFORMACIÓN DEPORTIVA', 'Rol y capacidades en el campo', [
                 _buildTextField(
                   _numeroCtrl, 'Número Camiseta', Icons.format_list_numbered,
                   keyboardType: TextInputType.number,
                   inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d]'))],
+                  cs: cs,
                 ),
                 const SizedBox(height: 12),
                 _buildPosicionDropdown('Posición Principal', _posicion, (v) {
                   if (v != null) setState(() => _posicion = v);
-                }),
+                }, cs),
                 const SizedBox(height: 12),
                 _buildPosicionDropdown('Posición Secundaria', _posicionSecundaria, (v) {
                   if (v != null) setState(() => _posicionSecundaria = v);
-                }),
+                }, cs),
                 const SizedBox(height: 12),
                 _buildTextField(
                   _alturaCtrl, 'Altura (cm)', Icons.height,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d.]'))],
+                  cs: cs,
                 ),
                 const SizedBox(height: 12),
-                _buildManoDropdown(),
+                _buildManoDropdown(cs),
                 const SizedBox(height: 12),
                 CategorySelector(
                   selectedCategory: _categoriaOverride,
@@ -341,30 +318,30 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
                 const SizedBox(height: 12),
                 _buildSwitchRow(Icons.star, '¿Es Capitán?', _esCapitan, (v) {
                   setState(() => _esCapitan = v);
-                }),
-              ], delay: const Duration(milliseconds: 80)),
+                }, cs),
+              ], delay: const Duration(milliseconds: 80), cs: cs),
               const SizedBox(height: 24),
               _animatedSection(Icons.medical_services, 'INFORMACIÓN MÉDICA', 'Datos de salud del atleta', [
-                _buildTipoSangreDropdown(),
+                _buildTipoSangreDropdown(cs),
                 const SizedBox(height: 12),
-                _buildSaludDropdown(),
+                _buildSaludDropdown(cs),
                 const SizedBox(height: 12),
-                _buildTextField(_condicionFisicaCtrl, 'Condición Física', Icons.fitness_center),
-              ], delay: const Duration(milliseconds: 160)),
+                _buildTextField(_condicionFisicaCtrl, 'Condición Física', Icons.fitness_center, cs: cs),
+              ], delay: const Duration(milliseconds: 160), cs: cs),
               const SizedBox(height: 24),
               _animatedSection(Icons.camera_alt, 'FOTOGRAFÍA', 'Imagen del atleta', [
-                _buildPhotoSection(),
-              ], delay: const Duration(milliseconds: 240)),
+                _buildPhotoSection(cs),
+              ], delay: const Duration(milliseconds: 240), cs: cs),
               const SizedBox(height: 32),
               FilledButton.icon(
                 onPressed: _saving ? null : _save,
                 icon: _saving
-                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    ? SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: cs.onPrimary))
                     : const Icon(Icons.save),
                 label: Text(_saving ? 'Guardando...' : (isEditing ? 'Guardar Cambios' : 'Guardar Atleta')),
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.accent,
-                  foregroundColor: Colors.white,
+                  foregroundColor: cs.onPrimary,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
@@ -377,7 +354,7 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
     );
   }
 
-  Widget _buildPhotoSection() {
+  Widget _buildPhotoSection(ColorScheme cs) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -435,7 +412,7 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
     );
   }
 
-  Widget _buildBirthDateField() {
+  Widget _buildBirthDateField(ColorScheme cs) {
     final edad = _edadCalculada;
     final cat = CategoryCalculator.calculate(edad);
     return GestureDetector(
@@ -443,9 +420,9 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.surfaceLight,
+          color: cs.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.border),
+          border: Border.all(color: cs.outlineVariant),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -455,7 +432,7 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
                 Icon(Icons.cake, color: AppColors.primary, size: 20),
                 const SizedBox(width: 12),
                 Text('Fecha de Nacimiento',
-                  style: const TextStyle(color: Colors.white54, fontSize: 13)),
+                  style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
               ],
             ),
             const SizedBox(height: 8),
@@ -463,7 +440,7 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
               children: [
                 Text(
                   _formatDate(_fechaNacimiento),
-                  style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500),
+                  style: TextStyle(color: cs.onSurface, fontSize: 16, fontWeight: FontWeight.w500),
                 ),
                 const Spacer(),
                 Icon(Icons.edit_calendar_rounded, color: AppColors.accent, size: 18),
@@ -497,10 +474,10 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
     );
   }
 
-  Widget _sectionCard(IconData icon, String title, String subtitle) {
+  Widget _sectionCard(IconData icon, String title, String subtitle, ColorScheme cs) {
     return Card(
       margin: EdgeInsets.zero,
-      color: AppColors.surfaceLight,
+      color: cs.surfaceContainerHighest,
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
@@ -526,8 +503,8 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: cs.onSurface,
                       fontWeight: FontWeight.w600,
                       fontSize: 15,
                       letterSpacing: 0.5,
@@ -536,8 +513,8 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: const TextStyle(
-                      color: Colors.white54,
+                    style: TextStyle(
+                      color: cs.onSurfaceVariant,
                       fontSize: 12,
                     ),
                   ),
@@ -557,16 +534,17 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
     TextInputType? keyboardType,
     List<TextInputFormatter>? inputFormatters,
     String? Function(String?)? validator,
+    required ColorScheme cs,
   }) {
     return TextFormField(
       controller: ctrl,
       validator: validator,
       keyboardType: keyboardType,
       inputFormatters: inputFormatters,
-      style: const TextStyle(color: Colors.white),
+      style: TextStyle(color: cs.onSurface),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(color: Colors.white54),
+        labelStyle: TextStyle(color: cs.onSurfaceVariant),
         prefixIcon: Padding(
           padding: const EdgeInsetsDirectional.only(start: 12, end: 8),
           child: Icon(icon, color: AppColors.primary, size: 20),
@@ -574,7 +552,7 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
         prefixIconConstraints: const BoxConstraints(minWidth: 44, minHeight: 20),
         contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
         filled: true,
-        fillColor: AppColors.surfaceLight,
+        fillColor: cs.surfaceContainerHighest,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -588,27 +566,27 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
     );
   }
 
-  Widget _buildDateField(String label, DateTime date, IconData icon, VoidCallback onTap, int? edad) {
+  Widget _buildDateField(String label, DateTime date, IconData icon, VoidCallback onTap, int? edad, ColorScheme cs) {
     return GestureDetector(
       onTap: onTap,
       child: AbsorbPointer(
         child: TextFormField(
-          style: const TextStyle(color: Colors.white),
+          style: TextStyle(color: cs.onSurface),
           decoration: InputDecoration(
             labelText: edad != null ? '$label ($edad años)' : label,
-            labelStyle: const TextStyle(color: Colors.white54),
+            labelStyle: TextStyle(color: cs.onSurfaceVariant),
             prefixIcon: Padding(
               padding: const EdgeInsetsDirectional.only(start: 12, end: 8),
               child: Icon(icon, color: AppColors.primary, size: 20),
             ),
             filled: true,
-            fillColor: AppColors.surfaceLight,
+            fillColor: cs.surfaceContainerHighest,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(color: AppColors.accent),
             ),
-            suffixIcon: const Icon(Icons.calendar_today, color: Colors.white38, size: 18),
+            suffixIcon: Icon(Icons.calendar_today, color: cs.onSurface.withValues(alpha: 0.6), size: 18),
             prefixIconConstraints: const BoxConstraints(minWidth: 44, minHeight: 20),
             contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
           ),
@@ -621,12 +599,12 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
     );
   }
 
-  Widget _buildSexoDropdown() {
+  Widget _buildSexoDropdown(ColorScheme cs) {
     return DropdownButtonFormField<Sexo>(
       value: _sexo,
-      dropdownColor: AppColors.surfaceLight,
-      style: const TextStyle(color: Colors.white),
-      decoration: _dropdownDecoration('Sexo', Icons.wc),
+      dropdownColor: cs.surfaceContainerHighest,
+      style: TextStyle(color: cs.onSurface),
+      decoration: _dropdownDecoration('Sexo', Icons.wc, cs),
       items: Sexo.values.map((e) {
         return DropdownMenuItem(value: e, child: Text(e == Sexo.masculino ? 'Masculino' : 'Femenino'));
       }).toList(),
@@ -636,12 +614,12 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
     );
   }
 
-  Widget _buildTipoSangreDropdown() {
+  Widget _buildTipoSangreDropdown(ColorScheme cs) {
     return DropdownButtonFormField<TipoSangre>(
       value: _tipoSangre,
-      dropdownColor: AppColors.surfaceLight,
-      style: const TextStyle(color: Colors.white),
-      decoration: _dropdownDecoration('Tipo de Sangre', Icons.bloodtype),
+      dropdownColor: cs.surfaceContainerHighest,
+      style: TextStyle(color: cs.onSurface),
+      decoration: _dropdownDecoration('Tipo de Sangre', Icons.bloodtype, cs),
       items: TipoSangre.values.map((e) {
         final label = {
           TipoSangre.aPositivo: 'A+',
@@ -661,12 +639,12 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
     );
   }
 
-  Widget _buildManoDropdown() {
+  Widget _buildManoDropdown(ColorScheme cs) {
     return DropdownButtonFormField<ManoDominante>(
       value: _manoDominante,
-      dropdownColor: AppColors.surfaceLight,
-      style: const TextStyle(color: Colors.white),
-      decoration: _dropdownDecoration('Mano Dominante', Icons.pan_tool),
+      dropdownColor: cs.surfaceContainerHighest,
+      style: TextStyle(color: cs.onSurface),
+      decoration: _dropdownDecoration('Mano Dominante', Icons.pan_tool, cs),
       items: ManoDominante.values.map((e) {
         final label = {
           ManoDominante.derecha: 'Derecha',
@@ -681,12 +659,12 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
     );
   }
 
-  Widget _buildPosicionDropdown(String label, Posicion value, ValueChanged<Posicion?> onChanged) {
+  Widget _buildPosicionDropdown(String label, Posicion value, ValueChanged<Posicion?> onChanged, ColorScheme cs) {
     return DropdownButtonFormField<Posicion>(
       value: value,
-      dropdownColor: AppColors.surfaceLight,
-      style: const TextStyle(color: Colors.white),
-      decoration: _dropdownDecoration(label, Icons.sports),
+      dropdownColor: cs.surfaceContainerHighest,
+      style: TextStyle(color: cs.onSurface),
+      decoration: _dropdownDecoration(label, Icons.sports, cs),
       items: Posicion.values.map((p) {
         return DropdownMenuItem(value: p, child: Text(_posicionLabel(p)));
       }).toList(),
@@ -694,12 +672,12 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
     );
   }
 
-  Widget _buildSaludDropdown() {
+  Widget _buildSaludDropdown(ColorScheme cs) {
     return DropdownButtonFormField<EstadoSalud>(
       value: _estadoSalud,
-      dropdownColor: AppColors.surfaceLight,
-      style: const TextStyle(color: Colors.white),
-      decoration: _dropdownDecoration('Estado de Salud', Icons.health_and_safety),
+      dropdownColor: cs.surfaceContainerHighest,
+      style: TextStyle(color: cs.onSurface),
+      decoration: _dropdownDecoration('Estado de Salud', Icons.health_and_safety, cs),
       items: EstadoSalud.values.map((e) {
         return DropdownMenuItem(value: e, child: Text(_saludLabel(e)));
       }).toList(),
@@ -709,34 +687,34 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
     );
   }
 
-  InputDecoration _dropdownDecoration(String label, IconData icon) {
+  InputDecoration _dropdownDecoration(String label, IconData icon, ColorScheme cs) {
     return InputDecoration(
       labelText: label,
-      labelStyle: const TextStyle(color: Colors.white54),
+      labelStyle: TextStyle(color: cs.onSurfaceVariant),
       prefixIcon: Padding(
         padding: const EdgeInsetsDirectional.only(start: 12, end: 8),
         child: Icon(icon, color: AppColors.primary, size: 20),
       ),
       filled: true,
-      fillColor: AppColors.surfaceLight,
+      fillColor: cs.surfaceContainerHighest,
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
       prefixIconConstraints: const BoxConstraints(minWidth: 44, minHeight: 20),
       contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
     );
   }
 
-  Widget _buildSwitchRow(IconData icon, String label, bool value, ValueChanged<bool> onChanged) {
+  Widget _buildSwitchRow(IconData icon, String label, bool value, ValueChanged<bool> onChanged, ColorScheme cs) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.surfaceLight,
+        color: cs.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         children: [
           Icon(icon, color: AppColors.primary, size: 20),
           const SizedBox(width: 12),
-          Text(label, style: const TextStyle(color: Colors.white, fontSize: 14)),
+          Text(label, style: TextStyle(color: cs.onSurface, fontSize: 14)),
           const Spacer(),
           Switch(
             value: value,
@@ -748,7 +726,7 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
     );
   }
 
-  Widget _animatedSection(IconData icon, String title, String subtitle, List<Widget> fields, {required Duration delay}) {
+  Widget _animatedSection(IconData icon, String title, String subtitle, List<Widget> fields, {required Duration delay, required ColorScheme cs}) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: const Duration(milliseconds: 400) + delay,
@@ -765,7 +743,7 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _sectionCard(icon, title, subtitle),
+          _sectionCard(icon, title, subtitle, cs),
           const SizedBox(height: 16),
           ...fields,
         ],

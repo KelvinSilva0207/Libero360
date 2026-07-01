@@ -36,14 +36,15 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: cs.surface,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
+        backgroundColor: cs.surface,
         title: Consumer<AthleteViewModel>(
           builder: (_, vm, __) => Row(
             children: [
-              const Text('Atletas', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+              Text('Atletas', style: TextStyle(color: cs.onSurface, fontSize: 16, fontWeight: FontWeight.bold)),
               if (!vm.loading && vm.athletes.isNotEmpty) ...[
                 const SizedBox(width: 8),
                 Container(
@@ -70,7 +71,7 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
                   Stack(
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.delete_outline_rounded, color: Colors.white54),
+                        icon: Icon(Icons.delete_outline_rounded, color: cs.onSurfaceVariant),
                         onPressed: () => context.pushSlide(const AthleteTrashScreen()),
                       ),
                       Positioned(
@@ -81,14 +82,14 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
                           decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
                           child: Text(
                             '${vm.trashed.length}',
-                            style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                            style: TextStyle(color: cs.onPrimary, fontSize: 8, fontWeight: FontWeight.bold),
                           ),
                         ),
                       ),
                     ],
                   ),
                 IconButton(
-                  icon: Icon(Icons.search, color: vm.query.isNotEmpty ? AppColors.accent : Colors.white54),
+                  icon: Icon(Icons.search, color: vm.query.isNotEmpty ? AppColors.accent : cs.onSurfaceVariant),
                   onPressed: () => _showSearchDialog(context),
                 ),
               ],
@@ -99,7 +100,7 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
       body: Consumer<AthleteViewModel>(
         builder: (_, vm, __) {
           if (vm.loading) {
-            return const Center(child: CircularProgressIndicator(color: AppColors.accent));
+            return Center(child: CircularProgressIndicator(color: AppColors.accent));
           }
           if (vm.error != null) {
             return Center(
@@ -128,15 +129,15 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: AppColors.surface,
+                      color: cs.surfaceContainerHighest,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.people_outline, color: Colors.white24, size: 48),
+                    child: Icon(Icons.people_outline, color: cs.onSurface.withValues(alpha: 0.38), size: 48),
                   ),
                   const SizedBox(height: 20),
-                  const Text('Aún no hay atletas', style: TextStyle(color: Colors.white54, fontSize: 16)),
+                  Text('Aún no hay atletas', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 16)),
                   const SizedBox(height: 6),
-                  const Text('Agrega tu primer atleta', style: TextStyle(color: Colors.white38, fontSize: 13)),
+                  Text('Agrega tu primer atleta', style: TextStyle(color: cs.onSurface.withValues(alpha: 0.6), fontSize: 13)),
                   const SizedBox(height: 20),
                   FilledButton.icon(
                     onPressed: _addAthlete,
@@ -154,7 +155,7 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
           final filtered = vm.filtered;
           return Column(
             children: [
-              _buildCategoryChips(vm),
+              _buildCategoryChips(vm, cs),
               Expanded(
                 child: RefreshIndicator(
                   color: AppColors.accent,
@@ -168,9 +169,9 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
                                 child: Column(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    const Icon(Icons.search_off_rounded, color: Colors.white24, size: 40),
+                                    Icon(Icons.search_off_rounded, color: cs.onSurface.withValues(alpha: 0.38), size: 40),
                                     const SizedBox(height: 8),
-                                    const Text('Sin resultados', style: TextStyle(color: Colors.white38, fontSize: 14)),
+                                    Text('Sin resultados', style: TextStyle(color: cs.onSurface.withValues(alpha: 0.6), fontSize: 14)),
                                   ],
                                 ),
                               ),
@@ -180,7 +181,7 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
                       : ListView.builder(
                           padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
                           itemCount: filtered.length,
-                          itemBuilder: (context, index) => _athleteCard(filtered[index]),
+                          itemBuilder: (context, index) => _athleteCard(filtered[index], cs),
                         ),
                 ),
               ),
@@ -191,12 +192,12 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed: _addAthlete,
         backgroundColor: AppColors.accent,
-        child: const Icon(Icons.add, color: Colors.white),
+        child: Icon(Icons.add, color: cs.onPrimary),
       ),
     );
   }
 
-  Widget _buildCategoryChips(AthleteViewModel vm) {
+  Widget _buildCategoryChips(AthleteViewModel vm, ColorScheme cs) {
     final categories = vm.allCategoryNames;
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 6),
@@ -208,10 +209,10 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
           Padding(
             padding: const EdgeInsets.only(right: 8),
             child: FilterChip(
-              label: Text('Todos', style: TextStyle(fontSize: 12, color: !vm.hasActiveFilter ? Colors.white : Colors.white54)),
+              label: Text('Todos', style: TextStyle(fontSize: 12, color: !vm.hasActiveFilter ? cs.onSurface : cs.onSurfaceVariant)),
               selected: !vm.hasActiveFilter,
               selectedColor: AppColors.accent.withValues(alpha: 0.3),
-              backgroundColor: AppColors.surface,
+              backgroundColor: cs.surfaceContainerHighest,
               side: BorderSide.none,
               onSelected: (_) {
                 vm.setQuery('');
@@ -223,10 +224,10 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
           ...categories.map((cat) => Padding(
             padding: const EdgeInsets.only(right: 8),
             child: FilterChip(
-              label: Text(cat, style: TextStyle(fontSize: 12, color: vm.selectedCategories.contains(cat) ? Colors.white : Colors.white54)),
+              label: Text(cat, style: TextStyle(fontSize: 12, color: vm.selectedCategories.contains(cat) ? cs.onSurface : cs.onSurfaceVariant)),
               selected: vm.selectedCategories.contains(cat),
               selectedColor: AppColors.accent.withValues(alpha: 0.3),
-              backgroundColor: AppColors.surface,
+              backgroundColor: cs.surfaceContainerHighest,
               side: BorderSide.none,
               onSelected: (_) => vm.toggleCategory(cat),
             ),
@@ -234,9 +235,9 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
           Padding(
             padding: const EdgeInsets.only(left: 8),
             child: ActionChip(
-              avatar: const Icon(Icons.tune, color: Colors.white38, size: 16),
-              label: const Text('Gestionar', style: TextStyle(color: Colors.white38, fontSize: 11)),
-              backgroundColor: AppColors.surface,
+              avatar: Icon(Icons.tune, color: cs.onSurface.withValues(alpha: 0.6), size: 16),
+              label: Text('Gestionar', style: TextStyle(color: cs.onSurface.withValues(alpha: 0.6), fontSize: 11)),
+              backgroundColor: cs.surfaceContainerHighest,
               side: BorderSide.none,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
               onPressed: () => context.pushSlide(
@@ -265,12 +266,12 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
     }
   }
 
-  Widget _athleteCard(Player p) {
+  Widget _athleteCard(Player p, ColorScheme cs) {
     final healthColor = _saludColor(p.estadoSalud);
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Material(
-        color: AppColors.surface,
+        color: cs.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
           onTap: () => context.pushSlide(AthleteDetailScreen(player: p)),
@@ -279,7 +280,7 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
             padding: const EdgeInsets.fromLTRB(12, 12, 14, 12),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.border),
+              border: Border.all(color: cs.outlineVariant),
             ),
             child: Row(
               children: [
@@ -302,8 +303,8 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
                     child: Center(
                       child: Text(
                         '${p.numero ?? '-'}',
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: cs.onPrimary,
                           fontWeight: FontWeight.bold,
                           fontSize: 17,
                         ),
@@ -321,7 +322,7 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
                           Flexible(
                             child: Text(
                               NameFormatter.playerDisplayName(p),
-                              style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
+                              style: TextStyle(color: cs.onSurface, fontSize: 15, fontWeight: FontWeight.w600),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
@@ -368,13 +369,13 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
                           const SizedBox(width: 6),
                           Text(
                             '${p.edad} años',
-                            style: const TextStyle(color: AppColors.textTertiary, fontSize: 11),
+                            style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11),
                           ),
                           if (p.cedula.isNotEmpty) ...[
                             const SizedBox(width: 6),
                             Text(
                               p.cedula,
-                              style: const TextStyle(color: AppColors.textTertiary, fontSize: 10),
+                              style: TextStyle(color: cs.onSurfaceVariant, fontSize: 10),
                             ),
                           ],
                         ],
@@ -408,7 +409,7 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
                   ),
                 ),
                 const SizedBox(width: 4),
-                const Icon(Icons.chevron_right, color: AppColors.textTertiary, size: 18),
+                Icon(Icons.chevron_right, color: cs.onSurfaceVariant, size: 18),
               ],
             ),
           ),
@@ -427,13 +428,14 @@ class _AthleteSearchDelegate extends SearchDelegate<void> {
 
   @override
   ThemeData appBarTheme(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Theme.of(context).copyWith(
-      appBarTheme: const AppBarTheme(
-        backgroundColor: AppColors.surface,
-        iconTheme: IconThemeData(color: Colors.white),
+      appBarTheme: AppBarTheme(
+        backgroundColor: cs.surface,
+        iconTheme: IconThemeData(color: cs.onSurface),
       ),
-      inputDecorationTheme: const InputDecorationTheme(
-        hintStyle: TextStyle(color: Colors.white38),
+      inputDecorationTheme: InputDecorationTheme(
+        hintStyle: TextStyle(color: cs.onSurface.withValues(alpha: 0.6)),
         border: InputBorder.none,
       ),
     );
@@ -441,10 +443,11 @@ class _AthleteSearchDelegate extends SearchDelegate<void> {
 
   @override
   List<Widget>? buildActions(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return [
       if (query.isNotEmpty)
         IconButton(
-          icon: const Icon(Icons.clear, color: Colors.white54),
+          icon: Icon(Icons.clear, color: cs.onSurfaceVariant),
           onPressed: () => query = '',
         ),
     ];
@@ -452,8 +455,9 @@ class _AthleteSearchDelegate extends SearchDelegate<void> {
 
   @override
   Widget buildLeading(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return IconButton(
-      icon: const Icon(Icons.arrow_back, color: Colors.white),
+      icon: Icon(Icons.arrow_back, color: cs.onSurface),
       onPressed: () => close(context, null),
     );
   }
@@ -465,6 +469,7 @@ class _AthleteSearchDelegate extends SearchDelegate<void> {
   Widget buildSuggestions(BuildContext context) => _buildList(context);
 
   Widget _buildList(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final lower = query.toLowerCase().trim();
     final results = lower.isEmpty
         ? vm.athletes
@@ -475,8 +480,8 @@ class _AthleteSearchDelegate extends SearchDelegate<void> {
           ).toList();
 
     if (results.isEmpty) {
-      return const Center(
-        child: Text('Sin resultados', style: TextStyle(color: Colors.white38, fontSize: 14)),
+      return Center(
+        child: Text('Sin resultados', style: TextStyle(color: cs.onSurface.withValues(alpha: 0.6), fontSize: 14)),
       );
     }
 
@@ -495,15 +500,15 @@ class _AthleteSearchDelegate extends SearchDelegate<void> {
             ),
             child: Center(
               child: Text('${p.numero ?? '-'}',
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                style: TextStyle(color: cs.onPrimary, fontWeight: FontWeight.bold, fontSize: 14),
               ),
             ),
           ),
-          title: Text(NameFormatter.playerDisplayName(p), style: const TextStyle(color: Colors.white, fontSize: 14)),
+          title: Text(NameFormatter.playerDisplayName(p), style: TextStyle(color: cs.onSurface, fontSize: 14)),
           subtitle: Text('${p.posicionLabel} · ${p.categoria}',
-            style: const TextStyle(color: Colors.white38, fontSize: 12),
+            style: TextStyle(color: cs.onSurface.withValues(alpha: 0.6), fontSize: 12),
           ),
-          trailing: const Icon(Icons.chevron_right, color: Colors.white24, size: 16),
+          trailing: Icon(Icons.chevron_right, color: cs.onSurface.withValues(alpha: 0.38), size: 16),
           onTap: () {
             close(context, null);
             context.pushSlide(AthleteDetailScreen(player: p));

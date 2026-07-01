@@ -8,41 +8,42 @@ class InvitationBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final vm = context.watch<ClubViewModel>();
     final pending = vm.pendingInvitations;
 
     if (pending.isEmpty) return const SizedBox.shrink();
 
     return Container(
-      color: const Color(0xFFFF8C00).withValues(alpha: 0.15),
+      color: cs.primaryContainer.withValues(alpha: 0.3),
       child: Column(
-        children: pending.map((inv) => _invitationTile(context, vm, inv)).toList(),
+        children: pending.map((inv) => _invitationTile(context, vm, inv, cs)).toList(),
       ),
     );
   }
 
   Widget _invitationTile(
-      BuildContext context, ClubViewModel vm, ClubInvitation inv) {
+      BuildContext context, ClubViewModel vm, ClubInvitation inv, ColorScheme cs) {
     return ListTile(
       dense: true,
-      leading: const Icon(Icons.mail, color: Color(0xFFFF8C00)),
+      leading: Icon(Icons.mail, color: cs.primary),
       title: Text(
         '${inv.inviterDisplayName} te invitó a ${inv.clubName}',
-        style: const TextStyle(color: Colors.white, fontSize: 14),
+        style: TextStyle(color: cs.onSurface, fontSize: 14),
       ),
       subtitle: Text(
         'Rol: ${_roleLabel(inv.role)}',
-        style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 12),
+        style: TextStyle(color: cs.onSurface.withValues(alpha: 0.6), fontSize: 12),
       ),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           IconButton(
-            icon: const Icon(Icons.check_circle, color: Color(0xFF4CAF50)),
+            icon: Icon(Icons.check_circle, color: cs.primary),
             onPressed: () => _accept(context, vm, inv),
           ),
           IconButton(
-            icon: const Icon(Icons.cancel, color: Colors.red),
+            icon: Icon(Icons.cancel, color: cs.error),
             onPressed: () => _reject(context, vm, inv),
           ),
         ],
@@ -55,7 +56,7 @@ class InvitationBanner extends StatelessWidget {
     final err = await vm.acceptInvitation(inv);
     if (err != null && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(err), backgroundColor: Colors.red));
+          SnackBar(content: Text(err), backgroundColor: Theme.of(context).colorScheme.error));
     }
   }
 
@@ -64,7 +65,7 @@ class InvitationBanner extends StatelessWidget {
     final err = await vm.rejectInvitation(inv);
     if (err != null && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(err), backgroundColor: Colors.red));
+          SnackBar(content: Text(err), backgroundColor: Theme.of(context).colorScheme.error));
     }
   }
 

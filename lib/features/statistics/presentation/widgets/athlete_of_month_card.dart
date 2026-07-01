@@ -178,13 +178,13 @@ class _PlayerRow extends StatelessWidget {
             color: AppColors.accent,
             borderRadius: BorderRadius.circular(12),
           ),
-          child: const Row(
+          child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.emoji_events, color: Colors.white, size: 16),
-              SizedBox(width: 4),
+              Icon(Icons.emoji_events, color: Theme.of(context).colorScheme.onPrimary, size: 16),
+              const SizedBox(width: 4),
               Text('#1', style: TextStyle(
-                color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16,
+                color: Theme.of(context).colorScheme.onPrimary, fontWeight: FontWeight.bold, fontSize: 16,
               )),
             ],
           ),
@@ -239,7 +239,7 @@ class _StatsGrid extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.04),
+        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Wrap(

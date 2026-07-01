@@ -54,6 +54,7 @@ class _MatchScreenState extends State<MatchScreen>
   int _prevLocalPoints = 0;
   int _prevVisitorPoints = 0;
   CourtPerspective _perspective = CourtPerspective.right;
+  int? _selectedZone;
 
   final List<PlayerActionEvent> _actionEvents = [];
   int _actionAnimCounter = 0;
@@ -446,6 +447,102 @@ class _MatchScreenState extends State<MatchScreen>
     );
   }
 
+  void _showPlayerAssign(int zoneNumber, PartidoViewModel vm) {
+    final available = vm.jugadores
+        .where((p) => !_rotationManager.slots.whereType<int>().contains(p.numero))
+        .toList();
+    if (available.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No hay jugadores disponibles')),
+      );
+      return;
+    }
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.all(16),
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.person_add, color: AppColors.accent, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  'Asignar jugador — Zona $zoneNumber',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const Spacer(),
+                IconButton(
+                  icon: const Icon(Icons.close, color: Colors.white38),
+                  onPressed: () {
+                    setState(() => _selectedZone = null);
+                    Navigator.of(ctx).pop();
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            const Divider(color: Colors.white12, height: 1),
+            const SizedBox(height: 8),
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.4,
+              ),
+              child: ListView.separated(
+                shrinkWrap: true,
+                itemCount: available.length,
+                separatorBuilder: (_, __) => const Divider(
+                  color: Colors.white12, height: 1, indent: 48,
+                ),
+                itemBuilder: (_, i) {
+                  final p = available[i];
+                  return ListTile(
+                    leading: CircleAvatar(
+                      radius: 18,
+                      backgroundColor: AppColors.primary.withValues(alpha: 0.3),
+                      child: Text(
+                        '${p.numero ?? '?'}',
+                        style: const TextStyle(
+                          color: Colors.white, fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    title: Text(
+                      NameFormatter.playerShortName(p),
+                      style: const TextStyle(color: Colors.white, fontSize: 14),
+                    ),
+                    subtitle: Text(
+                      p.rol?.toUpperCase() ?? '',
+                      style: const TextStyle(color: Colors.white38, fontSize: 11),
+                    ),
+                    onTap: () {
+                      _rotationManager.assignPlayerByZone(zoneNumber, p.numero ?? 0);
+                      setState(() => _selectedZone = null);
+                      Navigator.of(ctx).pop();
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    ).whenComplete(() {
+      if (mounted) setState(() => _selectedZone = null);
+    });
+  }
+
   void _showLiberoSwap(Player libero, PartidoViewModel vm) {
     final courtPlayers = _courtPlayers(vm);
     final libName = NameFormatter.playerMatchName(libero);
@@ -482,15 +579,8 @@ class _MatchScreenState extends State<MatchScreen>
     if (player != null) {
       _showPlayerActions(player, vm);
     } else {
-      showDialog(
-        context: context,
-        builder: (ctx) => _PlayerNumberPicker(
-          onSelected: (number) {
-            _rotationManager.assignPlayerByZone(zoneNumber, number);
-            Navigator.of(ctx).pop();
-          },
-        ),
-      );
+      setState(() => _selectedZone = zoneNumber);
+      _showPlayerAssign(zoneNumber, vm);
     }
   }
 
@@ -877,6 +967,8 @@ class _MatchScreenState extends State<MatchScreen>
               if (player != null) _showPlayerStats(player);
             },
             onTogglePerspective: _togglePerspective,
+            selectedZone: _selectedZone,
+            players: vm.jugadores,
           ),
           _buildRotationInfoRow(context, vm),
           _buildServerioRow(),

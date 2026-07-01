@@ -203,7 +203,7 @@ class _StaffScreenState extends State<StaffScreen> {
       ClubInvitationStatus.pending => AppColors.info,
       ClubInvitationStatus.accepted => const Color(0xFF4CAF50),
       ClubInvitationStatus.rejected => AppColors.error,
-      ClubInvitationStatus.expired => Colors.grey,
+      ClubInvitationStatus.expired => cs.onSurfaceVariant,
     };
     final label = switch (status) {
       ClubInvitationStatus.pending => 'Pendiente',

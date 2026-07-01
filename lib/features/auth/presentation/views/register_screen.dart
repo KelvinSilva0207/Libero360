@@ -66,6 +66,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 constraints: const BoxConstraints(maxWidth: 400),
                 child: Consumer<AuthViewModel>(
                   builder: (context, vm, _) {
+                    final cs = Theme.of(context).colorScheme;
                     return Form(
                       key: _formKey,
                       child: Column(
@@ -88,7 +89,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           const SizedBox(height: 6),
                           Text(
                             'Comienza a gestionar tu equipo',
-                            style: TextStyle(fontSize: 14, color: Colors.white.withValues(alpha: 0.5)),
+                            style: TextStyle(fontSize: 14, color: cs.onSurface.withValues(alpha: 0.5)),
                           ),
                           const SizedBox(height: 36),
                           AppTextField(
@@ -171,13 +172,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           Text(
                             'Al registrarte, aceptas nuestros Términos y Condiciones y Política de Privacidad.',
                             textAlign: TextAlign.center,
-                            style: TextStyle(color: Colors.white.withValues(alpha: 0.35), fontSize: 11, height: 1.4),
+                            style: TextStyle(color: cs.onSurface.withValues(alpha: 0.35), fontSize: 11, height: 1.4),
                           ),
                           const SizedBox(height: 24),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Text('¿Ya tienes cuenta? ', style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 13)),
+                              Text('¿Ya tienes cuenta? ', style: TextStyle(color: cs.onSurface.withValues(alpha: 0.5), fontSize: 13)),
                               GestureDetector(
                                 onTap: () => Navigator.pushNamed(context, '/login'),
                                 child: const Text('Inicia sesión', style: TextStyle(color: AppColors.accent, fontSize: 13, fontWeight: FontWeight.w600)),

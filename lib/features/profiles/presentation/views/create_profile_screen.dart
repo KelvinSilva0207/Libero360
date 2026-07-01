@@ -54,7 +54,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
               const SizedBox(height: 20),
               TextFormField(
                 controller: _clubNameCtrl,
-                decoration: _inputDecoration(cs, 'Club', 'Ej: Club Águilas'),
+                decoration: _inputDecoration(cs, 'Club', 'Ej: mi club'),
                 style: TextStyle(color: cs.onSurface),
                 validator: (v) =>
                     v == null || v.trim().isEmpty ? 'Ingresa el club' : null,
@@ -104,8 +104,8 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                       ? const SizedBox(
                           width: 20,
                           height: 20,
-                          child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.white),
+                          child:                           CircularProgressIndicator(
+                              strokeWidth: 2, color: cs.onPrimary),
                         )
                       : const Text('Crear perfil',
                           style: TextStyle(

@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../../../../core/services/category_service.dart';
 import '../../data/athlete_ranking_service.dart';
 import '../../data/statistics_models.dart';
 import '../../../estadisticas/data/stat_event_bus.dart';
@@ -18,6 +19,7 @@ class AthleteOfMonthViewModel extends ChangeNotifier {
   String _selectedCategory = 'Todos';
   bool _loaded = false;
   VoidCallback? _eventBusHandler;
+  List<String> _categorias = ['Todos'];
 
   AthleteOfMonthViewModel({AthleteRankingService? service})
       : _service = service ?? AthleteRankingService();
@@ -30,10 +32,7 @@ class AthleteOfMonthViewModel extends ChangeNotifier {
   String? get error => _error;
   RankingPeriod get selectedPeriod => _selectedPeriod;
   String get selectedCategory => _selectedCategory;
-
-  static const List<String> categorias = [
-    'Todos', 'U13', 'U15', 'U17', 'U19', 'Adulto',
-  ];
+  List<String> get categorias => _categorias;
 
   Future<void> load() async {
     _loading = true;
@@ -41,6 +40,9 @@ class AthleteOfMonthViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
+      await CategoryService.instance.load();
+      _categorias = ['Todos', ...CategoryService.instance.getAllNames()];
+
       final now = DateTime.now();
       DateTime? start;
       DateTime? end;

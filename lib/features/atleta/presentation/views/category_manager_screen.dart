@@ -58,14 +58,15 @@ class _CategoryManagerScreenState extends State<CategoryManagerScreen> {
       }
       return;
     }
+    final cs = Theme.of(context).colorScheme;
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        title: const Text('Eliminar categoría', style: TextStyle(color: Colors.white)),
-        content: Text('¿Eliminar "${cat.name}"?', style: const TextStyle(color: Colors.white70)),
+        backgroundColor: cs.surfaceContainerHighest,
+        title: Text('Eliminar categoría', style: TextStyle(color: cs.onSurface)),
+        content: Text('¿Eliminar "${cat.name}"?', style: TextStyle(color: cs.onSurface.withValues(alpha: 0.7))),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar', style: TextStyle(color: Colors.white54))),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('Cancelar', style: TextStyle(color: cs.onSurfaceVariant))),
           TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Eliminar', style: TextStyle(color: Colors.red))),
         ],
       ),
@@ -83,11 +84,12 @@ class _CategoryManagerScreenState extends State<CategoryManagerScreen> {
     final maxAgeCtrl = TextEditingController(text: existing?.maxAge.toString() ?? '');
     final sortCtrl = TextEditingController(text: existing?.sortOrder.toString() ?? '');
 
+    final cs = Theme.of(context).colorScheme;
     final result = await showDialog<CategoryConfig>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        title: Text(existing != null ? 'Editar categoría' : 'Nueva categoría', style: const TextStyle(color: Colors.white)),
+        backgroundColor: cs.surfaceContainerHighest,
+        title: Text(existing != null ? 'Editar categoría' : 'Nueva categoría', style: TextStyle(color: cs.onSurface)),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -103,7 +105,7 @@ class _CategoryManagerScreenState extends State<CategoryManagerScreen> {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar', style: TextStyle(color: Colors.white54))),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Cancelar', style: TextStyle(color: cs.onSurfaceVariant))),
           TextButton(
             onPressed: () {
               final name = nameCtrl.text.trim();
@@ -129,13 +131,14 @@ class _CategoryManagerScreenState extends State<CategoryManagerScreen> {
   }
 
   Widget _field(String label, TextEditingController ctrl, {bool numeric = false}) {
+    final cs = Theme.of(context).colorScheme;
     return TextField(
       controller: ctrl,
       keyboardType: numeric ? TextInputType.number : TextInputType.text,
-      style: const TextStyle(color: Colors.white),
+      style: TextStyle(color: cs.onSurface),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(color: Colors.white54),
+        labelStyle: TextStyle(color: cs.onSurfaceVariant),
         filled: true,
         fillColor: AppColors.surfaceLight,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
@@ -145,11 +148,12 @@ class _CategoryManagerScreenState extends State<CategoryManagerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: cs.surface,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
-        title: const Text('Categorías', style: TextStyle(color: Colors.white)),
+        backgroundColor: cs.surface,
+        title: Text('Categorías', style: TextStyle(color: cs.onSurface)),
         actions: [
           IconButton(
             icon: const Icon(Icons.add, color: AppColors.accent),
@@ -164,9 +168,9 @@ class _CategoryManagerScreenState extends State<CategoryManagerScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.category_outlined, color: Colors.white24, size: 48),
+                      Icon(Icons.category_outlined, color: cs.onSurface.withValues(alpha: 0.38), size: 48),
                       const SizedBox(height: 12),
-                      const Text('Sin categorías', style: TextStyle(color: Colors.white54)),
+                      Text('Sin categorías', style: TextStyle(color: cs.onSurfaceVariant)),
                       const SizedBox(height: 16),
                       FilledButton.icon(
                         onPressed: _create,
@@ -185,7 +189,7 @@ class _CategoryManagerScreenState extends State<CategoryManagerScreen> {
                     return Container(
                       margin: const EdgeInsets.only(bottom: 8),
                       decoration: BoxDecoration(
-                        color: AppColors.surface,
+                        color: cs.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: AppColors.border),
                       ),
@@ -205,13 +209,13 @@ class _CategoryManagerScreenState extends State<CategoryManagerScreen> {
                             ),
                           ),
                         ),
-                        title: Text(cat.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500)),
-                        subtitle: Text('${cat.minAge}-${cat.maxAge} años', style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                        title: Text(cat.name, style: TextStyle(color: cs.onSurface, fontWeight: FontWeight.w500)),
+                        subtitle: Text('${cat.minAge}-${cat.maxAge} años', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             IconButton(
-                              icon: const Icon(Icons.edit_outlined, color: Colors.white38, size: 18),
+                              icon: Icon(Icons.edit_outlined, color: cs.onSurface.withValues(alpha: 0.6), size: 18),
                               onPressed: cat.isDefault ? null : () => _edit(cat),
                             ),
                             IconButton(

@@ -115,6 +115,7 @@ class _LiveStatsWidgetState extends State<LiveStatsWidget> {
   }
 
   Widget _buildHeader() {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -129,14 +130,14 @@ class _LiveStatsWidgetState extends State<LiveStatsWidget> {
             size: 24,
           ),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'ESTADÍSTICAS EN VIVO',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: cs.onSurface,
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 1.2,
@@ -162,7 +163,7 @@ class _LiveStatsWidgetState extends State<LiveStatsWidget> {
                 height: 12,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: hasData ? Colors.green : Colors.grey,
+                  color: hasData ? Colors.green : cs.onSurfaceVariant,
                   boxShadow: hasData
                       ? [
                           BoxShadow(
@@ -181,6 +182,7 @@ class _LiveStatsWidgetState extends State<LiveStatsWidget> {
   }
 
   Widget _buildPlayerStatsCard(Player jugador, PlayerStats? stats) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
@@ -202,8 +204,8 @@ class _LiveStatsWidgetState extends State<LiveStatsWidget> {
                 radius: 18,
                 child: Text(
                   '${jugador.numero}',
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: cs.onPrimary,
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
                   ),
@@ -216,8 +218,8 @@ class _LiveStatsWidgetState extends State<LiveStatsWidget> {
                   children: [
                     Text(
                       NameFormatter.playerDisplayName(jugador),
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: cs.onSurface,
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
                       ),
@@ -248,6 +250,7 @@ class _LiveStatsWidgetState extends State<LiveStatsWidget> {
                     '${stats.ataquesExitosos}/${stats.ataquesTotales}',
                     stats.efectividadAtaque,
                     Colors.green,
+                    cs,
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -257,6 +260,7 @@ class _LiveStatsWidgetState extends State<LiveStatsWidget> {
                     '${stats.saquesDirectos}/${stats.saquesTotales}',
                     stats.efectividadSaque,
                     Colors.blue,
+                    cs,
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -266,6 +270,7 @@ class _LiveStatsWidgetState extends State<LiveStatsWidget> {
                     '${stats.bloqueosExitosos}/${stats.bloqueosTotales}',
                     stats.efectividadBloqueo,
                     _accentOrange,
+                    cs,
                   ),
                 ),
               ],
@@ -300,7 +305,7 @@ class _LiveStatsWidgetState extends State<LiveStatsWidget> {
     );
   }
 
-  Widget _buildStatItem(String label, String value, double percentage, Color color) {
+  Widget _buildStatItem(String label, String value, double percentage, Color color, ColorScheme cs) {
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
@@ -320,8 +325,8 @@ class _LiveStatsWidgetState extends State<LiveStatsWidget> {
           const SizedBox(height: 4),
           Text(
             value,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: cs.onSurface,
               fontSize: 14,
               fontWeight: FontWeight.bold,
             ),
@@ -394,6 +399,7 @@ class _LiveStatsWidgetState extends State<LiveStatsWidget> {
   }
 
   Widget _buildNoStats() {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(16),
       child: Row(
@@ -401,14 +407,14 @@ class _LiveStatsWidgetState extends State<LiveStatsWidget> {
         children: [
           Icon(
             Icons.hourglass_empty,
-            color: Colors.grey,
+            color: cs.onSurfaceVariant,
             size: 20,
           ),
           const SizedBox(width: 8),
           Text(
             'Sin estadísticas aún',
             style: TextStyle(
-              color: Colors.grey,
+              color: cs.onSurfaceVariant,
               fontSize: 12,
             ),
           ),
@@ -418,6 +424,7 @@ class _LiveStatsWidgetState extends State<LiveStatsWidget> {
   }
 
   Widget _buildError(String error) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -432,7 +439,7 @@ class _LiveStatsWidgetState extends State<LiveStatsWidget> {
           Text(
             'Error al cargar estadísticas',
             style: TextStyle(
-              color: Colors.white,
+              color: cs.onSurface,
               fontSize: 14,
               fontWeight: FontWeight.bold,
             ),
@@ -441,7 +448,7 @@ class _LiveStatsWidgetState extends State<LiveStatsWidget> {
           Text(
             error,
             style: TextStyle(
-              color: Colors.grey,
+              color: cs.onSurfaceVariant,
               fontSize: 12,
             ),
             textAlign: TextAlign.center,

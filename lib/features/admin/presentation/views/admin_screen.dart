@@ -95,7 +95,7 @@ class _AdminScreenState extends State<AdminScreen> {
     return GestureDetector(
       onTap: () => setState(() => _mobileOpen = false),
       child: Container(
-        color: Colors.black54,
+        color: cs.onSurfaceVariant,
         child: Row(
           children: [
             GestureDetector(
@@ -127,7 +127,7 @@ class _AdminScreenState extends State<AdminScreen> {
               ),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Icon(Icons.admin_panel_settings_rounded, color: Colors.white, size: 18),
+            child: Icon(Icons.admin_panel_settings_rounded, color: cs.onPrimary, size: 18),
           ),
           const SizedBox(width: 10),
           Text(
@@ -155,10 +155,10 @@ class _AdminScreenState extends State<AdminScreen> {
           CircleAvatar(
             radius: 14,
             backgroundColor: AppColors.accent,
-            child: Text(
-              user?.nombre.isNotEmpty == true ? user!.nombre[0].toUpperCase() : '?',
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
-            ),
+              child: Text(
+                user?.nombre.isNotEmpty == true ? user!.nombre[0].toUpperCase() : '?',
+                style: TextStyle(color: cs.onPrimary, fontWeight: FontWeight.bold, fontSize: 12),
+              ),
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -356,13 +356,13 @@ class _AdminScreenState extends State<AdminScreen> {
             icon: meta.isBackingUp
                 ? const SizedBox(
                     width: 16, height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    child: CircularProgressIndicator(strokeWidth: 2, color: cs.onPrimary),
                   )
                 : const Icon(Icons.backup_rounded, size: 18),
             label: Text(meta.isBackingUp ? 'Creando respaldo...' : 'Crear respaldo'),
             style: FilledButton.styleFrom(
               backgroundColor: const Color(0xFF22C55E),
-              foregroundColor: Colors.white,
+              foregroundColor: cs.onPrimary,
               padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
@@ -456,14 +456,14 @@ class _AdminScreenState extends State<AdminScreen> {
             Text('Restaurar respaldo', style: TextStyle(fontSize: 16)),
           ],
         ),
-        content: const Text(
+        content: Text(
           'Se reemplazarán TODOS los datos actuales.\n\n¿Estás seguro?',
-          style: TextStyle(color: Colors.white70, fontSize: 13),
+          style: TextStyle(color: cs(context).onSurface.withValues(alpha: 0.7), fontSize: 13),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancelar', style: TextStyle(color: Colors.white54)),
+            child: Text('Cancelar', style: TextStyle(color: cs(context).onSurfaceVariant)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),

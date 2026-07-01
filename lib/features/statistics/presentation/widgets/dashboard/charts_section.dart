@@ -400,8 +400,8 @@ class _PieChart extends StatelessWidget {
                           color: _color(i),
                           radius: 50,
                           title: '${charts.typeValues[i].toInt()}',
-                          titleStyle: const TextStyle(
-                            color: Colors.white,
+                          titleStyle: TextStyle(
+                            color: Theme.of(context).colorScheme.surface,
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
                           ),

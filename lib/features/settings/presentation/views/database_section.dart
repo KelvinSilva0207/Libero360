@@ -92,29 +92,30 @@ class DatabaseSection extends StatelessWidget {
   }
 
   Future<void> _importData(BuildContext context, SettingsViewModel vm) async {
+    final cs = Theme.of(context).colorScheme;
     if (!context.mounted) return;
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: cs(context).surfaceContainerHighest,
+        backgroundColor: cs.surfaceContainerHighest,
         title: Row(
           children: [
             const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 22),
             const SizedBox(width: 8),
             Text('Importar datos',
                 style: TextStyle(
-                    color: cs(context).onSurface, fontSize: 16)),
+                    color: cs.onSurface, fontSize: 16)),
           ],
         ),
-        content: const Text(
+        content: Text(
           'Se reemplazarán TODOS los datos actuales.\n\n¿Estás seguro?',
-          style: TextStyle(color: Colors.white70, fontSize: 13),
+          style: TextStyle(color: cs.onSurface.withValues(alpha: 0.7), fontSize: 13),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancelar',
-                style: TextStyle(color: Colors.white54)),
+            child: Text('Cancelar',
+                style: TextStyle(color: cs.onSurfaceVariant)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
@@ -230,6 +231,7 @@ class _OrphanCardState extends State<_OrphanCard> {
   }
 
   Future<void> _assignAll() async {
+    final cs = Theme.of(context).colorScheme;
     final profileVm = context.read<ProfileViewModel>();
     final profile = profileVm.currentProfile;
     if (profile == null) return;
@@ -239,15 +241,15 @@ class _OrphanCardState extends State<_OrphanCard> {
         backgroundColor: Theme.of(ctx).colorScheme.surfaceContainerHighest,
         title: const Text('Asignar datos',
             style: TextStyle(fontSize: 16)),
-        content: const Text(
+        content: Text(
           'Todos los datos sin perfil serán asignados al perfil activo.\n\n¿Continuar?',
-          style: TextStyle(color: Colors.white70, fontSize: 13),
+          style: TextStyle(color: cs.onSurface.withValues(alpha: 0.7), fontSize: 13),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancelar',
-                style: TextStyle(color: Colors.white54)),
+            child: Text('Cancelar',
+                style: TextStyle(color: cs.onSurfaceVariant)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
@@ -332,17 +334,17 @@ class _OrphanCardState extends State<_OrphanCard> {
                 child: ElevatedButton.icon(
                   onPressed: _assigning ? null : _assignAll,
                   icon: _assigning
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 16,
                           height: 16,
                           child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.white),
+                              strokeWidth: 2, color: cs.onPrimary),
                         )
                       : const Icon(Icons.swap_horiz_rounded, size: 18),
                   label: const Text('Asignar todos al perfil activo'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.accent,
-                    foregroundColor: Colors.white,
+                    foregroundColor: cs.onPrimary,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12)),

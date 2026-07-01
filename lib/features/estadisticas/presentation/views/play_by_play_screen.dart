@@ -42,16 +42,17 @@ class _PlayByPlayContent extends StatelessWidget {
   }
 
   Widget _buildHeader(BuildContext context, PlayByPlayViewModel vm) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest,
         border: Border(bottom: BorderSide(color: AppColors.border)),
       ),
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
+            icon: Icon(Icons.arrow_back, color: cs.onSurface, size: 20),
             onPressed: () => Navigator.pop(context),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
@@ -59,10 +60,10 @@ class _PlayByPlayContent extends StatelessWidget {
           const SizedBox(width: 8),
           const Icon(Icons.bar_chart_rounded, color: AppColors.accent, size: 20),
           const SizedBox(width: 10),
-          const Expanded(
+          Expanded(
             child: Text(
               'Play-by-Play',
-              style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+              style: TextStyle(color: cs.onSurface, fontSize: 16, fontWeight: FontWeight.bold),
             ),
           ),
           if (vm.hayPartidoActivo) ...[
@@ -71,7 +72,7 @@ class _PlayByPlayContent extends StatelessWidget {
                 vm.estadoPartido == EstadoPartido.pausado
                     ? Icons.play_arrow
                     : Icons.pause,
-                color: Colors.white,
+                color: cs.onSurface,
               ),
               tooltip: vm.estadoPartido == EstadoPartido.pausado ? 'Reanudar' : 'Pausar',
               onPressed: () {
@@ -94,6 +95,7 @@ class _PlayByPlayContent extends StatelessWidget {
   }
 
   Widget _buildNuevoPartido(BuildContext context, PlayByPlayViewModel vm) {
+    final cs = Theme.of(context).colorScheme;
     final controllerLocal = TextEditingController();
     final controllerVisitante = TextEditingController();
 
@@ -107,17 +109,17 @@ class _PlayByPlayContent extends StatelessWidget {
             children: [
               const Icon(Icons.sports_volleyball, size: 80, color: AppColors.accent),
               const SizedBox(height: 24),
-              const Text(
+              Text(
                 'Nuevo Partido',
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
+                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: cs.onSurface),
               ),
               const SizedBox(height: 32),
               TextField(
                 controller: controllerLocal,
-                style: const TextStyle(color: Colors.white),
+                style: TextStyle(color: cs.onSurface),
                 decoration: InputDecoration(
                   labelText: 'Equipo Local',
-                  labelStyle: const TextStyle(color: Colors.white54),
+                  labelStyle: TextStyle(color: cs.onSurfaceVariant),
                   prefixIcon: const Icon(Icons.home, color: AppColors.primary, size: 20),
                   filled: true,
                   fillColor: AppColors.surfaceLight,
@@ -127,10 +129,10 @@ class _PlayByPlayContent extends StatelessWidget {
               const SizedBox(height: 16),
               TextField(
                 controller: controllerVisitante,
-                style: const TextStyle(color: Colors.white),
+                style: TextStyle(color: cs.onSurface),
                 decoration: InputDecoration(
                   labelText: 'Equipo Visitante',
-                  labelStyle: const TextStyle(color: Colors.white54),
+                  labelStyle: TextStyle(color: cs.onSurfaceVariant),
                   prefixIcon: const Icon(Icons.sports_score, color: AppColors.primary, size: 20),
                   filled: true,
                   fillColor: AppColors.surfaceLight,
@@ -152,7 +154,7 @@ class _PlayByPlayContent extends StatelessWidget {
                   },
                   style: FilledButton.styleFrom(
                     backgroundColor: AppColors.accent,
-                    foregroundColor: Colors.white,
+                    foregroundColor: cs.onPrimary,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   child: const Text('INICIAR PARTIDO', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
@@ -170,11 +172,12 @@ class _PlayByPlayContent extends StatelessWidget {
   }
 
   Widget _buildMarcador(BuildContext context, PlayByPlayViewModel vm) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        border: const Border(bottom: BorderSide(color: Colors.white12)),
+        color: cs.surfaceContainerHighest,
+        border: Border(bottom: BorderSide(color: cs.outlineVariant)),
       ),
       child: Column(
         children: [
@@ -199,7 +202,7 @@ class _PlayByPlayContent extends StatelessWidget {
                       vm.partidoActual?.equipoLocal ?? 'Local',
                       style: TextStyle(
                         fontSize: 14, fontWeight: FontWeight.bold,
-                        color: vm.esEquipoLocal ? AppColors.accent : Colors.white70,
+                        color: vm.esEquipoLocal ? AppColors.accent : cs.onSurface.withValues(alpha: 0.7),
                       ),
                       textAlign: TextAlign.center,
                       maxLines: 1, overflow: TextOverflow.ellipsis,
@@ -209,19 +212,19 @@ class _PlayByPlayContent extends StatelessWidget {
                       vm.partidoActual?.puntosLocal.toString() ?? '0',
                       style: TextStyle(
                         fontSize: 48, fontWeight: FontWeight.bold,
-                        color: vm.esEquipoLocal ? AppColors.accent : Colors.white,
+                        color: vm.esEquipoLocal ? AppColors.accent : cs.onSurface,
                       ),
                     ),
                     Text(
                       '${vm.partidoActual?.setsLocal ?? 0} sets',
-                      style: const TextStyle(fontSize: 12, color: Colors.white38),
+                      style: TextStyle(fontSize: 12, color: cs.onSurface.withValues(alpha: 0.6)),
                     ),
                   ],
                 ),
               ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text('-', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white.withValues(alpha: 0.3))),
+                child: Text('-', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: cs.onSurface.withValues(alpha: 0.3))),
               ),
               Expanded(
                 child: Column(
@@ -230,7 +233,7 @@ class _PlayByPlayContent extends StatelessWidget {
                       vm.partidoActual?.equipoVisitante ?? 'Visitante',
                       style: TextStyle(
                         fontSize: 14, fontWeight: FontWeight.bold,
-                        color: !vm.esEquipoLocal ? AppColors.accent : Colors.white70,
+                        color: !vm.esEquipoLocal ? AppColors.accent : cs.onSurface.withValues(alpha: 0.7),
                       ),
                       textAlign: TextAlign.center,
                       maxLines: 1, overflow: TextOverflow.ellipsis,
@@ -240,12 +243,12 @@ class _PlayByPlayContent extends StatelessWidget {
                       vm.partidoActual?.puntosVisitante.toString() ?? '0',
                       style: TextStyle(
                         fontSize: 48, fontWeight: FontWeight.bold,
-                        color: !vm.esEquipoLocal ? AppColors.accent : Colors.white,
+                        color: !vm.esEquipoLocal ? AppColors.accent : cs.onSurface,
                       ),
                     ),
                     Text(
                       '${vm.partidoActual?.setsVisitante ?? 0} sets',
-                      style: const TextStyle(fontSize: 12, color: Colors.white38),
+                      style: TextStyle(fontSize: 12, color: cs.onSurface.withValues(alpha: 0.6)),
                     ),
                   ],
                 ),
@@ -290,6 +293,7 @@ class _PlayByPlayContent extends StatelessWidget {
   }
 
   Widget _buildEquipoTab(BuildContext context, PlayByPlayViewModel vm, {required bool esLocal, required String nombre}) {
+    final cs = Theme.of(context).colorScheme;
     final isSelected = vm.esEquipoLocal == esLocal;
     return GestureDetector(
       onTap: () => vm.cambiarEquipo(esLocal),
@@ -302,13 +306,14 @@ class _PlayByPlayContent extends StatelessWidget {
         child: Text(
           nombre,
           textAlign: TextAlign.center,
-          style: TextStyle(fontWeight: FontWeight.bold, color: isSelected ? Colors.white : Colors.white54, fontSize: 13),
+          style: TextStyle(fontWeight: FontWeight.bold, color: isSelected ? cs.onPrimary : cs.onSurfaceVariant, fontSize: 13),
         ),
       ),
     );
   }
 
   Widget _buildJugadores(BuildContext context, PlayByPlayViewModel vm) {
+    final cs = Theme.of(context).colorScheme;
     final jugadores = vm.esEquipoLocal ? vm.jugadoresLocal : vm.jugadoresVisitante;
 
     if (jugadores.isEmpty) {
@@ -316,9 +321,9 @@ class _PlayByPlayContent extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.people_outline, size: 64, color: Colors.white24),
+            Icon(Icons.people_outline, size: 64, color: cs.onSurface.withValues(alpha: 0.38)),
             const SizedBox(height: 16),
-            const Text('No hay jugadores configurados', style: TextStyle(color: Colors.white54)),
+            Text('No hay jugadores configurados', style: TextStyle(color: cs.onSurfaceVariant)),
             const SizedBox(height: 16),
             FilledButton.icon(
               onPressed: () => _agregarJugadorDemo(vm),
@@ -350,21 +355,21 @@ class _PlayByPlayContent extends StatelessWidget {
             decoration: BoxDecoration(
               color: isSelected ? AppColors.accent : AppColors.surfaceLight,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: isSelected ? AppColors.accent : Colors.white12, width: isSelected ? 2 : 1),
+              border: Border.all(color: isSelected ? AppColors.accent : cs.outlineVariant, width: isSelected ? 2 : 1),
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
                   jugador.numero.toString(),
-                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: isSelected ? Colors.white : AppColors.accent),
+                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: isSelected ? cs.onPrimary : AppColors.accent),
                 ),
                 const SizedBox(height: 4),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 4),
                   child: Text(
                     NameFormatter.playerDisplayName(jugador),
-                    style: TextStyle(fontSize: 10, color: isSelected ? Colors.white70 : Colors.white38),
+                    style: TextStyle(fontSize: 10, color: isSelected ? cs.onSurface.withValues(alpha: 0.7) : cs.onSurface.withValues(alpha: 0.6)),
                     maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center,
                   ),
                 ),
@@ -377,11 +382,12 @@ class _PlayByPlayContent extends StatelessWidget {
   }
 
   Widget _buildAcciones(BuildContext context, PlayByPlayViewModel vm) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        border: const Border(top: BorderSide(color: Colors.white12)),
+        color: cs.surfaceContainerHighest,
+        border: Border(top: BorderSide(color: cs.outlineVariant)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -399,15 +405,15 @@ class _PlayByPlayContent extends StatelessWidget {
                   CircleAvatar(
                     radius: 16,
                     backgroundColor: AppColors.accent,
-                    child: Text(vm.jugadorSeleccionado?.numero?.toString() ?? '—', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                    child: Text(vm.jugadorSeleccionado?.numero?.toString() ?? '—', style: TextStyle(color: cs.onPrimary, fontWeight: FontWeight.bold, fontSize: 12)),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(NameFormatter.playerDisplayName(vm.jugadorSeleccionado!), style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13)),
-                        Text(_posicionToString(vm.jugadorSeleccionado!.posicion), style: const TextStyle(fontSize: 11, color: Colors.white54)),
+                        Text(NameFormatter.playerDisplayName(vm.jugadorSeleccionado!), style: TextStyle(fontWeight: FontWeight.bold, color: cs.onSurface, fontSize: 13)),
+                        Text(_posicionToString(vm.jugadorSeleccionado!.posicion), style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
                       ],
                     ),
                   ),
@@ -425,7 +431,7 @@ class _PlayByPlayContent extends StatelessWidget {
               _accionBtn(icon: Icons.wifi_tethering, label: 'Saque -', color: Colors.red, onPressed: vm.jugadorSeleccionado != null ? () => vm.registrarSaque(esPositivo: false) : null),
               _accionBtn(icon: Icons.block, label: 'Bloqueo', color: Colors.orange, onPressed: vm.jugadorSeleccionado != null ? () => vm.registrarBloqueo(esPositivo: true) : null),
               _accionBtn(icon: Icons.pan_tool, label: 'Defensa', color: AppColors.primary, onPressed: vm.jugadorSeleccionado != null ? () => vm.registrarDefensa() : null),
-              _accionBtn(icon: Icons.error_outline, label: 'Error Rival', color: Colors.grey, onPressed: () => vm.registrarErrorContrario()),
+              _accionBtn(icon: Icons.error_outline, label: 'Error Rival', color: cs.onSurfaceVariant, onPressed: () => vm.registrarErrorContrario()),
             ],
           ),
         ],
@@ -461,14 +467,15 @@ class _PlayByPlayContent extends StatelessWidget {
   }
 
   void _mostrarDialogoFinalizar(BuildContext context, PlayByPlayViewModel vm) {
+    final cs = Theme.of(context).colorScheme;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        title: const Text('Finalizar Partido', style: TextStyle(color: Colors.white)),
-        content: const Text('¿Estás seguro de que quieres finalizar el partido? Esta acción no se puede deshacer.', style: TextStyle(color: Colors.white70)),
+        backgroundColor: cs.surfaceContainerHighest,
+        title: Text('Finalizar Partido', style: TextStyle(color: cs.onSurface)),
+        content: Text('¿Estás seguro de que quieres finalizar el partido? Esta acción no se puede deshacer.', style: TextStyle(color: cs.onSurface.withValues(alpha: 0.7))),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar', style: TextStyle(color: Colors.white54))),
+          TextButton(onPressed: () => Navigator.pop(context), child: Text('Cancelar', style: TextStyle(color: cs.onSurfaceVariant))),
           FilledButton(
             onPressed: () {
               Navigator.pop(context);

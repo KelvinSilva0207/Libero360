@@ -89,13 +89,14 @@ class _AthleteEditScreenState extends State<AthleteEditScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: cs.surface,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
-        title: const Text('Editar Atleta', style: TextStyle(color: Colors.white, fontSize: 16)),
+        backgroundColor: cs.surfaceContainerHighest,
+        title: Text('Editar Atleta', style: TextStyle(color: cs.onSurface, fontSize: 16)),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: Icon(Icons.arrow_back, color: cs.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
@@ -135,11 +136,11 @@ class _AthleteEditScreenState extends State<AthleteEditScreen> {
             _buildTextField(_condicionFisicaCtrl, 'Condición física', Icons.fitness_center_rounded),
             const SizedBox(height: 10),
             SwitchListTile(
-              title: const Text('Capitana', style: TextStyle(color: Colors.white, fontSize: 14)),
+              title: Text('Capitana', style: TextStyle(color: cs.onSurface, fontSize: 14)),
               value: _esCapitan,
               onChanged: (v) => setState(() => _esCapitan = v),
               activeColor: AppColors.accent,
-              secondary: Icon(Icons.star_rounded, color: _esCapitan ? AppColors.accent : Colors.white24),
+              secondary: Icon(Icons.star_rounded, color: _esCapitan ? AppColors.accent : cs.onSurface.withValues(alpha: 0.38)),
             ),
             if (_fotoUrlCtrl.text.isNotEmpty) ...[
               const SizedBox(height: 20),
@@ -156,9 +157,10 @@ class _AthleteEditScreenState extends State<AthleteEditScreen> {
   }
 
   Widget _buildTextField(TextEditingController ctrl, String label, IconData icon, {String? Function(String?)? validator, TextInputType? keyboardType, List<TextInputFormatter>? inputFormatters}) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: cs.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: AppColors.border),
       ),
@@ -167,7 +169,7 @@ class _AthleteEditScreenState extends State<AthleteEditScreen> {
         validator: validator,
         keyboardType: keyboardType,
         inputFormatters: inputFormatters,
-        style: const TextStyle(color: Colors.white, fontSize: 14),
+        style: TextStyle(color: cs.onSurface, fontSize: 14),
         decoration: InputDecoration(
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
@@ -180,9 +182,10 @@ class _AthleteEditScreenState extends State<AthleteEditScreen> {
   }
 
   Widget _buildDropdown<T>(String label, T value, List<T> items, ValueChanged<T> onChanged, String Function(T) labelFn) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: cs.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: AppColors.border),
       ),
@@ -194,8 +197,8 @@ class _AthleteEditScreenState extends State<AthleteEditScreen> {
           labelStyle: TextStyle(color: AppColors.textSecondary, fontSize: 13),
           prefixIcon: Icon(Icons.swap_vert_rounded, size: 18, color: AppColors.textSecondary),
         ),
-        style: const TextStyle(color: Colors.white, fontSize: 14),
-        dropdownColor: AppColors.surface,
+        style: TextStyle(color: cs.onSurface, fontSize: 14),
+        dropdownColor: cs.surfaceContainerHighest,
         items: items.map((v) => DropdownMenuItem(value: v, child: Text(labelFn(v)))).toList(),
         onChanged: (v) { if (v != null) onChanged(v); },
       ),
@@ -203,16 +206,17 @@ class _AthleteEditScreenState extends State<AthleteEditScreen> {
   }
 
   Widget _buildFechaPicker() {
+    final cs = Theme.of(context).colorScheme;
     final edad = DateTime.now().year - _fechaNacimiento.year;
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: cs.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: AppColors.border),
       ),
       child: ListTile(
         leading: const Icon(Icons.cake_rounded, size: 18, color: AppColors.textSecondary),
-        title: Text('${_fechaNacimiento.day}/${_fechaNacimiento.month}/${_fechaNacimiento.year}', style: const TextStyle(color: Colors.white, fontSize: 14)),
+        title: Text('${_fechaNacimiento.day}/${_fechaNacimiento.month}/${_fechaNacimiento.year}', style: TextStyle(color: cs.onSurface, fontSize: 14)),
         subtitle: Text('$edad años', style: const TextStyle(color: AppColors.textTertiary, fontSize: 11)),
         trailing: const Icon(Icons.edit_calendar_rounded, color: AppColors.textSecondary, size: 18),
         onTap: () async {
@@ -222,7 +226,7 @@ class _AthleteEditScreenState extends State<AthleteEditScreen> {
             firstDate: DateTime(1970),
             lastDate: DateTime.now(),
             builder: (ctx, child) => Theme(data: Theme.of(ctx).copyWith(
-              colorScheme: const ColorScheme.dark(primary: AppColors.accent, surface: AppColors.surface),
+              colorScheme: ColorScheme.dark(primary: AppColors.accent, surface: cs.surfaceContainerHighest),
             ), child: child!),
           );
           if (picked != null) setState(() => _fechaNacimiento = picked);

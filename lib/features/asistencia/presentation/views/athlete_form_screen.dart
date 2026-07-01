@@ -103,13 +103,14 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Scaffold(
       backgroundColor: AppColors.surfaceDark,
       appBar: AppBar(
         backgroundColor: AppColors.surfaceLight,
-        title: const Text('Nuevo Atleta', style: TextStyle(color: Colors.white)),
+        title: Text('Nuevo Atleta', style: TextStyle(color: cs.onSurface)),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: Icon(Icons.arrow_back, color: cs.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -166,12 +167,12 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
               FilledButton.icon(
                 onPressed: _saving ? null : _save,
                 icon: _saving
-                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    ? SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: cs.onPrimary))
                     : const Icon(Icons.save),
                 label: Text(_saving ? 'Guardando...' : 'Guardar Atleta'),
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.accent,
-                  foregroundColor: Colors.white,
+                  foregroundColor: cs.onPrimary,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
@@ -204,15 +205,16 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
     List<TextInputFormatter>? inputFormatters,
     String? Function(String?)? validator,
   }) {
+    final cs = Theme.of(context).colorScheme;
     return TextFormField(
       controller: ctrl,
       validator: validator,
       keyboardType: keyboardType,
       inputFormatters: inputFormatters,
-      style: const TextStyle(color: Colors.white),
+      style: TextStyle(color: cs.onSurface),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(color: Colors.white54),
+        labelStyle: TextStyle(color: cs.onSurfaceVariant),
         prefixIcon: Padding(
           padding: const EdgeInsetsDirectional.only(start: 12, end: 8),
           child: Icon(icon, color: AppColors.primary, size: 20),
@@ -235,14 +237,15 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
   }
 
   Widget _buildDateField() {
+    final cs = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: _pickDate,
       child: AbsorbPointer(
         child: TextFormField(
-          style: const TextStyle(color: Colors.white),
+          style: TextStyle(color: cs.onSurface),
           decoration: InputDecoration(
             labelText: 'Fecha de Nacimiento ($_edadCalculada)',
-            labelStyle: const TextStyle(color: Colors.white54),
+            labelStyle: TextStyle(color: cs.onSurfaceVariant),
             prefixIcon: const Padding(
               padding: EdgeInsetsDirectional.only(start: 12, end: 8),
               child: Icon(Icons.cake, color: AppColors.primary, size: 20),
@@ -254,7 +257,7 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(color: AppColors.accent),
             ),
-            suffixIcon: const Icon(Icons.calendar_today, color: Colors.white38, size: 18),
+            suffixIcon: Icon(Icons.calendar_today, color: cs.onSurface.withValues(alpha: 0.6), size: 18),
             prefixIconConstraints: const BoxConstraints(minWidth: 44, minHeight: 20),
             contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
           ),
@@ -269,13 +272,14 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
   }
 
   Widget _buildPosicionDropdown() {
+    final cs = Theme.of(context).colorScheme;
     return DropdownButtonFormField<Posicion>(
       value: _posicion,
       dropdownColor: AppColors.surfaceLight,
-      style: const TextStyle(color: Colors.white),
+      style: TextStyle(color: cs.onSurface),
       decoration: InputDecoration(
         labelText: 'Posición Principal',
-        labelStyle: const TextStyle(color: Colors.white54),
+        labelStyle: TextStyle(color: cs.onSurfaceVariant),
         prefixIcon: const Padding(
           padding: EdgeInsetsDirectional.only(start: 12, end: 8),
           child: Icon(Icons.sports, color: AppColors.primary, size: 20),
@@ -299,13 +303,14 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
   }
 
   Widget _buildSaludDropdown() {
+    final cs = Theme.of(context).colorScheme;
     return DropdownButtonFormField<EstadoSalud>(
       value: _estadoSalud,
       dropdownColor: AppColors.surfaceLight,
-      style: const TextStyle(color: Colors.white),
+      style: TextStyle(color: cs.onSurface),
       decoration: InputDecoration(
         labelText: 'Estado de Salud',
-        labelStyle: const TextStyle(color: Colors.white54),
+        labelStyle: TextStyle(color: cs.onSurfaceVariant),
         prefixIcon: const Padding(
           padding: EdgeInsetsDirectional.only(start: 12, end: 8),
           child: Icon(Icons.health_and_safety, color: AppColors.primary, size: 20),
@@ -329,6 +334,7 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
   }
 
   Widget _buildSwitchRow(IconData icon, String label, bool value, ValueChanged<bool> onChanged) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
@@ -339,7 +345,7 @@ class _AthleteFormScreenState extends State<AthleteFormScreen> {
         children: [
           Icon(icon, color: AppColors.primary, size: 20),
           const SizedBox(width: 12),
-          Text(label, style: const TextStyle(color: Colors.white, fontSize: 14)),
+          Text(label, style: TextStyle(color: cs.onSurface, fontSize: 14)),
           const Spacer(),
           Switch(
             value: value,

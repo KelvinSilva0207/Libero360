@@ -52,20 +52,21 @@ class _PlayerDetailScreenState extends State<PlayerDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final p = widget.player;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: cs.surface,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
-        title: Text(NameFormatter.playerFullName(p), style: const TextStyle(color: Colors.white, fontSize: 16)),
+        backgroundColor: cs.surfaceContainerHighest,
+        title: Text(NameFormatter.playerFullName(p), style: TextStyle(color: cs.onSurface, fontSize: 16)),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: Icon(Icons.arrow_back, color: cs.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.edit_rounded, color: Colors.white54, size: 16),
+            icon: Icon(Icons.edit_rounded, color: cs.onSurfaceVariant, size: 16),
             onPressed: () async {
               final result = await context.pushSlide<bool>(AthleteEditScreen(player: p));
               if (result == true) {
@@ -104,10 +105,11 @@ class _PlayerDetailScreenState extends State<PlayerDetailScreen> {
   }
 
   Widget _headerCard(Player p) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: cs.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border),
       ),
@@ -129,7 +131,7 @@ class _PlayerDetailScreenState extends State<PlayerDetailScreen> {
               child: Center(
                 child: Text(
                   '${p.numero ?? '-'}',
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 26),
+                  style: TextStyle(color: cs.onPrimary, fontWeight: FontWeight.bold, fontSize: 26),
                 ),
               ),
             ),
@@ -141,7 +143,7 @@ class _PlayerDetailScreenState extends State<PlayerDetailScreen> {
               children: [
                 Row(
                   children: [
-                    Text(NameFormatter.playerFullName(p), style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                    Text(NameFormatter.playerFullName(p), style: TextStyle(color: cs.onSurface, fontSize: 18, fontWeight: FontWeight.bold)),
                     if (p.esCapitan) ...[
                       const SizedBox(width: 6),
                       const Icon(Icons.star, color: AppColors.accent, size: 18),
@@ -186,10 +188,11 @@ class _PlayerDetailScreenState extends State<PlayerDetailScreen> {
   }
 
   Widget _infoGrid(Player p) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: cs.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.border),
       ),
@@ -214,6 +217,7 @@ class _PlayerDetailScreenState extends State<PlayerDetailScreen> {
   }
 
   Widget _infoItem(IconData icon, String label, String value) {
+    final cs = Theme.of(context).colorScheme;
     return Expanded(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -228,7 +232,7 @@ class _PlayerDetailScreenState extends State<PlayerDetailScreen> {
           const SizedBox(height: 4),
           Text(
             value,
-            style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+            style: TextStyle(color: cs.onSurface, fontSize: 14, fontWeight: FontWeight.w500),
           ),
         ],
       ),
@@ -236,6 +240,7 @@ class _PlayerDetailScreenState extends State<PlayerDetailScreen> {
   }
 
   Widget _attendanceCard() {
+    final cs = Theme.of(context).colorScheme;
     final pctColor = _attendancePercentage >= 80
         ? const Color(0xFF22C55E)
         : _attendancePercentage >= 50
@@ -244,7 +249,7 @@ class _PlayerDetailScreenState extends State<PlayerDetailScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: cs.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.border),
       ),
@@ -265,7 +270,7 @@ class _PlayerDetailScreenState extends State<PlayerDetailScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Asistencia', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+                Text('Asistencia', style: TextStyle(color: cs.onSurface, fontSize: 14, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 2),
                 Text('$_attendancePresent de $_attendanceTotal entrenos', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
                 const SizedBox(height: 4),
@@ -287,21 +292,22 @@ class _PlayerDetailScreenState extends State<PlayerDetailScreen> {
   }
 
   Widget _statsCard(PlayerStats stats) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: cs.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.bar_chart_rounded, color: AppColors.accent, size: 16),
-              SizedBox(width: 8),
-              Text('Estadísticas', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
+              const Icon(Icons.bar_chart_rounded, color: AppColors.accent, size: 16),
+              const SizedBox(width: 8),
+              Text('Estadísticas', style: TextStyle(color: cs.onSurface, fontSize: 15, fontWeight: FontWeight.bold)),
             ],
           ),
           const SizedBox(height: 16),
@@ -317,7 +323,7 @@ class _PlayerDetailScreenState extends State<PlayerDetailScreen> {
             children: [
               _statItem('Saque', '${stats.saquesDirectos}', const Color(0xFF3B82F6)),
               _statItem('Errores', '${stats.errores}', const Color(0xFFEF4444)),
-              _statItem('Efect.', '${stats.porcentajeEfectividad.toStringAsFixed(0)}%', Colors.white),
+              _statItem('Efect.', '${stats.porcentajeEfectividad.toStringAsFixed(0)}%', cs.onSurface),
             ],
           ),
         ],
@@ -354,10 +360,11 @@ class _PlayerDetailScreenState extends State<PlayerDetailScreen> {
   }
 
   Widget _positionBadges(Player p) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: cs.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.border),
       ),

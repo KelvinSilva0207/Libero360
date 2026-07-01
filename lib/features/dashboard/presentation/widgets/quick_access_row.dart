@@ -17,34 +17,32 @@ class QuickAccessRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _sectionLabel('Accesos Rápidos', isDark),
-            const SizedBox(height: 14),
-            SizedBox(
-              height: 80,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: _items.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 12),
-                itemBuilder: (context, i) {
-                  final item = _items[i];
-                  return _quickButton(
-                    icon: item.icon,
-                    label: item.label,
-                    color: item.color,
-                    onTap: () {
-                      context.pushSlide(item.pageBuilder());
-                    },
-                  );
-                },
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _sectionLabel('Accesos Rápidos', isDark),
+          const SizedBox(height: 10),
+          SizedBox(
+            height: 72,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: _items.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 10),
+              itemBuilder: (context, i) {
+                final item = _items[i];
+                return _quickButton(
+                  icon: item.icon,
+                  label: item.label,
+                  color: item.color,
+                  onTap: () => context.pushSlide(item.pageBuilder()),
+                );
+              },
             ),
-          ),    // close SizedBox
-        ],      // close Column children
-      ),        // close Column
-    );          // close Padding
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _quickButton({
@@ -65,7 +63,7 @@ class QuickAccessRow extends StatelessWidget {
   static final _items = [
     _QuickItem('👥', 'Atletas', AppColors.primary, () => const AthleteListScreen()),
     _QuickItem('🏐', 'Partido', AppColors.accent, () => const PlayByPlayScreen()),
-    _QuickItem('📈', 'Estadísticas', AppColors.success, () => const StatisticsScreen()),
+    _QuickItem('📈', 'Stats', AppColors.success, () => const StatisticsScreen()),
     _QuickItem('📅', 'Asistencia', AppColors.info, () => const AttendanceScreen()),
     _QuickItem('📊', 'Analytics', AppColors.info, () => const AttendanceAnalyticsScreen()),
     _QuickItem('📄', 'PDF', AppColors.info, () => const PdfExportScreen()),
@@ -76,7 +74,7 @@ class QuickAccessRow extends StatelessWidget {
     return Text(
       text.toUpperCase(),
       style: TextStyle(
-        fontSize: 12,
+        fontSize: 11,
         fontWeight: FontWeight.w700,
         color: isDark ? AppColors.textSecondary : AppColors.textTertiary,
         letterSpacing: 1.5,
@@ -116,6 +114,7 @@ class _QuickButtonWidgetState extends State<_QuickButtonWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
@@ -128,11 +127,11 @@ class _QuickButtonWidgetState extends State<_QuickButtonWidget> {
           curve: Curves.easeOut,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
-            width: 64,
-            padding: const EdgeInsets.symmetric(vertical: 10),
+            width: 60,
+            padding: const EdgeInsets.symmetric(vertical: 8),
             decoration: BoxDecoration(
               color: widget.isDark ? AppColors.surface : AppColors.lightCard,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(14),
               border: Border.all(
                 color: widget.isDark ? AppColors.border : AppColors.lightBorder,
               ),
@@ -140,12 +139,12 @@ class _QuickButtonWidgetState extends State<_QuickButtonWidget> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(widget.icon, style: const TextStyle(fontSize: 22)),
-                const SizedBox(height: 4),
+                Text(widget.icon, style: const TextStyle(fontSize: 20)),
+                const SizedBox(height: 3),
                 Text(
                   widget.label,
                   style: TextStyle(
-                    fontSize: 10,
+                    fontSize: 9,
                     fontWeight: FontWeight.w600,
                     color: widget.isDark ? AppColors.textSecondary : AppColors.textTertiary,
                   ),

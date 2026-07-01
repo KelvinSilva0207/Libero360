@@ -22,16 +22,17 @@ class TeamStatusSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final bg = isDark ? AppColors.surface : AppColors.lightCard;
     final borderClr = isDark ? AppColors.border : AppColors.lightBorder;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
       child: Container(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: bg,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(color: borderClr),
           boxShadow: [
             BoxShadow(
@@ -45,7 +46,7 @@ class TeamStatusSection extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _sectionLabel('Estado del Equipo', isDark),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             Row(
               children: [
                 Expanded(child: _StatusTileWidget(
@@ -56,7 +57,7 @@ class TeamStatusSection extends StatelessWidget {
                   isDark: isDark,
                   onTap: onMedicalTap,
                 )),
-                const SizedBox(width: 10),
+                const SizedBox(width: 8),
                 Expanded(child: _StatusTileWidget(
                   icon: '🚫',
                   label: 'Ausencias',
@@ -67,7 +68,7 @@ class TeamStatusSection extends StatelessWidget {
                 )),
               ],
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
             Row(
               children: [
                 Expanded(child: _StatusTileWidget(
@@ -78,7 +79,7 @@ class TeamStatusSection extends StatelessWidget {
                   isDark: isDark,
                   onTap: onStreakTap,
                 )),
-                const SizedBox(width: 10),
+                const SizedBox(width: 8),
                 Expanded(child: _StatusTileWidget(
                   icon: '⭐',
                   label: 'MVP actual',
@@ -99,7 +100,7 @@ class TeamStatusSection extends StatelessWidget {
     return Text(
       text.toUpperCase(),
       style: TextStyle(
-        fontSize: 12,
+        fontSize: 11,
         fontWeight: FontWeight.w700,
         color: isDark ? AppColors.textSecondary : AppColors.textTertiary,
         letterSpacing: 1.5,
@@ -134,7 +135,8 @@ class _StatusTileWidgetState extends State<_StatusTileWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final textPri = widget.isDark ? Colors.white : AppColors.textPrimary;
+    final cs = Theme.of(context).colorScheme;
+    final textPri = widget.isDark ? cs.onSurface : AppColors.textPrimary;
     final textSec = widget.isDark ? AppColors.textSecondary : AppColors.textTertiary;
 
     return MouseRegion(
@@ -147,10 +149,10 @@ class _StatusTileWidgetState extends State<_StatusTileWidget> {
           duration: const Duration(milliseconds: 200),
           transform: _isHovered ? Matrix4.diagonal3Values(1.03, 1.03, 1.0) : Matrix4.identity(),
           transformAlignment: Alignment.center,
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: widget.color.withValues(alpha: _isHovered ? 0.18 : 0.1),
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(12),
             boxShadow: _isHovered
                 ? [BoxShadow(
                     color: widget.color.withValues(alpha: 0.2),
@@ -162,19 +164,19 @@ class _StatusTileWidgetState extends State<_StatusTileWidget> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(widget.icon, style: const TextStyle(fontSize: 24)),
-              const SizedBox(height: 10),
+              Text(widget.icon, style: const TextStyle(fontSize: 22)),
+              const SizedBox(height: 8),
               Text(widget.value,
                   style: TextStyle(
                     fontWeight: FontWeight.w700,
-                    fontSize: 13,
+                    fontSize: 12,
                     color: textPri,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis),
-              const SizedBox(height: 2),
+              const SizedBox(height: 1),
               Text(widget.label,
-                  style: TextStyle(fontSize: 11, color: textSec)),
+                  style: TextStyle(fontSize: 10, color: textSec)),
             ],
           ),
         ),

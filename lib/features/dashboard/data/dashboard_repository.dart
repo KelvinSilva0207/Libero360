@@ -60,8 +60,9 @@ class DashboardRepository {
   }
 
   TeamInfo _buildTeamInfo({String? clubName, int clubMemberCount = 0, String? category, List<Player>? players}) {
+    LogService.instance.auto('🟡 _buildTeamInfo: clubName=$clubName', source: 'DashboardRepository');
     return TeamInfo(
-      name: clubName ?? 'Club Águilas',
+      name: clubName ?? 'Sin club seleccionado',
       category: category ?? 'Masculino',
       ageGroup: _deriveAgeGroup(players),
       memberCount: clubMemberCount,
@@ -69,9 +70,9 @@ class DashboardRepository {
   }
 
   String _deriveAgeGroup(List<Player>? players) {
-    if (players == null || players.isEmpty) return 'U17';
+    if (players == null || players.isEmpty) return '';
     final cats = players.map((p) => p.categoria).toSet().where((c) => c.isNotEmpty).toList()..sort();
-    if (cats.isEmpty) return 'U17';
+    if (cats.isEmpty) return '';
     if (cats.length == 1) return cats.first;
     return '${cats.first} - ${cats.last}';
   }

@@ -68,6 +68,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final isDark = context.watch<ThemeNotifier>().isDark;
     final bg = isDark ? AppColors.background : AppColors.lightBackground;
 
@@ -83,7 +84,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               switchOutCurve: Curves.easeIn,
               child: _buildBody(isDark),
             ),
-            _buildRefreshingIndicator(isDark),
+            _buildRefreshingIndicator(isDark, cs),
           ],
         ),
       ),
@@ -119,13 +120,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _buildActivityTimelineSection(isDark),
           _buildQuickAccessSection(isDark),
           _buildEmptyStates(isDark),
-          const SliverToBoxAdapter(child: SizedBox(height: 32)),
+          const SliverToBoxAdapter(child: SizedBox(height: 24)),
         ],
       ),
     );
   }
 
-  Widget _buildRefreshingIndicator(bool isDark) {
+  Widget _buildRefreshingIndicator(bool isDark, ColorScheme cs) {
     return ValueListenableBuilder<int>(
       valueListenable: context.read<DashboardViewModel>().skeletonSection,
       builder: (_, __, ___) {
@@ -146,8 +147,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 SizedBox(
-                  width: 14,
-                  height: 14,
+                  width: 14, height: 14,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
                     color: Colors.white.withValues(alpha: 0.9),
@@ -373,40 +373,41 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _emptyCard(bool isDark, String type) {
+    final cs = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
       child: Container(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: isDark ? AppColors.surface : AppColors.lightCard,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(color: isDark ? AppColors.border : AppColors.lightBorder),
         ),
         child: Column(
           children: [
-            Text(type == 'registerAthlete' ? '👥' : '🏐', style: const TextStyle(fontSize: 40)),
-            const SizedBox(height: 12),
+            Text(type == 'registerAthlete' ? '👥' : '🏐', style: const TextStyle(fontSize: 36)),
+            const SizedBox(height: 8),
             Text(
               type == 'registerAthlete' ? 'Aún no has registrado atletas' : 'No hay partidos registrados',
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: isDark ? Colors.white : AppColors.textPrimary),
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: isDark ? cs.onSurface : AppColors.textPrimary),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
             Text(
               type == 'registerAthlete' ? 'Comienza agregando tu primer atleta al equipo' : 'Crea tu primer partido para ver estadísticas',
-              style: TextStyle(fontSize: 12, color: isDark ? AppColors.textSecondary : AppColors.textTertiary),
+              style: TextStyle(fontSize: 11, color: isDark ? AppColors.textSecondary : AppColors.textTertiary),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             TextButton.icon(
               onPressed: type == 'registerAthlete'
                   ? () => context.pushSlide(const asis_athlete.AthleteListScreen())
                   : () => context.pushSlide(const PlayByPlayScreen()),
-              icon: Icon(type == 'registerAthlete' ? Icons.person_add_rounded : Icons.sports_volleyball_rounded, size: 18),
+              icon: Icon(type == 'registerAthlete' ? Icons.person_add_rounded : Icons.sports_volleyball_rounded, size: 16),
               label: Text(type == 'registerAthlete' ? 'Registrar atleta' : 'Crear partido'),
               style: TextButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
           ],
@@ -426,7 +427,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _errorState(bool isDark, {Key? key}) {
     final vm = context.read<DashboardViewModel>();
-    final textPri = isDark ? Colors.white : AppColors.textPrimary;
+    final cs = Theme.of(context).colorScheme;
+    final textPri = isDark ? cs.onSurface : AppColors.textPrimary;
     final textSec = isDark ? AppColors.textSecondary : AppColors.textTertiary;
     return Center(
       key: key,
@@ -437,13 +439,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
           children: [
             Icon(Icons.cloud_off_rounded, size: 48,
                 color: isDark ? AppColors.textTertiary : AppColors.lightTextTertiary),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             Text('Error al cargar',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: textPri)),
-            const SizedBox(height: 8),
-            Text(vm.error ?? '', style: TextStyle(fontSize: 12, color: textSec),
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: textPri)),
+            const SizedBox(height: 6),
+            Text(vm.error ?? '', style: TextStyle(fontSize: 11, color: textSec),
                 textAlign: TextAlign.center),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
             TextButton.icon(
               onPressed: _load,
               icon: const Icon(Icons.refresh_rounded),

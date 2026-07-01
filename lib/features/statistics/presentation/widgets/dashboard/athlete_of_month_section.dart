@@ -136,14 +136,14 @@ class _AthleteOfMonthSectionState extends State<AthleteOfMonthSection>
             color: AppColors.accent,
             borderRadius: BorderRadius.circular(8),
           ),
-          child: const Row(
+          child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.emoji_events, color: Colors.white, size: 16),
-              SizedBox(width: 6),
+              Icon(Icons.emoji_events, color: Theme.of(context).colorScheme.onPrimary, size: 16),
+              const SizedBox(width: 6),
               Text('ATLETA DEL MES',
                   style: TextStyle(
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onPrimary,
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 1.2)),
@@ -212,14 +212,14 @@ class _AthleteOfMonthSectionState extends State<AthleteOfMonthSection>
             color: AppColors.accent,
             borderRadius: BorderRadius.circular(14),
           ),
-          child: const Row(
+          child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.emoji_events, color: Colors.white, size: 18),
-              SizedBox(width: 4),
+              Icon(Icons.emoji_events, color: Theme.of(context).colorScheme.onPrimary, size: 18),
+              const SizedBox(width: 4),
               Text('#1',
                   style: TextStyle(
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onPrimary,
                       fontWeight: FontWeight.bold,
                       fontSize: 18)),
             ],
@@ -250,7 +250,7 @@ class _AthleteOfMonthSectionState extends State<AthleteOfMonthSection>
   }
 
   Widget _statsGrid(AthleteOfMonthData a) {
-    final bg = (widget.isDark ? Colors.white : Colors.black)
+    final bg = Theme.of(context).colorScheme.onSurface
         .withValues(alpha: 0.04);
     return Container(
       padding: const EdgeInsets.all(12),

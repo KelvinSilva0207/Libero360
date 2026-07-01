@@ -21,8 +21,9 @@ class _NotificationSheetContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final bg = isDark ? AppColors.surface : AppColors.lightCard;
-    final textPri = isDark ? Colors.white : AppColors.textPrimary;
+    final textPri = isDark ? cs.onSurface : AppColors.textPrimary;
     final textSec = isDark ? AppColors.textSecondary : AppColors.textTertiary;
 
     return Container(
@@ -56,97 +57,54 @@ class _NotificationSheetContent extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
-                const Text(
-                  '3 nuevas',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w600,
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    context.pushSlide(const NotificationsScreen());
+                  },
+                  child: Text(
+                    'Ver todas',
+                    style: TextStyle(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 16),
-          const Divider(height: 1),
+          const Divider(height: 1, color: Colors.white12),
           Expanded(
-            child: ListView.separated(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              itemCount: _notifications.length,
-              separatorBuilder: (_, __) => const Divider(height: 1),
-              itemBuilder: (_, i) {
-                final n = _notifications[i];
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: n.color.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Center(child: Text(n.icon, style: const TextStyle(fontSize: 16))),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              n.title,
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14,
-                                color: textPri,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              n.subtitle,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: textSec,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              n.timeAgo,
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: textSec,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 64,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      color: isDark ? AppColors.surfaceLight : AppColors.lightSurface,
+                      borderRadius: BorderRadius.circular(32),
+                    ),
+                    child: const Icon(Icons.notifications_none_rounded,
+                        size: 32, color: AppColors.textTertiary),
                   ),
-                );
-              },
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: SizedBox(
-              width: double.infinity,
-              child: TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  context.pushSlide(const NotificationsScreen());
-                },
-                style: TextButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Sin notificaciones',
+                    style: TextStyle(
+                      color: textPri,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-                child: const Text('Ver todas',
-                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Las notificaciones importantes aparecerán aquí',
+                    style: TextStyle(color: textSec, fontSize: 12),
+                  ),
+                ],
               ),
             ),
           ),
@@ -155,43 +113,3 @@ class _NotificationSheetContent extends StatelessWidget {
     );
   }
 }
-
-class _NotifItem {
-  final String icon;
-  final String title;
-  final String subtitle;
-  final String timeAgo;
-  final Color color;
-
-  const _NotifItem({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.timeAgo,
-    required this.color,
-  });
-}
-
-const _notifications = [
-  _NotifItem(
-    icon: '👤',
-    title: 'Nuevo atleta registrado',
-    subtitle: 'María González',
-    timeAgo: 'Hace 5 min',
-    color: Color(0xFF0081CF),
-  ),
-  _NotifItem(
-    icon: '🏆',
-    title: 'Camila lleva',
-    subtitle: '5 MVP esta temporada',
-    timeAgo: 'Hace 2 horas',
-    color: Color(0xFFFF8C00),
-  ),
-  _NotifItem(
-    icon: '⚠',
-    title: 'David',
-    subtitle: '3 ausencias consecutivas',
-    timeAgo: 'Hace 1 día',
-    color: Color(0xFFEF4444),
-  ),
-];

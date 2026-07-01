@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/themes/app_colors.dart';
+import '../../../../core/utils/name_formatter.dart';
+import '../../../estadisticas/data/models/models.dart';
 import '../../data/court_state.dart';
 import 'court_painter.dart';
 
@@ -8,6 +10,8 @@ class CourtWidget extends StatelessWidget {
   final ValueChanged<int>? onZoneTap;
   final ValueChanged<int>? onZoneLongPress;
   final VoidCallback? onTogglePerspective;
+  final int? selectedZone;
+  final List<Player>? players;
 
   const CourtWidget({
     super.key,
@@ -15,6 +19,8 @@ class CourtWidget extends StatelessWidget {
     this.onZoneTap,
     this.onZoneLongPress,
     this.onTogglePerspective,
+    this.selectedZone,
+    this.players,
   });
 
   @override
@@ -117,9 +123,7 @@ class CourtWidget extends StatelessWidget {
                 ),
               ),
               for (final zone in state.zones)
-                _buildZoneBackground(zone, w, h),
-              for (final zone in state.zones.where((z) => z.hasAthlete))
-                _buildAthleteCircle(zone, w, h),
+                _buildZone(zone, w, h),
             ],
           ),
         );
@@ -127,16 +131,17 @@ class CourtWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildZoneBackground(CourtZone zone, double w, double h) {
+  Widget _buildZone(CourtZone zone, double w, double h) {
     final visualPos = state.visualPositionForZone(zone.zoneNumber);
     final pos = _zoneRect(visualPos, w, h);
+    final isSelected = selectedZone == zone.zoneNumber;
 
     return Positioned(
       left: pos.left,
       top: pos.top,
       width: pos.width,
       height: pos.height,
-        child: Material(
+      child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: () => onZoneTap?.call(zone.zoneNumber),
@@ -151,52 +156,135 @@ class CourtWidget extends StatelessWidget {
             curve: Curves.easeOutCubic,
             margin: const EdgeInsets.all(4),
             decoration: BoxDecoration(
-              color: zone.hasAthlete
-                  ? Colors.white.withValues(alpha: 0.04)
-                  : Colors.white.withValues(alpha: 0.02),
+              color: isSelected
+                  ? AppColors.accent.withValues(alpha: 0.15)
+                  : zone.hasAthlete
+                      ? Colors.white.withValues(alpha: 0.04)
+                      : Colors.white.withValues(alpha: 0.02),
               borderRadius: BorderRadius.circular(10),
               border: Border.all(
-                color: zone.zoneNumber == 1
-                    ? AppColors.accent.withValues(alpha: 0.20)
-                    : Colors.white.withValues(alpha: zone.hasAthlete ? 0.10 : 0.05),
+                color: isSelected
+                    ? AppColors.accent
+                    : zone.zoneNumber == 1
+                        ? AppColors.accent.withValues(alpha: 0.20)
+                        : Colors.white.withValues(alpha: zone.hasAthlete ? 0.10 : 0.05),
+                width: isSelected ? 2 : 1,
               ),
             ),
-            child: _buildEmptyZone(zone.zoneNumber),
+            child: zone.hasAthlete
+                ? _buildAthleteContent(zone)
+                : _buildEmptyZone(zone),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildEmptyZone(int zoneNumber) {
+  Widget _buildEmptyZone(CourtZone zone) {
     return Center(
-      child: Text(
-        '$zoneNumber',
-        style: TextStyle(
-          color: Colors.white.withValues(alpha: 0.20),
-          fontSize: 28,
-          fontWeight: FontWeight.w200,
-          height: 1,
-        ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppColors.accent.withValues(alpha: 0.2),
+              border: Border.all(color: AppColors.accent.withValues(alpha: 0.4)),
+            ),
+            child: const Icon(Icons.add, color: AppColors.accent, size: 18),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            '${zone.zoneNumber}',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.20),
+              fontSize: 11,
+              fontWeight: FontWeight.w200,
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildAthleteCircle(CourtZone zone, double w, double h) {
-    final visualPos = state.visualPositionForZone(zone.zoneNumber);
-    final pos = _zoneRect(visualPos, w, h);
+  Widget _buildAthleteContent(CourtZone zone) {
+    final player = _playerForNumber(zone.athleteNumber);
+    final displayName = player != null
+        ? NameFormatter.courtName(player)
+        : '#${zone.athleteNumber}';
     final isServer = zone.zoneNumber == 1;
 
-    return AnimatedPositioned(
-      key: ValueKey('athlete_${zone.athleteNumber}'),
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-      left: pos.left,
-      top: pos.top,
-      width: pos.width,
-      height: pos.height,
-      child: _AthleteContent(zone: zone, isServer: isServer),
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        if (isServer)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 2),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.accent.withValues(alpha: 0.3),
+              ),
+              child: Icon(
+                Icons.sports_volleyball,
+                size: 12,
+                color: AppColors.accent,
+              ),
+            ),
+          ),
+        Text(
+          '${zone.athleteNumber}',
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            height: 1.1,
+          ),
+        ),
+        Text(
+          displayName,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.7),
+            fontSize: 9,
+            fontWeight: FontWeight.w500,
+          ),
+          overflow: TextOverflow.ellipsis,
+          maxLines: 1,
+        ),
+        if (zone.isLibero)
+          Container(
+            margin: const EdgeInsets.only(top: 1),
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+            decoration: BoxDecoration(
+              color: AppColors.accent.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(3),
+            ),
+            child: const Text(
+              'LIB',
+              style: TextStyle(
+                color: AppColors.accent,
+                fontSize: 8,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ),
+      ],
     );
+  }
+
+  Player? _playerForNumber(int? number) {
+    if (number == null || players == null) return null;
+    try {
+      return players!.firstWhere((p) => p.numero == number);
+    } catch (_) {
+      return null;
+    }
   }
 
   _ZoneRect _zoneRect(int visualPos, double w, double h) {
@@ -210,80 +298,6 @@ class CourtWidget extends StatelessWidget {
       top: margin + row * zoneH,
       width: zoneW,
       height: zoneH,
-    );
-  }
-}
-
-class _AthleteContent extends StatelessWidget {
-  final CourtZone zone;
-  final bool isServer;
-
-  const _AthleteContent({required this.zone, required this.isServer});
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOutCubic,
-      margin: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: isServer
-              ? AppColors.accent.withValues(alpha: 0.35)
-              : Colors.white.withValues(alpha: 0.12),
-        ),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          if (isServer)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 2),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.accent.withValues(alpha: 0.3),
-                ),
-                child: Icon(
-                  Icons.sports_volleyball,
-                  size: zone.athleteNumber != null ? 14 : 0,
-                  color: AppColors.accent,
-                ),
-              ),
-            ),
-          Text(
-            '${zone.athleteNumber}',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              height: 1.1,
-            ),
-          ),
-          if (zone.isLibero)
-            Container(
-              margin: const EdgeInsets.only(top: 2),
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
-              decoration: BoxDecoration(
-                color: AppColors.accent.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: const Text(
-                'LIB',
-                style: TextStyle(
-                  color: AppColors.accent,
-                  fontSize: 9,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.5,
-                ),
-              ),
-            ),
-        ],
-      ),
     );
   }
 }

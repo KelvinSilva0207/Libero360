@@ -63,13 +63,14 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: cs.surface,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
+        backgroundColor: cs.surfaceContainerHighest,
         title: Row(
           children: [
-            const Text('Roster', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+            Text('Roster', style: TextStyle(color: cs.onSurface, fontSize: 16, fontWeight: FontWeight.bold)),
             if (!_loading && _players.isNotEmpty) ...[
               const SizedBox(width: 8),
               Container(
@@ -88,14 +89,14 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
         ),
         actions: [
           IconButton(
-            icon: Icon(_showSearch ? Icons.close : Icons.search, color: Colors.white54),
+            icon: Icon(_showSearch ? Icons.close : Icons.search, color: cs.onSurfaceVariant),
             onPressed: () => setState(() {
               _showSearch = !_showSearch;
               if (!_showSearch) { _searchCtrl.clear(); _applyFilters(); }
             }),
           ),
           IconButton(
-            icon: const Icon(Icons.filter_list, color: Colors.white54),
+            icon: Icon(Icons.filter_list, color: cs.onSurfaceVariant),
             onPressed: _showFilterDialog,
           ),
         ],
@@ -104,12 +105,13 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed: _addAthlete,
         backgroundColor: AppColors.accent,
-        child: const Icon(Icons.add, color: Colors.white),
+        child: Icon(Icons.add, color: cs.onPrimary),
       ),
     );
   }
 
   Widget _buildBody() {
+    final cs = Theme.of(context).colorScheme;
     if (_loading) {
       return const Center(child: CircularProgressIndicator(color: AppColors.accent));
     }
@@ -140,15 +142,15 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: cs.surfaceContainerHighest,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.people_outline, color: Colors.white24, size: 48),
+              child: Icon(Icons.people_outline, color: cs.onSurface.withValues(alpha: 0.38), size: 48),
             ),
             const SizedBox(height: 20),
-            const Text('Aún no hay atletas', style: TextStyle(color: Colors.white54, fontSize: 16)),
+            Text('Aún no hay atletas', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 16)),
             const SizedBox(height: 6),
-            const Text('Agrega tu primer atleta', style: TextStyle(color: Colors.white38, fontSize: 13)),
+            Text('Agrega tu primer atleta', style: TextStyle(color: cs.onSurface.withValues(alpha: 0.6), fontSize: 13)),
             const SizedBox(height: 20),
             FilledButton.icon(
               onPressed: _addAthlete,
@@ -187,9 +189,9 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.search_off_rounded, color: Colors.white24, size: 40),
+                              Icon(Icons.search_off_rounded, color: cs.onSurface.withValues(alpha: 0.38), size: 40),
                               const SizedBox(height: 8),
-                              const Text('Sin resultados', style: TextStyle(color: Colors.white38, fontSize: 14)),
+                              Text('Sin resultados', style: TextStyle(color: cs.onSurface.withValues(alpha: 0.6), fontSize: 14)),
                             ],
                           ),
                         ),
@@ -227,18 +229,19 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
   }
 
   Widget _buildSearchBar() {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: cs.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(color: AppColors.border),
         ),
         child: TextField(
           controller: _searchCtrl,
           onChanged: (_) => _applyFilters(),
-          style: const TextStyle(color: Colors.white, fontSize: 14),
+          style: TextStyle(color: cs.onSurface, fontSize: 14),
           decoration: InputDecoration(
             hintText: 'Buscar por nombre, número o cédula...',
             hintStyle: const TextStyle(color: AppColors.textTertiary, fontSize: 13),
@@ -258,9 +261,10 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
   }
 
   void _showFilterDialog() {
+    final cs = Theme.of(context).colorScheme;
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.surface,
+      backgroundColor: cs.surfaceContainerHighest,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -271,7 +275,7 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Filtrar por posición', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+              Text('Filtrar por posición', style: TextStyle(color: cs.onSurface, fontSize: 14, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
@@ -281,7 +285,7 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
                     selected: _filterPosicion == p,
                     selectedColor: AppColors.accent.withValues(alpha: 0.3),
                     backgroundColor: AppColors.surfaceLight,
-                    labelStyle: TextStyle(color: _filterPosicion == p ? Colors.white : Colors.white54, fontSize: 12),
+                    labelStyle: TextStyle(color: _filterPosicion == p ? cs.onSurface : cs.onSurfaceVariant, fontSize: 12),
                     onSelected: (v) {
                       setSheetState(() => _filterPosicion = v ? p : null);
                     },
@@ -289,7 +293,7 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
                 ],
               ),
               const SizedBox(height: 16),
-              const Text('Filtrar por estado', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+              Text('Filtrar por estado', style: TextStyle(color: cs.onSurface, fontSize: 14, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
@@ -299,7 +303,7 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
                     selected: _filterSalud == s,
                     selectedColor: _saludColor(s).withValues(alpha: 0.3),
                     backgroundColor: AppColors.surfaceLight,
-                    labelStyle: TextStyle(color: _filterSalud == s ? Colors.white : Colors.white54, fontSize: 12),
+                    labelStyle: TextStyle(color: _filterSalud == s ? cs.onSurface : cs.onSurfaceVariant, fontSize: 12),
                     onSelected: (v) {
                       setSheetState(() => _filterSalud = v ? s : null);
                     },
@@ -329,7 +333,7 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
                         _filterSalud = null;
                       });
                     },
-                    child: const Text('Limpiar filtros', style: TextStyle(color: Colors.white54)),
+                    child: Text('Limpiar filtros', style: TextStyle(color: cs.onSurfaceVariant)),
                   ),
                 ),
               ],
@@ -360,13 +364,14 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
   }
 
   Widget _athleteCard(Player p) {
+    final cs = Theme.of(context).colorScheme;
     final healthColor = _saludColor(p.estadoSalud);
     final displayName = NameFormatter.playerDisplayName(p);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Material(
-        color: AppColors.surface,
+        color: cs.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
           onTap: () => context.pushSlide(PlayerDetailScreen(player: p)),
@@ -398,8 +403,8 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
                     child: Center(
                       child: Text(
                         '${p.numero ?? '-'}',
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: cs.onPrimary,
                           fontWeight: FontWeight.bold,
                           fontSize: 17,
                         ),
@@ -418,7 +423,7 @@ class _AthleteListScreenState extends State<AthleteListScreen> {
                           Flexible(
                             child: Text(
                               displayName,
-                              style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
+                              style: TextStyle(color: cs.onSurface, fontSize: 15, fontWeight: FontWeight.w600),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),

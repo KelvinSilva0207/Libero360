@@ -24,8 +24,8 @@ class AccountSection extends StatelessWidget {
                   user?.nombre.isNotEmpty == true
                       ? user!.nombre[0].toUpperCase()
                       : '?',
-                  style: const TextStyle(
-                      color: Colors.white,
+                  style: TextStyle(
+                      color: cs.onPrimary,
                       fontWeight: FontWeight.bold,
                       fontSize: 18),
                 ),

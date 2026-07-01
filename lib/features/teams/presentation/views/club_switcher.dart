@@ -8,6 +8,7 @@ class ClubSwitcher extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final vm = context.watch<ClubViewModel>();
 
     if (vm.myClubs.isEmpty) {
@@ -20,15 +21,15 @@ class ClubSwitcher extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: const Color(0xFF1A1F3D),
+            color: cs.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(8),
           ),
-          child: const Row(
+          child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.add_circle_outline, color: Color(0xFFFF8C00), size: 18),
-              SizedBox(width: 6),
-              Text('Crear club', style: TextStyle(color: Colors.white, fontSize: 14)),
+              Icon(Icons.add_circle_outline, color: cs.primary, size: 18),
+              const SizedBox(width: 6),
+              Text('Crear club', style: TextStyle(color: cs.onSurface, fontSize: 14)),
             ],
           ),
         ),
@@ -36,7 +37,7 @@ class ClubSwitcher extends StatelessWidget {
     }
 
     return PopupMenuButton<String>(
-      color: const Color(0xFF1A1F3D),
+      color: cs.surfaceContainerHighest,
       onSelected: (value) {
         if (value == '__create__') {
           Navigator.push(
@@ -50,21 +51,21 @@ class ClubSwitcher extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: const Color(0xFF1A1F3D),
+          color: cs.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.groups_2, color: Color(0xFFFF8C00), size: 18),
+            Icon(Icons.groups_2, color: cs.primary, size: 18),
             const SizedBox(width: 6),
             Text(
               vm.currentClub?.name ?? 'Seleccionar club',
-              style: const TextStyle(color: Colors.white, fontSize: 14),
+              style: TextStyle(color: cs.onSurface, fontSize: 14),
             ),
             const SizedBox(width: 4),
             Icon(Icons.arrow_drop_down,
-                color: Colors.white.withValues(alpha: 0.5), size: 20),
+                color: cs.onSurface.withValues(alpha: 0.5), size: 20),
           ],
         ),
       ),
@@ -75,29 +76,29 @@ class ClubSwitcher extends StatelessWidget {
             child: Row(
               children: [
                 if (club.id == vm.currentClub?.id)
-                  const Icon(Icons.check,
-                      color: Color(0xFFFF8C00), size: 18)
+                  Icon(Icons.check,
+                      color: cs.primary, size: 18)
                 else
                   const SizedBox(width: 18),
                 const SizedBox(width: 8),
                 Text(club.name,
                     style: TextStyle(
                       color: club.id == vm.currentClub?.id
-                          ? const Color(0xFFFF8C00)
-                          : Colors.white,
+                          ? cs.primary
+                          : cs.onSurface,
                     )),
               ],
             ),
           ),
         ),
         const PopupMenuDivider(),
-        const PopupMenuItem(
+        PopupMenuItem(
           value: '__create__',
           child: Row(
             children: [
-              Icon(Icons.add_circle_outline, color: Color(0xFFFF8C00), size: 18),
-              SizedBox(width: 8),
-              Text('Crear club', style: TextStyle(color: Colors.white)),
+              Icon(Icons.add_circle_outline, color: cs.primary, size: 18),
+              const SizedBox(width: 8),
+              Text('Crear club', style: TextStyle(color: cs.onSurface)),
             ],
           ),
         ),

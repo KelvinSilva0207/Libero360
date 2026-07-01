@@ -55,13 +55,13 @@ class StaffSection extends StatelessWidget {
                       color: AppColors.accent,
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.people_rounded, size: 16, color: Colors.white),
-                        SizedBox(width: 6),
+                        Icon(Icons.people_rounded, size: 16, color: cs.onPrimary),
+                        const SizedBox(width: 6),
                         Text('Ver Staff',
-                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                            style: TextStyle(color: cs.onPrimary, fontWeight: FontWeight.bold, fontSize: 13)),
                       ],
                     ),
                   ),

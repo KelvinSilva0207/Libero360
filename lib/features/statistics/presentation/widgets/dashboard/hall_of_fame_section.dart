@@ -54,14 +54,15 @@ class HallOfFameSection extends StatelessWidget {
   }
 
   Widget _rankRow(HallOfFameEntry entry) {
+    final cs = Theme.of(context).colorScheme;
     final p = entry.player;
-    final bg = isDark ? AppColors.surface : AppColors.lightCard;
-    final border = isDark ? AppColors.border : AppColors.lightBorder;
+    final bg = cs.surfaceContainerHighest;
+    final border = cs.outlineVariant;
 
     final medalColors = {
       1: AppColors.accent,
-      2: Colors.grey.shade400,
-      3: Colors.brown.shade300,
+      2: cs.onSurfaceVariant,
+      3: cs.tertiary,
     };
     final isMedal = medalColors.containsKey(entry.rank);
 

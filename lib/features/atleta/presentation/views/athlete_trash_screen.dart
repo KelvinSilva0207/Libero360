@@ -34,17 +34,18 @@ class _AthleteTrashScreenState extends State<AthleteTrashScreen> {
   }
 
   Future<void> _permanentDelete(Player p) async {
+    final cs = Theme.of(context).colorScheme;
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        title: const Text('Eliminar permanentemente', style: TextStyle(color: Colors.white)),
-        content: const Text('Esta acción no podrá deshacerse.',
-          style: TextStyle(color: Colors.white54)),
+        backgroundColor: cs.surfaceContainerHighest,
+        title: Text('Eliminar permanentemente', style: TextStyle(color: cs.onSurface)),
+        content: Text('Esta acción no podrá deshacerse.',
+          style: TextStyle(color: cs.onSurfaceVariant)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancelar', style: TextStyle(color: Colors.white54)),
+            child: Text('Cancelar', style: TextStyle(color: cs.onSurfaceVariant)),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
@@ -66,29 +67,30 @@ class _AthleteTrashScreenState extends State<AthleteTrashScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: cs.surface,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
-        title: const Text('Papelera', style: TextStyle(color: Colors.white, fontSize: 16)),
+        backgroundColor: cs.surface,
+        title: Text('Papelera', style: TextStyle(color: cs.onSurface, fontSize: 16)),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: Icon(Icons.arrow_back, color: cs.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
       ),
       body: Consumer<AthleteViewModel>(
         builder: (_, vm, __) {
           if (vm.trashed.isEmpty) {
-            return const Center(
+            return Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.delete_sweep_outlined, color: Colors.white24, size: 48),
-                  SizedBox(height: 12),
-                  Text('Papelera vacía', style: TextStyle(color: Colors.white38, fontSize: 16)),
-                  SizedBox(height: 4),
+                  Icon(Icons.delete_sweep_outlined, color: cs.onSurface.withValues(alpha: 0.38), size: 48),
+                  const SizedBox(height: 12),
+                  Text('Papelera vacía', style: TextStyle(color: cs.onSurface.withValues(alpha: 0.6), fontSize: 16)),
+                  const SizedBox(height: 4),
                   Text('Los atletas eliminados aparecerán aquí',
-                    style: TextStyle(color: Colors.white24, fontSize: 13)),
+                    style: TextStyle(color: cs.onSurface.withValues(alpha: 0.38), fontSize: 13)),
                 ],
               ),
             );
@@ -104,7 +106,7 @@ class _AthleteTrashScreenState extends State<AthleteTrashScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
+                    color: cs.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(color: AppColors.border),
                   ),
@@ -127,12 +129,12 @@ class _AthleteTrashScreenState extends State<AthleteTrashScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(NameFormatter.playerDisplayName(p),
-                              style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600)),
+                              style: TextStyle(color: cs.onSurface, fontSize: 15, fontWeight: FontWeight.w600)),
                             const SizedBox(height: 4),
                             Row(
                               children: [
                                 Text('#${p.numero ?? '-'}',
-                                  style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                                  style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
                                 const SizedBox(width: 8),
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -148,12 +150,12 @@ class _AthleteTrashScreenState extends State<AthleteTrashScreen> {
                             if (p.deletedAt != null) ...[
                               const SizedBox(height: 4),
                               Text('Eliminado: ${_formatDate(p.deletedAt!)}',
-                                style: const TextStyle(color: Colors.white24, fontSize: 11)),
+                                style: TextStyle(color: cs.onSurface.withValues(alpha: 0.38), fontSize: 11)),
                             ],
                             if (p.deletionReason != null && p.deletionReason!.isNotEmpty) ...[
                               const SizedBox(height: 4),
                               Text('Motivo: ${p.deletionReason}',
-                                style: const TextStyle(color: Colors.white24, fontSize: 11)),
+                                style: TextStyle(color: cs.onSurface.withValues(alpha: 0.38), fontSize: 11)),
                             ],
                           ],
                         ),

@@ -15,12 +15,18 @@ class CompactProfileSelector extends StatelessWidget {
     final profile = vm.currentProfile;
     final cs = Theme.of(context).colorScheme;
 
+    LogService.instance.auto('⚪ CompactProfileSelector — profiles=${vm.profiles.length}', source: 'CompactProfileSelector');
+
     if (vm.profiles.isEmpty) {
+      LogService.instance.auto('⚪ CompactProfileSelector — sin perfiles, mostrar "Crear perfil"', source: 'CompactProfileSelector');
       return InkWell(
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const CreateProfileScreen()),
-        ),
+        onTap: () {
+          LogService.instance.auto('🟡 CompactProfileSelector — navegar a CreateProfileScreen', source: 'CompactProfileSelector');
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const CreateProfileScreen()),
+          );
+        },
         borderRadius: BorderRadius.circular(8),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -44,7 +50,41 @@ class CompactProfileSelector extends StatelessWidget {
       );
     }
 
-    if (profile == null) return const SizedBox.shrink();
+    if (profile == null) {
+      LogService.instance.auto('🔴 CompactProfileSelector — sin club seleccionado', source: 'CompactProfileSelector');
+      return InkWell(
+        onTap: () => _showProfileSheet(context, vm),
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: cs.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: cs.outlineVariant),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.shield_rounded, size: 16, color: cs.onSurface.withValues(alpha: 0.4)),
+              const SizedBox(width: 4),
+              Text(
+                'Sin club seleccionado',
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: cs.onSurface.withValues(alpha: 0.5),
+                  fontSize: 11,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+              const SizedBox(width: 2),
+              Icon(Icons.arrow_drop_down, color: cs.onSurface.withValues(alpha: 0.4), size: 18),
+            ],
+          ),
+        ),
+      );
+    }
+
+    LogService.instance.auto('🟢 CompactProfileSelector — perfil activo: ${profile.clubName}', source: 'CompactProfileSelector');
 
     return InkWell(
       onTap: () => _showProfileSheet(context, vm),
@@ -88,7 +128,7 @@ class CompactProfileSelector extends StatelessWidget {
 
   void _showProfileSheet(BuildContext context, ProfileViewModel vm) {
     final cs = Theme.of(context).colorScheme;
-    LogService.instance.auto('🟢 Perfil cambiado a: ${vm.currentProfile?.clubName}', source: 'CompactProfileSelector');
+    LogService.instance.auto('🟡 CompactProfileSelector — abriendo selector de perfiles', source: 'CompactProfileSelector');
 
     showModalBottomSheet(
       context: context,
@@ -157,8 +197,8 @@ class CompactProfileSelector extends StatelessWidget {
                           icon: const Icon(Icons.delete_outline, size: 16),
                           label: const Text('Eliminar', style: TextStyle(fontSize: 13, color: Colors.red)),
                           style: OutlinedButton.styleFrom(
-                            side: BorderSide(color: Colors.red.withValues(alpha: 0.5)),
-                          ),
+                            side: const BorderSide(color: Colors.red)),
+                          foregroundColor: Colors.red,
                         ),
                       ),
                     ],
@@ -178,8 +218,8 @@ class CompactProfileSelector extends StatelessWidget {
     return InkWell(
       onTap: () {
         vm.selectProfile(p.id);
-        LogService.instance.auto('🟢 Perfil cambiado a: ${p.clubName}', source: 'CompactProfileSelector');
-        LogService.instance.auto('🔵 Dashboard actualizado', source: 'CompactProfileSelector');
+        LogService.instance.auto('🟢 CompactProfileSelector — perfil cambiado a: ${p.clubName}', source: 'CompactProfileSelector');
+        LogService.instance.auto('🔵 CompactProfileSelector — dashboard actualizado', source: 'CompactProfileSelector');
         Navigator.pop(ctx);
       },
       child: Padding(
@@ -245,12 +285,12 @@ class CompactProfileSelector extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: cs.surface,
-        title: const Text('Eliminar perfil', style: TextStyle(color: Colors.white)),
-        content: Text('¿Eliminar "${profile.clubName}"?', style: const TextStyle(color: Colors.white70)),
+        title: Text('Eliminar perfil', style: TextStyle(color: cs.onSurface)),
+        content: Text('¿Eliminar "${profile.clubName}"?', style: TextStyle(color: cs.onSurfaceVariant)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar', style: TextStyle(color: Colors.white54)),
+            child: Text('Cancelar', style: TextStyle(color: cs.onSurfaceVariant)),
           ),
           TextButton(
             onPressed: () {

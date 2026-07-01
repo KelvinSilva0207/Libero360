@@ -165,7 +165,7 @@ class _PeriodChip extends StatelessWidget {
           borderRadius: BorderRadius.circular(8),
         ),
         child: Text(label, style: TextStyle(
-          color: selected ? Colors.white : _sec(isDark),
+          color: selected ? Theme.of(context).colorScheme.onPrimary : _sec(isDark),
           fontSize: 11, fontWeight: FontWeight.w600,
         )),
       ),

@@ -89,8 +89,8 @@ class _CourtScreenState extends State<CourtScreen> with SingleTickerProviderStat
                   context: context,
                   builder: (ctx) => AlertDialog(
                     backgroundColor: colors.surface,
-                    title: const Text('¿Reiniciar cancha?', style: TextStyle(color: Colors.white)),
-                    content: const Text('Se perderá la formación actual.', style: TextStyle(color: Colors.white70)),
+                    title: Text('¿Reiniciar cancha?', style: TextStyle(color: colors.onSurface)),
+                    content: Text('Se perderá la formación actual.', style: TextStyle(color: colors.onSurface.withValues(alpha: 0.7))),
                     actions: [
                       TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
                       TextButton(
@@ -373,7 +373,7 @@ class _CourtScreenState extends State<CourtScreen> with SingleTickerProviderStat
           children: [
             Text(data.$1, style: const TextStyle(fontSize: 20)),
             const SizedBox(width: 8),
-            Text(data.$2, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+            Text(data.$2, style: TextStyle(color: colors.onSurface, fontWeight: FontWeight.w600)),
           ],
         ),
         backgroundColor: colors.surface,

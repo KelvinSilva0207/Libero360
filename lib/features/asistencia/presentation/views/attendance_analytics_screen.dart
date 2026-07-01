@@ -67,14 +67,14 @@ class _AttendanceAnalyticsScreenState extends State<AttendanceAnalyticsScreen> {
     final total = data.totalPresent + data.totalAbsent + data.totalMedicalRest;
     if (total == 0) return const SizedBox.shrink();
     final sections = [
-      PieChartSectionData(value: data.totalPresent.toDouble(), color: const Color(0xFF22C55E), title: '${(data.totalPresent / total * 100).toStringAsFixed(0)}%', radius: 40, titleStyle: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
-      PieChartSectionData(value: data.totalAbsent.toDouble(), color: const Color(0xFFEF4444), title: '${(data.totalAbsent / total * 100).toStringAsFixed(0)}%', radius: 40, titleStyle: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
-      PieChartSectionData(value: data.totalMedicalRest.toDouble(), color: const Color(0xFF3B82F6), title: '${(data.totalMedicalRest / total * 100).toStringAsFixed(0)}%', radius: 40, titleStyle: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+      PieChartSectionData(value: data.totalPresent.toDouble(), color: const Color(0xFF22C55E), title: '${(data.totalPresent / total * 100).toStringAsFixed(0)}%', radius: 40, titleStyle: TextStyle(color: cs.onSurface, fontSize: 11, fontWeight: FontWeight.bold)),
+      PieChartSectionData(value: data.totalAbsent.toDouble(), color: const Color(0xFFEF4444), title: '${(data.totalAbsent / total * 100).toStringAsFixed(0)}%', radius: 40, titleStyle: TextStyle(color: cs.onSurface, fontSize: 11, fontWeight: FontWeight.bold)),
+      PieChartSectionData(value: data.totalMedicalRest.toDouble(), color: const Color(0xFF3B82F6), title: '${(data.totalMedicalRest / total * 100).toStringAsFixed(0)}%', radius: 40, titleStyle: TextStyle(color: cs.onSurface, fontSize: 11, fontWeight: FontWeight.bold)),
     ];
 
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.border)),
+      decoration: BoxDecoration(color: cs.surfaceContainerHighest, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.border)),
       child: Column(
         children: [
           SizedBox(height: 180, child: PieChart(PieChartData(sections: sections, centerSpaceRadius: 30, sectionsSpace: 2))),
@@ -114,7 +114,7 @@ class _AttendanceAnalyticsScreenState extends State<AttendanceAnalyticsScreen> {
 
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.border)),
+      decoration: BoxDecoration(color: cs.surfaceContainerHighest, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.border)),
       child: SizedBox(
         height: 200,
         child: BarChart(
@@ -152,7 +152,7 @@ class _AttendanceAnalyticsScreenState extends State<AttendanceAnalyticsScreen> {
 
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.border)),
+      decoration: BoxDecoration(color: cs.surfaceContainerHighest, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.border)),
       child: SizedBox(
         height: 180,
         child: LineChart(
@@ -161,7 +161,7 @@ class _AttendanceAnalyticsScreenState extends State<AttendanceAnalyticsScreen> {
             maxX: (evolution.length - 1).toDouble(),
             minY: 0,
             maxY: maxY * 1.2 > 0 ? maxY * 1.2 : 100,
-            lineTouchData: LineTouchData(enabled: true, touchTooltipData: LineTouchTooltipData(getTooltipItems: (s) => s.map((e) => LineTooltipItem('${e.y.toStringAsFixed(0)}%', const TextStyle(color: Colors.white, fontSize: 10))).toList())),
+            lineTouchData: LineTouchData(enabled: true, touchTooltipData: LineTouchTooltipData(getTooltipItems: (s) => s.map((e) => LineTooltipItem('${e.y.toStringAsFixed(0)}%', TextStyle(color: cs.onSurface, fontSize: 10))).toList())),
             titlesData: FlTitlesData(
               bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, getTitlesWidget: (v, m) {
                 final idx = v.toInt();
@@ -175,7 +175,7 @@ class _AttendanceAnalyticsScreenState extends State<AttendanceAnalyticsScreen> {
             gridData: FlGridData(show: true, drawVerticalLine: false, getDrawingHorizontalLine: (v) => FlLine(color: AppColors.border.withValues(alpha: 0.3), strokeWidth: 0.5)),
             borderData: FlBorderData(show: false),
             lineBarsData: [
-              LineChartBarData(spots: spots, isCurved: true, preventCurveOverShooting: true, color: const Color(0xFF3B82F6), barWidth: 2.5, dotData: FlDotData(show: true, getDotPainter: (s, p, d, i) => FlDotCirclePainter(radius: 3, color: const Color(0xFF3B82F6), strokeWidth: 2, strokeColor: Colors.white)), belowBarData: BarAreaData(show: true, color: const Color(0xFF3B82F6).withValues(alpha: 0.1))),
+              LineChartBarData(spots: spots, isCurved: true, preventCurveOverShooting: true, color: const Color(0xFF3B82F6), barWidth: 2.5, dotData: FlDotData(show: true, getDotPainter: (s, p, d, i) => FlDotCirclePainter(radius: 3, color: const Color(0xFF3B82F6), strokeWidth: 2, strokeColor: cs.onSurface)), belowBarData: BarAreaData(show: true, color: const Color(0xFF3B82F6).withValues(alpha: 0.1))),
             ],
           ),
         ),
@@ -200,7 +200,7 @@ class _AttendanceAnalyticsScreenState extends State<AttendanceAnalyticsScreen> {
   Widget _rankingCard(ColorScheme cs, String title, List items, String Function(dynamic) subtitle, Color color) {
     return Container(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.border)),
+      decoration: BoxDecoration(color: cs.surfaceContainerHighest, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.border)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

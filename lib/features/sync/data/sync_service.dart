@@ -1,9 +1,12 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../core/config.dart';
+import '../../../core/services/log_service.dart';
 import '../../estadisticas/data/local_db/database_service.dart';
 import '../../estadisticas/data/models/models.dart';
 import '../../profiles/data/profile_model.dart';
+import 'pending_sync_operation.dart';
 
 class SyncService {
   static final SyncService instance = SyncService._internal();
@@ -11,6 +14,8 @@ class SyncService {
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final DatabaseService _db = DatabaseService.instance;
+  bool _isProcessingQueue = false;
+  static const int _maxRetries = 5;
 
   String? get _uid => FirebaseAuth.instance.currentUser?.uid;
 
@@ -37,17 +42,197 @@ class SyncService {
       _clubProfileDocRef(clubId, profileId).collection('stats');
 
   // ============================================================
-  // PROFILES
+  // QUEUE ENQUEUE HELPERS
+  // ============================================================
+
+  Future<void> enqueueUpload(String collection, String documentId,
+      {Map<String, dynamic>? data}) async {
+    if (!AppConfig.useFirebase) return;
+    final op = PendingSyncOperation(
+      type: SyncOperationType.upload,
+      collection: collection,
+      documentId: documentId,
+      data: data,
+    );
+    await _db.addSyncOperation(op);
+    LogService.instance.auto(
+      '🔵 SYNC-QUEUE: enqueued $collection/$documentId',
+      source: 'SyncService',
+    );
+    _processQueue();
+  }
+
+  Future<void> enqueueDelete(String collection, String documentId) async {
+    if (!AppConfig.useFirebase) return;
+    final op = PendingSyncOperation(
+      type: SyncOperationType.delete,
+      collection: collection,
+      documentId: documentId,
+    );
+    await _db.addSyncOperation(op);
+    LogService.instance.auto(
+      '🔵 SYNC-QUEUE: enqueued DELETE $collection/$documentId',
+      source: 'SyncService',
+    );
+    _processQueue();
+  }
+
+  Future<void> _processQueue() async {
+    if (_isProcessingQueue) return;
+    _isProcessingQueue = true;
+
+    try {
+      final ops = await _db.getPendingSyncOperations();
+      for (final op in ops) {
+        if (op.retryCount >= _maxRetries) {
+          LogService.instance.auto(
+            '🔴 SYNC-QUEUE: max retries reached for ${op.collection}/${op.documentId}: ${op.errorMessage}',
+            source: 'SyncService',
+          );
+          await _db.removeSyncOperation(op.id);
+          continue;
+        }
+        try {
+          await _executeOperation(op);
+          await _db.removeSyncOperation(op.id);
+          LogService.instance.auto(
+            '🟢 SYNC-QUEUE: completed ${op.collection}/${op.documentId}',
+            source: 'SyncService',
+          );
+        } catch (e) {
+          final backoff = Duration(seconds: (op.retryCount + 1) * 2);
+          LogService.instance.auto(
+            '🟠 SYNC-QUEUE: retry ${op.retryCount + 1}/$_maxRetries ${op.collection}/${op.documentId}: $e (backoff ${backoff.inSeconds}s)',
+            source: 'SyncService',
+          );
+          final updated = op.copyWith(
+            retryCount: op.retryCount + 1,
+            errorMessage: e.toString(),
+          );
+          // Remove and re-add to update (Sembast intMapStore)
+          await _db.removeSyncOperation(op.id);
+          await _db.addSyncOperation(updated);
+          await Future.delayed(backoff);
+        }
+      }
+    } finally {
+      _isProcessingQueue = false;
+    }
+  }
+
+  Future<void> _executeOperation(PendingSyncOperation op) async {
+    switch (op.collection) {
+      case 'matches':
+        if (op.type == SyncOperationType.upload) {
+          final match = await _db.getMatchById(int.tryParse(op.documentId) ?? 0);
+          if (match != null) {
+            final ref = _findMatchRef(match);
+            await _setWithConflictCheck(ref, _matchToMap(match));
+          }
+        }
+        break;
+      case 'athletes':
+        if (op.type == SyncOperationType.upload) {
+          final player = await _db.getPlayer(int.tryParse(op.documentId) ?? 0);
+          if (player != null) {
+            final ref = _findPlayerRef(player);
+            await _setWithConflictCheck(ref, _playerToMap(player));
+          }
+        }
+        break;
+      case 'attendance':
+        if (op.type == SyncOperationType.upload && op.data != null) {
+          final ref = _findAttendanceRef(op.data!);
+          await _setWithConflictCheck(ref, op.data!);
+        }
+        break;
+      case 'stats':
+        if (op.type == SyncOperationType.upload && op.data != null) {
+          final ref = _findStatsRef(op.data!);
+          await _setWithConflictCheck(ref, op.data!);
+        }
+        break;
+      case 'profiles':
+        if (op.type == SyncOperationType.upload && op.data != null) {
+          await _userProfileRef(op.documentId).set(op.data!);
+        }
+        break;
+    }
+  }
+
+  DocumentReference _findMatchRef(Match m) {
+    final clubId = m.clubId ?? '';
+    final profileId = m.profileId ?? '';
+    if (clubId.isNotEmpty && profileId.isNotEmpty) {
+      return _clubMatchesRef(clubId, profileId).doc(m.id.toString());
+    }
+    return _firestore.collection('orphan_matches').doc(m.id.toString());
+  }
+
+  DocumentReference _findPlayerRef(Player p) {
+    final clubId = p.clubId ?? '';
+    final profileId = p.profileId ?? '';
+    if (clubId.isNotEmpty && profileId.isNotEmpty) {
+      return _clubAthletesRef(clubId, profileId).doc(p.id.toString());
+    }
+    return _firestore.collection('orphan_players').doc(p.id.toString());
+  }
+
+  DocumentReference _findAttendanceRef(Map<String, dynamic> data) {
+    final clubId = data['clubId'] as String? ?? '';
+    final profileId = data['profileId'] as String? ?? '';
+    final docId = data['id']?.toString() ?? DateTime.now().millisecondsSinceEpoch.toString();
+    if (clubId.isNotEmpty && profileId.isNotEmpty) {
+      return _clubAttendanceRef(clubId, profileId).doc(docId);
+    }
+    return _firestore.collection('orphan_attendance').doc(docId);
+  }
+
+  DocumentReference _findStatsRef(Map<String, dynamic> data) {
+    final clubId = data['clubId'] as String? ?? '';
+    final profileId = data['profileId'] as String? ?? '';
+    final docId = data['id']?.toString() ?? DateTime.now().millisecondsSinceEpoch.toString();
+    if (clubId.isNotEmpty && profileId.isNotEmpty) {
+      return _clubStatsRef(clubId, profileId).doc(docId);
+    }
+    return _firestore.collection('orphan_stats').doc(docId);
+  }
+
+  Future<void> _setWithConflictCheck(DocumentReference ref, Map<String, dynamic> newData) async {
+    try {
+      final snapshot = await ref.get();
+      if (!snapshot.exists) {
+        await ref.set(newData);
+        return;
+      }
+      final existing = snapshot.data() as Map<String, dynamic>;
+      final localUpdated = newData['updatedAt'] as String?;
+      final remoteUpdated = existing['updatedAt'] as String?;
+      if (localUpdated != null && remoteUpdated != null) {
+        if (DateTime.parse(localUpdated).isAfter(DateTime.parse(remoteUpdated))) {
+          await ref.set(newData);
+          LogService.instance.auto('🟡 SYNC: conflict resolved — local newer for $ref', source: 'SyncService');
+        } else {
+          LogService.instance.auto('🟠 SYNC: conflict resolved — remote newer for $ref, skipping', source: 'SyncService');
+        }
+      } else {
+        await ref.set(newData);
+      }
+    } catch (e) {
+      LogService.instance.auto('🔴 SYNC: conflict check failed for $ref: $e', source: 'SyncService');
+      rethrow;
+    }
+  }
+
+  // ============================================================
+  // DIRECT UPLOAD (legacy)
   // ============================================================
 
   Future<void> uploadProfiles() async {
     if (!AppConfig.useFirebase) return;
     final uid = _uid;
-    if (uid == null) {
-      print('🔴 SYNC: usuario no autenticado');
-      return;
-    }
-    print('🔵 SYNC: subiendo perfiles');
+    if (uid == null) return;
+    LogService.instance.auto('🔵 SYNC: subiendo perfiles', source: 'SyncService');
     final profiles = await _db.getAllProfiles();
     for (final profile in profiles) {
       try {
@@ -56,17 +241,17 @@ class SyncService {
           await _clubProfileDocRef(profile.clubId, profile.id).set(profile.toJson());
         }
       } catch (e) {
-        print('🔴 SYNC: error subiendo perfil ${profile.id}: $e');
+        LogService.instance.auto('🔴 SYNC: error subiendo perfil ${profile.id}: $e', source: 'SyncService');
       }
     }
-    print('🟢 SYNC: perfiles subidos (${profiles.length})');
+    LogService.instance.auto('🟢 SYNC: perfiles subidos (${profiles.length})', source: 'SyncService');
   }
 
   Future<List<ProfileModel>> downloadProfiles() async {
     if (!AppConfig.useFirebase) return [];
     final uid = _uid;
     if (uid == null) return [];
-    print('🔵 SYNC: descargando perfiles');
+    LogService.instance.auto('🔵 SYNC: descargando perfiles', source: 'SyncService');
     final List<ProfileModel> downloaded = [];
     try {
       final snap = await _firestore.collection('users').doc(uid).collection('profiles').get();
@@ -76,166 +261,157 @@ class SyncService {
         await _db.addProfile(profile);
       }
     } catch (e) {
-      print('🔴 SYNC: error descargando perfiles: $e');
+      LogService.instance.auto('🔴 SYNC: error descargando perfiles: $e', source: 'SyncService');
     }
-    print('🟢 SYNC: perfiles descargados (${downloaded.length})');
+    LogService.instance.auto('🟢 SYNC: perfiles descargados (${downloaded.length})', source: 'SyncService');
     return downloaded;
   }
 
-  // ============================================================
-  // PLAYERS
-  // ============================================================
-
   Future<void> uploadPlayers(String profileId, String clubId) async {
     if (!AppConfig.useFirebase) return;
-    print('🔵 SYNC: subiendo atletas (perfil $profileId)');
+    LogService.instance.auto('🔵 SYNC: subiendo atletas (perfil $profileId)', source: 'SyncService');
     final players = await _db.getPlayersByProfile(profileId);
     final ref = _clubAthletesRef(clubId, profileId);
     for (final player in players) {
       try {
-        await ref.doc(player.id.toString()).set(_playerToMap(player));
+        await _setWithConflictCheck(ref.doc(player.id.toString()), _playerToMap(player));
       } catch (e) {
-        print('🔴 SYNC: error subiendo atleta ${player.id}: $e');
+        LogService.instance.auto('🔴 SYNC: error subiendo atleta ${player.id}: $e', source: 'SyncService');
       }
     }
-    print('🟢 SYNC: atletas subidos (${players.length})');
+    LogService.instance.auto('🟢 SYNC: atletas subidos (${players.length})', source: 'SyncService');
   }
 
   Future<void> downloadPlayers(String profileId, String clubId) async {
     if (!AppConfig.useFirebase) return;
-    print('🔵 SYNC: descargando atletas (perfil $profileId)');
+    LogService.instance.auto('🔵 SYNC: descargando atletas (perfil $profileId)', source: 'SyncService');
     try {
       final snap = await _clubAthletesRef(clubId, profileId).get();
       for (final doc in snap.docs) {
         final player = _mapToPlayer(doc.id, doc.data() as Map<String, dynamic>);
         await _db.savePlayer(player);
       }
-      print('🟢 SYNC: atletas descargados (${snap.docs.length})');
+      LogService.instance.auto('🟢 SYNC: atletas descargados (${snap.docs.length})', source: 'SyncService');
     } catch (e) {
-      print('🔴 SYNC: error descargando atletas: $e');
+      LogService.instance.auto('🔴 SYNC: error descargando atletas: $e', source: 'SyncService');
     }
   }
 
-  // ============================================================
-  // MATCHES
-  // ============================================================
-
   Future<void> uploadMatches(String profileId, String clubId) async {
     if (!AppConfig.useFirebase) return;
-    print('🔵 SYNC: subiendo partidos (perfil $profileId)');
+    LogService.instance.auto('🔵 SYNC: subiendo partidos (perfil $profileId)', source: 'SyncService');
     final matches = await _db.getMatchesByProfile(profileId);
     final ref = _clubMatchesRef(clubId, profileId);
     for (final match in matches) {
       try {
-        await ref.doc(match.id.toString()).set(_matchToMap(match));
+        await _setWithConflictCheck(ref.doc(match.id.toString()), _matchToMap(match));
       } catch (e) {
-        print('🔴 SYNC: error subiendo partido ${match.id}: $e');
+        LogService.instance.auto('🔴 SYNC: error subiendo partido ${match.id}: $e', source: 'SyncService');
       }
     }
-    print('🟢 SYNC: partidos subidos (${matches.length})');
+    LogService.instance.auto('🟢 SYNC: partidos subidos (${matches.length})', source: 'SyncService');
   }
 
   Future<void> downloadMatches(String profileId, String clubId) async {
     if (!AppConfig.useFirebase) return;
-    print('🔵 SYNC: descargando partidos (perfil $profileId)');
+    LogService.instance.auto('🔵 SYNC: descargando partidos (perfil $profileId)', source: 'SyncService');
     try {
       final snap = await _clubMatchesRef(clubId, profileId).get();
       for (final doc in snap.docs) {
         final match = _mapToMatch(doc.id, doc.data() as Map<String, dynamic>);
         await _db.saveMatch(match);
       }
-      print('🟢 SYNC: partidos descargados (${snap.docs.length})');
+      LogService.instance.auto('🟢 SYNC: partidos descargados (${snap.docs.length})', source: 'SyncService');
     } catch (e) {
-      print('🔴 SYNC: error descargando partidos: $e');
+      LogService.instance.auto('🔴 SYNC: error descargando partidos: $e', source: 'SyncService');
     }
   }
 
-  // ============================================================
-  // ATTENDANCE
-  // ============================================================
-
   Future<void> uploadAttendance(String profileId, String clubId) async {
     if (!AppConfig.useFirebase) return;
-    print('🔵 SYNC: subiendo asistencias (perfil $profileId)');
+    LogService.instance.auto('🔵 SYNC: subiendo asistencias (perfil $profileId)', source: 'SyncService');
     final records = await _db.getAttendanceByProfile(profileId);
     final ref = _clubAttendanceRef(clubId, profileId);
     for (final record in records) {
       try {
-        await ref.doc(record.id.toString()).set(_attendanceToMap(record));
+        await _setWithConflictCheck(ref.doc(record.id.toString()), _attendanceToMap(record));
       } catch (e) {
-        print('🔴 SYNC: error subiendo asistencia ${record.id}: $e');
+        LogService.instance.auto('🔴 SYNC: error subiendo asistencia ${record.id}: $e', source: 'SyncService');
       }
     }
-    print('🟢 SYNC: asistencias subidas (${records.length})');
+    LogService.instance.auto('🟢 SYNC: asistencias subidas (${records.length})', source: 'SyncService');
   }
 
   Future<void> downloadAttendance(String profileId, String clubId) async {
     if (!AppConfig.useFirebase) return;
-    print('🔵 SYNC: descargando asistencias (perfil $profileId)');
+    LogService.instance.auto('🔵 SYNC: descargando asistencias (perfil $profileId)', source: 'SyncService');
     try {
       final snap = await _clubAttendanceRef(clubId, profileId).get();
       for (final doc in snap.docs) {
         final record = _mapToAttendance(doc.id, doc.data() as Map<String, dynamic>);
         await _db.saveAttendanceRecord(record);
       }
-      print('🟢 SYNC: asistencias descargadas (${snap.docs.length})');
+      LogService.instance.auto('🟢 SYNC: asistencias descargadas (${snap.docs.length})', source: 'SyncService');
     } catch (e) {
-      print('🔴 SYNC: error descargando asistencias: $e');
+      LogService.instance.auto('🔴 SYNC: error descargando asistencias: $e', source: 'SyncService');
     }
   }
 
-  // ============================================================
-  // STATS (StatEvent)
-  // ============================================================
-
   Future<void> uploadStats(String profileId, String clubId) async {
     if (!AppConfig.useFirebase) return;
-    print('🔵 SYNC: subiendo estadísticas (perfil $profileId)');
+    LogService.instance.auto('🔵 SYNC: subiendo estadísticas (perfil $profileId)', source: 'SyncService');
     final events = await _db.getStatsByProfile(profileId);
     final ref = _clubStatsRef(clubId, profileId);
     for (final event in events) {
       try {
-        await ref.doc(event.id.toString()).set(_statEventToMap(event));
+        await _setWithConflictCheck(ref.doc(event.id.toString()), _statEventToMap(event));
       } catch (e) {
-        print('🔴 SYNC: error subiendo estadística ${event.id}: $e');
+        LogService.instance.auto('🔴 SYNC: error subiendo estadística ${event.id}: $e', source: 'SyncService');
       }
     }
-    print('🟢 SYNC: estadísticas subidas (${events.length})');
+    LogService.instance.auto('🟢 SYNC: estadísticas subidas (${events.length})', source: 'SyncService');
   }
 
   Future<void> downloadStats(String profileId, String clubId) async {
     if (!AppConfig.useFirebase) return;
-    print('🔵 SYNC: descargando estadísticas (perfil $profileId)');
+    LogService.instance.auto('🔵 SYNC: descargando estadísticas (perfil $profileId)', source: 'SyncService');
     try {
       final snap = await _clubStatsRef(clubId, profileId).get();
       for (final doc in snap.docs) {
         final event = _mapToStatEvent(doc.id, doc.data() as Map<String, dynamic>);
         await _db.saveStatEvent(event);
       }
-      print('🟢 SYNC: estadísticas descargadas (${snap.docs.length})');
+      LogService.instance.auto('🟢 SYNC: estadísticas descargadas (${snap.docs.length})', source: 'SyncService');
     } catch (e) {
-      print('🔴 SYNC: error descargando estadísticas: $e');
+      LogService.instance.auto('🔴 SYNC: error descargando estadísticas: $e', source: 'SyncService');
     }
   }
 
-  // ============================================================
-  // SYNC ALL
-  // ============================================================
-
   Future<void> syncAll(String profileId, String clubId) async {
     if (!AppConfig.useFirebase) return;
-    print('🔵 SYNC: iniciando sincronización (perfil $profileId)');
+    LogService.instance.auto('🔵 SYNC: iniciando sincronización (perfil $profileId)', source: 'SyncService');
     try {
       await uploadProfiles();
       await uploadPlayers(profileId, clubId);
       await uploadMatches(profileId, clubId);
       await uploadAttendance(profileId, clubId);
       await uploadStats(profileId, clubId);
-      print('🟢 SYNC: sincronización completada');
+      // Process any remaining queue items
+      await _processQueue();
+      LogService.instance.auto('🟢 SYNC: sincronización completada', source: 'SyncService');
     } catch (e) {
-      print('🔴 SYNC: error en sincronización: $e');
+      LogService.instance.auto('🔴 SYNC: error en sincronización: $e', source: 'SyncService');
       rethrow;
     }
+  }
+
+  Future<int> getPendingCount() async {
+    if (!AppConfig.useFirebase) return 0;
+    return await _db.getSyncQueueCount();
+  }
+
+  Future<void> clearQueue() async {
+    await _db.clearSyncQueue();
   }
 
   // ============================================================

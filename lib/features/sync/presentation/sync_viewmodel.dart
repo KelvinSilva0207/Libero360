@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../data/sync_service.dart';
 
@@ -12,6 +13,8 @@ class SyncViewModel extends ChangeNotifier {
   int _progress = 0;
   final int _totalSteps = 5;
   DateTime? _lastSyncDate;
+  int _pendingCount = 0;
+  Timer? _pendingTimer;
 
   SyncState get state => _state;
   String? get error => _error;
@@ -20,6 +23,7 @@ class SyncViewModel extends ChangeNotifier {
   int get totalSteps => _totalSteps;
   bool get isSyncing => _state == SyncState.syncing;
   DateTime? get lastSyncDate => _lastSyncDate;
+  int get pendingCount => _pendingCount;
 
   String? get lastSyncDateFormatted {
     if (_lastSyncDate == null) return null;
@@ -29,6 +33,25 @@ class SyncViewModel extends ChangeNotifier {
     final h = _lastSyncDate!.hour.toString().padLeft(2, '0');
     final min = _lastSyncDate!.minute.toString().padLeft(2, '0');
     return '$d/$m/$y $h:$min';
+  }
+
+  void startPollingPending() {
+    _pendingTimer?.cancel();
+    _pendingTimer = Timer.periodic(const Duration(seconds: 15), (_) => _refreshPending());
+    _refreshPending();
+  }
+
+  void stopPollingPending() {
+    _pendingTimer?.cancel();
+    _pendingTimer = null;
+  }
+
+  Future<void> _refreshPending() async {
+    final count = await _service.getPendingCount();
+    if (count != _pendingCount) {
+      _pendingCount = count;
+      notifyListeners();
+    }
   }
 
   Future<void> syncAll(String profileId, String clubId) async {
@@ -68,6 +91,24 @@ class SyncViewModel extends ChangeNotifier {
       _error = e.toString();
       _state = SyncState.error;
     }
+    await _refreshPending();
+    notifyListeners();
+  }
+
+  Future<void> processPendingQueue() async {
+    if (_service.getPendingCount() == 0) return;
+    _state = SyncState.syncing;
+    _currentOperation = 'Procesando cola pendiente (${_pendingCount} ops)...';
+    notifyListeners();
+    try {
+      // syncAll already calls _processQueue internally
+      // but we expose this for manual queue flush
+      await _service.syncAll('', '');
+    } catch (e) {
+      _error = e.toString();
+      _state = SyncState.error;
+    }
+    await _refreshPending();
     notifyListeners();
   }
 
@@ -121,5 +162,11 @@ class SyncViewModel extends ChangeNotifier {
     _currentOperation = '';
     _progress = 0;
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    stopPollingPending();
+    super.dispose();
   }
 }

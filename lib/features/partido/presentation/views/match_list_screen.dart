@@ -1,7 +1,8 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/services/log_service.dart';
-import '../../../../core/themes/app_colors.dart';
 import '../../../../core/widgets_globales/route_transitions.dart';
 import '../../../cancha/presentation/views/court_screen.dart';
 import '../../../estadisticas/data/local_db/database_service.dart';
@@ -20,13 +21,28 @@ class MatchListScreen extends StatefulWidget {
 class _MatchListScreenState extends State<MatchListScreen> {
   List<Match> _activeMatches = [];
   List<Match> _finishedMatches = [];
+  List<Season> _seasons = [];
   bool _loading = true;
+
+  final _searchCtrl = TextEditingController();
+  String _searchQuery = '';
+
+  TipoPartido? _filterTipo;
+  bool? _filterResultado; // true=ganados, false=perdidos, null=all
+  int? _filterSeasonId;
 
   @override
   void initState() {
     super.initState();
     LogService.instance.auto('🟢 MatchListScreen — initState', source: 'MatchListScreen');
+    _searchCtrl.addListener(() => setState(() => _searchQuery = _searchCtrl.text));
     _loadMatches();
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
   }
 
   Future<void> _loadMatches() async {
@@ -36,18 +52,51 @@ class _MatchListScreenState extends State<MatchListScreen> {
       final active = await DatabaseService.instance.getMatchesByState(EstadoPartido.enProgreso);
       final paused = await DatabaseService.instance.getMatchesByState(EstadoPartido.pausado);
       final finished = await DatabaseService.instance.getMatchesByState(EstadoPartido.finalizado);
+      final seasons = await DatabaseService.instance.getAllSeasons();
       if (!mounted) return;
       setState(() {
         _activeMatches = [...active, ...paused]
           ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
         _finishedMatches = finished..sort((a, b) => b.fecha.compareTo(a.fecha));
+        _seasons = seasons;
         _loading = false;
       });
-      LogService.instance.auto('🟢 MatchListScreen — activos=${_activeMatches.length}, historial=${_finishedMatches.length}', source: 'MatchListScreen');
+      LogService.instance.auto('🟢 MatchListScreen — activos=${_activeMatches.length}, historial=${_finishedMatches.length}, seasons=${_seasons.length}', source: 'MatchListScreen');
     } catch (e) {
       LogService.instance.auto('🔴 MatchListScreen — error: $e', source: 'MatchListScreen');
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  List<Match> get _filteredFinished {
+    var list = _finishedMatches;
+
+    if (_searchQuery.isNotEmpty) {
+      final q = _searchQuery.toLowerCase();
+      list = list.where((m) =>
+        m.equipoLocal.toLowerCase().contains(q) ||
+        m.equipoVisitante.toLowerCase().contains(q) ||
+        (m.competitionName?.toLowerCase().contains(q) ?? false) ||
+        (m.lugar?.toLowerCase().contains(q) ?? false)
+      ).toList();
+    }
+
+    if (_filterTipo != null) {
+      list = list.where((m) => m.tipoPartido == _filterTipo).toList();
+    }
+
+    if (_filterResultado != null) {
+      list = list.where((m) {
+        final won = m.setsLocal > m.setsVisitante;
+        return _filterResultado == true ? won : !won;
+      }).toList();
+    }
+
+    if (_filterSeasonId != null) {
+      list = list.where((m) => m.seasonId == _filterSeasonId).toList();
+    }
+
+    return list;
   }
 
   Future<void> _deleteMatch(Match m) async {
@@ -73,9 +122,74 @@ class _MatchListScreenState extends State<MatchListScreen> {
     }
   }
 
+  Future<void> _duplicateMatch(Match m) async {
+    LogService.instance.auto('🟡 MatchListScreen — duplicar partido: ${m.equipoLocal} vs ${m.equipoVisitante}', source: 'MatchListScreen');
+    final copy = Match.create(
+      equipoLocal: m.equipoLocal,
+      equipoVisitante: m.equipoVisitante,
+      tipoPartido: m.tipoPartido,
+      setsTotales: m.setsTotales,
+      puntosParaGanarSet: m.puntosParaGanarSet,
+      puntosDiferenciaSet: m.puntosDiferenciaSet,
+      lugar: m.lugar,
+    );
+    copy.seasonId = m.seasonId;
+    copy.competitionName = m.competitionName;
+    copy.profileId = m.profileId;
+    copy.clubId = m.clubId;
+    await DatabaseService.instance.insertMatch(copy);
+    _loadMatches();
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Partido duplicado: ${m.equipoLocal} vs ${m.equipoVisitante}')),
+      );
+    }
+  }
+
+  Future<void> _exportMatch(Match m) async {
+    LogService.instance.auto('🟡 MatchListScreen — exportar partido: ${m.equipoLocal} vs ${m.equipoVisitante}', source: 'MatchListScreen');
+    final dateStr = DateFormat('dd/MM/yyyy HH:mm').format(m.fecha);
+    final winner = m.setsLocal > m.setsVisitante ? m.equipoLocal : m.equipoVisitante;
+    final lines = <String>[
+      '🏐 ${m.equipoLocal} vs ${m.equipoVisitante}',
+      '📅 $dateStr',
+      '📊 ${m.resultadoSets}',
+      '🏆 Ganador: $winner',
+      '',
+      'Tipo: ${m.tipoPartidoLabel}',
+      if (m.competitionName != null) 'Competición: ${m.competitionName}',
+      if (m.lugar != null) 'Lugar: ${m.lugar}',
+      'Duración: ${m.duracionSegundos}s',
+    ];
+    final text = lines.join('\n');
+    await Clipboard.setData(ClipboardData(text: text));
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Resultado copiado al portapapeles')),
+      );
+    }
+  }
+
+  void _clearFilters() {
+    setState(() {
+      _filterTipo = null;
+      _filterResultado = null;
+      _filterSeasonId = null;
+      _searchCtrl.clear();
+    });
+  }
+
+  bool get _hasActiveFilters =>
+    _filterTipo != null ||
+    _filterResultado != null ||
+    _filterSeasonId != null ||
+    _searchQuery.isNotEmpty;
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final filteredCount = _filteredFinished.length;
+
     return Scaffold(
       backgroundColor: cs.surface,
       appBar: AppBar(
@@ -99,18 +213,229 @@ class _MatchListScreenState extends State<MatchListScreen> {
                 children: [
                   _buildNuevoPartidoCard(cs),
                   const SizedBox(height: 20),
+                  if (_finishedMatches.isNotEmpty) ...[
+                    _buildSearchBar(cs),
+                    const SizedBox(height: 8),
+                    _buildFilterChips(cs),
+                    const SizedBox(height: 8),
+                  ],
                   if (_activeMatches.isNotEmpty) ...[
                     _buildActiveSection(cs),
                     const SizedBox(height: 20),
                   ],
                   if (_finishedMatches.isNotEmpty) ...[
-                    _buildHistorySection(cs),
+                    _buildHistorySection(cs, filteredCount),
                   ],
                   if (_activeMatches.isEmpty && _finishedMatches.isEmpty)
                     _buildEmptyState(cs),
+                  if (_hasActiveFilters && filteredCount == 0)
+                    _buildNoResults(cs),
                 ],
               ),
             ),
+    );
+  }
+
+  Widget _buildSearchBar(ColorScheme cs) {
+    return TextField(
+      controller: _searchCtrl,
+      decoration: InputDecoration(
+        hintText: 'Buscar partidos...',
+        hintStyle: TextStyle(color: cs.onSurfaceVariant.withValues(alpha: 0.5), fontSize: 13),
+        prefixIcon: Icon(Icons.search_rounded, size: 18, color: cs.onSurfaceVariant),
+        suffixIcon: _searchQuery.isNotEmpty
+            ? IconButton(
+                icon: Icon(Icons.clear_rounded, size: 16, color: cs.onSurfaceVariant),
+                onPressed: _searchCtrl.clear,
+              )
+            : null,
+        filled: true,
+        fillColor: cs.surfaceContainerHighest.withValues(alpha: 0.5),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        isDense: true,
+      ),
+      style: TextStyle(color: cs.onSurface, fontSize: 13),
+      textInputAction: TextInputAction.search,
+    );
+  }
+
+  Widget _buildFilterChips(ColorScheme cs) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          _buildChip(cs, 'Tipo', _filterTipo?.name, () {
+            showModalBottomSheet(
+              context: context,
+              backgroundColor: cs.surface,
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+              ),
+              builder: (ctx) => Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(height: 12),
+                  Container(width: 40, height: 4,
+                      decoration: BoxDecoration(color: cs.outlineVariant, borderRadius: BorderRadius.circular(2))),
+                  const SizedBox(height: 12),
+                  Text('Filtrar por tipo', style: TextStyle(color: cs.onSurface, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  ...TipoPartido.values.map((t) => ListTile(
+                    leading: Radio<TipoPartido>(
+                      value: t,
+                      groupValue: _filterTipo,
+                      onChanged: (v) {
+                        Navigator.pop(ctx);
+                        setState(() => _filterTipo = v);
+                      },
+                    ),
+                    title: Text(t.name, style: TextStyle(color: cs.onSurface)),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      setState(() => _filterTipo = t);
+                    },
+                  )),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      setState(() => _filterTipo = null);
+                    },
+                    child: const Text('Limpiar filtro'),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+              ),
+            );
+          }),
+          const SizedBox(width: 6),
+          _buildChip(cs, 'Resultado',
+            _filterResultado == null ? null : (_filterResultado! ? 'Ganados' : 'Perdidos'),
+            () => setState(() {
+              if (_filterResultado == null) {
+                _filterResultado = true;
+              } else if (_filterResultado == true) {
+                _filterResultado = false;
+              } else {
+                _filterResultado = null;
+              }
+            }),
+          ),
+          const SizedBox(width: 6),
+          if (_seasons.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(right: 6),
+              child: _buildChip(cs, 'Temporada',
+                _seasons.where((s) => s.id == _filterSeasonId).firstOrNull?.label,
+                () {
+                  showModalBottomSheet(
+                    context: context,
+                    backgroundColor: cs.surface,
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                    ),
+                    builder: (ctx) => Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const SizedBox(height: 12),
+                        Container(width: 40, height: 4,
+                            decoration: BoxDecoration(color: cs.outlineVariant, borderRadius: BorderRadius.circular(2))),
+                        const SizedBox(height: 12),
+                        Text('Filtrar por temporada', style: TextStyle(color: cs.onSurface, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 8),
+                        ..._seasons.map((s) => ListTile(
+                          leading: Radio<int>(
+                            value: s.id,
+                            groupValue: _filterSeasonId,
+                            onChanged: (v) {
+                              Navigator.pop(ctx);
+                              setState(() => _filterSeasonId = v);
+                            },
+                          ),
+                          title: Text(s.label, style: TextStyle(color: cs.onSurface)),
+                          onTap: () {
+                            Navigator.pop(ctx);
+                            setState(() => _filterSeasonId = s.id);
+                          },
+                        )),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.pop(ctx);
+                            setState(() => _filterSeasonId = null);
+                          },
+                          child: const Text('Limpiar filtro'),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+          if (_hasActiveFilters)
+            Padding(
+              padding: const EdgeInsets.only(left: 4),
+              child: GestureDetector(
+                onTap: _clearFilters,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: cs.error.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.close_rounded, size: 12, color: cs.error),
+                      const SizedBox(width: 4),
+                      Text('Limpiar', style: TextStyle(color: cs.error, fontSize: 11)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChip(ColorScheme cs, String label, String? value, VoidCallback onTap) {
+    final active = value != null;
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: active ? cs.primary.withValues(alpha: 0.12) : cs.surfaceContainerHighest.withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: active ? cs.primary.withValues(alpha: 0.3) : cs.outlineVariant.withValues(alpha: 0.5),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              active ? value! : label,
+              style: TextStyle(
+                color: active ? cs.primary : cs.onSurfaceVariant,
+                fontSize: 11,
+                fontWeight: active ? FontWeight.w600 : FontWeight.w500,
+              ),
+            ),
+            if (active) ...[
+              const SizedBox(width: 4),
+              Icon(Icons.close_rounded, size: 12, color: cs.primary),
+            ] else ...[
+              const SizedBox(width: 4),
+              Icon(Icons.arrow_drop_down_rounded, size: 14, color: cs.onSurfaceVariant),
+            ],
+          ],
+        ),
+      ),
     );
   }
 
@@ -165,7 +490,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
             children: [
               Container(
                 width: 8, height: 8,
-                decoration: const BoxDecoration(shape: BoxShape.circle, color: AppColors.accent),
+                decoration: BoxDecoration(shape: BoxShape.circle, color: cs.primary),
               ),
               const SizedBox(width: 6),
               Text('PARTIDOS ACTIVOS',
@@ -174,11 +499,11 @@ class _MatchListScreenState extends State<MatchListScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: AppColors.accent.withValues(alpha: 0.15),
+                  color: cs.primary.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text('${_activeMatches.length}',
-                    style: TextStyle(fontSize: 10, color: AppColors.accent, fontWeight: FontWeight.bold)),
+                    style: TextStyle(fontSize: 10, color: cs.primary, fontWeight: FontWeight.bold)),
               ),
             ],
           ),
@@ -190,13 +515,14 @@ class _MatchListScreenState extends State<MatchListScreen> {
 
   Widget _buildActiveCard(ColorScheme cs, Match m) {
     final dateStr = DateFormat('dd/MM/yyyy HH:mm').format(m.fecha);
+    final isPaused = m.estado == EstadoPartido.pausado;
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: cs.outlineVariant),
+        border: Border.all(color: isPaused ? cs.error.withValues(alpha: 0.3) : cs.outlineVariant),
       ),
       child: Padding(
         padding: const EdgeInsets.all(14),
@@ -205,10 +531,11 @@ class _MatchListScreenState extends State<MatchListScreen> {
           children: [
             Row(
               children: [
-                Icon(Icons.sports_volleyball_rounded, size: 14, color: AppColors.accent),
+                Icon(isPaused ? Icons.pause_circle_rounded : Icons.sports_volleyball_rounded, size: 14,
+                    color: isPaused ? cs.error : cs.primary),
                 const SizedBox(width: 4),
-                Text(m.tipoPartidoLabel,
-                    style: TextStyle(color: AppColors.accent, fontSize: 10, fontWeight: FontWeight.w600)),
+                Text(isPaused ? 'PAUSADO' : m.tipoPartidoLabel,
+                    style: TextStyle(color: isPaused ? cs.error : cs.primary, fontSize: 10, fontWeight: FontWeight.w600)),
                 const SizedBox(width: 8),
                 Text(dateStr, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 10)),
                 const Spacer(),
@@ -216,8 +543,12 @@ class _MatchListScreenState extends State<MatchListScreen> {
                   icon: Icon(Icons.more_vert_rounded, size: 16, color: cs.onSurfaceVariant),
                   onSelected: (v) {
                     if (v == 'delete') _deleteMatch(m);
+                    if (v == 'duplicate') _duplicateMatch(m);
+                    if (v == 'export') _exportMatch(m);
                   },
                   itemBuilder: (_) => [
+                    const PopupMenuItem(value: 'duplicate', child: Text('Duplicar')),
+                    const PopupMenuItem(value: 'export', child: Text('Exportar')),
                     const PopupMenuItem(value: 'delete', child: Text('Eliminar', style: TextStyle(color: Colors.red))),
                   ],
                 ),
@@ -241,11 +572,11 @@ class _MatchListScreenState extends State<MatchListScreen> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(
-                              color: AppColors.accent.withValues(alpha: 0.15),
+                              color: cs.primary.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(m.marcador,
-                                style: TextStyle(color: AppColors.accent, fontSize: 12, fontWeight: FontWeight.bold)),
+                                style: TextStyle(color: cs.primary, fontSize: 12, fontWeight: FontWeight.bold)),
                           ),
                         ],
                       ),
@@ -256,7 +587,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
                 FilledButton(
                   onPressed: () => _continuarPartido(m),
                   style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.accent,
+                    backgroundColor: cs.primary,
                     foregroundColor: cs.onPrimary,
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -271,7 +602,8 @@ class _MatchListScreenState extends State<MatchListScreen> {
     );
   }
 
-  Widget _buildHistorySection(ColorScheme cs) {
+  Widget _buildHistorySection(ColorScheme cs, int filteredCount) {
+    final displayList = _filteredFinished;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -281,24 +613,35 @@ class _MatchListScreenState extends State<MatchListScreen> {
             children: [
               Icon(Icons.history_rounded, size: 14, color: cs.onSurfaceVariant),
               const SizedBox(width: 6),
-              Text('ÚLTIMOS PARTIDOS',
+              Text(_hasActiveFilters ? 'RESULTADOS ($filteredCount)' : 'ÚLTIMOS PARTIDOS',
                   style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: cs.onSurfaceVariant, letterSpacing: 1)),
+              if (_hasActiveFilters) ...[
+                const SizedBox(width: 6),
+                GestureDetector(
+                  onTap: _clearFilters,
+                  child: Icon(Icons.close_rounded, size: 14, color: cs.error),
+                ),
+              ],
             ],
           ),
         ),
-        ..._finishedMatches.take(5).map((m) => _buildHistoryTile(cs, m)),
-        if (_finishedMatches.length > 5)
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Center(
-              child: TextButton.icon(
-                onPressed: () => _showFullHistory(cs),
-                icon: const Icon(Icons.history_rounded, size: 16),
-                label: Text('Ver historial completo (${_finishedMatches.length})'),
-                style: TextButton.styleFrom(foregroundColor: cs.primary),
+        if (_hasActiveFilters)
+          ...displayList.map((m) => _buildHistoryTile(cs, m))
+        else ...[
+          ..._finishedMatches.take(5).map((m) => _buildHistoryTile(cs, m)),
+          if (_finishedMatches.length > 5)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Center(
+                child: TextButton.icon(
+                  onPressed: () => _showFullHistory(cs),
+                  icon: const Icon(Icons.history_rounded, size: 16),
+                  label: Text('Ver historial completo (${_finishedMatches.length})'),
+                  style: TextButton.styleFrom(foregroundColor: cs.primary),
+                ),
               ),
             ),
-          ),
+        ],
       ],
     );
   }
@@ -325,12 +668,14 @@ class _MatchListScreenState extends State<MatchListScreen> {
                 duration: const Duration(milliseconds: 200),
                 width: 36, height: 36,
                 decoration: BoxDecoration(
-                  color: isWin ? AppColors.success.withValues(alpha: 0.2) : AppColors.error.withValues(alpha: 0.2),
+                  color: isWin
+                      ? cs.tertiary.withValues(alpha: 0.2)
+                      : cs.error.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(
                   isWin ? Icons.emoji_events_rounded : Icons.sports_volleyball_rounded,
-                  color: isWin ? AppColors.success : AppColors.error,
+                  color: isWin ? cs.tertiary : cs.error,
                   size: 18,
                 ),
               ),
@@ -341,28 +686,40 @@ class _MatchListScreenState extends State<MatchListScreen> {
                   children: [
                     Text('${m.equipoLocal} vs ${m.equipoVisitante}',
                         style: TextStyle(color: cs.onSurface, fontSize: 13, fontWeight: FontWeight.w500)),
-                    Text('$dateStr · ${m.resultadoSets}',
-                        style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11)),
+                    Row(
+                      children: [
+                        Text('$dateStr · ${m.resultadoSets}',
+                            style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11)),
+                        if (m.tipoPartido != TipoPartido.amistoso) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                            decoration: BoxDecoration(
+                              color: cs.primary.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(m.tipoPartidoLabel,
+                                style: TextStyle(color: cs.primary, fontSize: 9, fontWeight: FontWeight.w500)),
+                          ),
+                        ],
+                      ],
+                    ),
                   ],
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: isWin ? AppColors.success.withValues(alpha: 0.12) : AppColors.error.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  isWin ? 'Ganado' : 'Perdido',
-                  style: TextStyle(
-                    color: isWin ? AppColors.success : AppColors.error,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+              PopupMenuButton<String>(
+                icon: Icon(Icons.more_horiz_rounded, size: 16, color: cs.onSurfaceVariant),
+                onSelected: (v) {
+                  if (v == 'duplicate') _duplicateMatch(m);
+                  if (v == 'export') _exportMatch(m);
+                  if (v == 'delete') _deleteMatch(m);
+                },
+                itemBuilder: (_) => [
+                  const PopupMenuItem(value: 'duplicate', child: Text('Duplicar')),
+                  const PopupMenuItem(value: 'export', child: Text('Exportar')),
+                  const PopupMenuItem(value: 'delete', child: Text('Eliminar', style: TextStyle(color: Colors.red))),
+                ],
               ),
-              const SizedBox(width: 4),
-              Icon(Icons.chevron_right_rounded, color: cs.onSurfaceVariant, size: 18),
             ],
           ),
         ),
@@ -390,6 +747,23 @@ class _MatchListScreenState extends State<MatchListScreen> {
             const SizedBox(height: 4),
             Text('Crea tu primer partido desde la card superior',
                 style: TextStyle(color: cs.onSurfaceVariant.withValues(alpha: 0.6), fontSize: 12)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNoResults(ColorScheme cs) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 24),
+      child: Center(
+        child: Column(
+          children: [
+            Icon(Icons.search_off_rounded, size: 36, color: cs.onSurfaceVariant.withValues(alpha: 0.3)),
+            const SizedBox(height: 8),
+            Text('Sin resultados', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 14)),
+            const SizedBox(height: 4),
+            Text('Prueba con otros filtros', style: TextStyle(color: cs.onSurfaceVariant.withValues(alpha: 0.6), fontSize: 12)),
           ],
         ),
       ),
@@ -469,10 +843,57 @@ class _MatchListScreenState extends State<MatchListScreen> {
   void _verResumen(Match m) {
     final cs = Theme.of(context).colorScheme;
     LogService.instance.auto('🟡 MatchListScreen — ver resumen: ${m.equipoLocal} ${m.resultadoSets} ${m.equipoVisitante}', source: 'MatchListScreen');
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${m.equipoLocal} ${m.resultadoSets} ${m.equipoVisitante}'),
-        backgroundColor: cs.primary,
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: cs.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(width: 40, height: 4,
+                decoration: BoxDecoration(color: cs.outlineVariant, borderRadius: BorderRadius.circular(2))),
+            const SizedBox(height: 16),
+            Text('${m.equipoLocal} vs ${m.equipoVisitante}',
+                style: TextStyle(color: cs.onSurface, fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            Text(m.resultadoSets,
+                style: TextStyle(color: cs.primary, fontSize: 32, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            Text(m.isFinalizado
+                ? (m.setsLocal > m.setsVisitante ? 'Ganó ${m.equipoLocal}' : 'Ganó ${m.equipoVisitante}')
+                : m.estado.name,
+                style: TextStyle(color: cs.onSurfaceVariant, fontSize: 14)),
+            const SizedBox(height: 4),
+            Text(DateFormat('dd/MM/yyyy HH:mm').format(m.fecha),
+                style: TextStyle(color: cs.onSurfaceVariant.withValues(alpha: 0.6), fontSize: 12)),
+            if (m.competitionName != null) ...[
+              const SizedBox(height: 4),
+              Text(m.competitionName!,
+                  style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
+            ],
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                TextButton.icon(
+                  onPressed: () { Navigator.pop(ctx); _duplicateMatch(m); },
+                  icon: Icon(Icons.copy_rounded, size: 16),
+                  label: const Text('Duplicar', style: TextStyle(fontSize: 12)),
+                ),
+                TextButton.icon(
+                  onPressed: () { Navigator.pop(ctx); _exportMatch(m); },
+                  icon: Icon(Icons.share_rounded, size: 16),
+                  label: const Text('Exportar', style: TextStyle(fontSize: 12)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+          ],
+        ),
       ),
     );
   }

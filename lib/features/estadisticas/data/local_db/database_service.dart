@@ -7,6 +7,7 @@ import '../../../../core/services/category_service.dart';
 import '../models/models.dart';
 import '../../../auth/data/models/user_model.dart';
 import '../../../partido/data/match_event.dart';
+import '../../../sync/data/pending_sync_operation.dart';
 import 'package:intl/intl.dart';
 import '../../../profiles/data/profile_model.dart';
 import '../../../statistics/data/rotation_stats_model.dart';
@@ -42,6 +43,7 @@ class DatabaseService extends AbstractDataService {
   final _clubCacheStore = stringMapStoreFactory.store('club_cache');
   final _memberCacheStore = stringMapStoreFactory.store('member_cache');
   final _invitationCacheStore = stringMapStoreFactory.store('invitation_cache');
+  final _syncQueueStore = intMapStoreFactory.store('sync_queue');
 
   Future<void> initialize() async {
     if (_isInitialized) return;
@@ -479,6 +481,32 @@ class DatabaseService extends AbstractDataService {
 
   Future<void> deleteAttendance(int recordId) async {
     await _attendanceStore.record(recordId).delete(_database);
+  }
+
+  // ==================== SYNC QUEUE ====================
+
+  Future<void> addSyncOperation(PendingSyncOperation op) async {
+    await _syncQueueStore.add(_database, op.toMap());
+  }
+
+  Future<List<PendingSyncOperation>> getPendingSyncOperations() async {
+    final snapshots = await _syncQueueStore.find(
+      _database,
+      finder: Finder(sortOrders: [SortOrder('createdAt')]),
+    );
+    return snapshots.map((e) => PendingSyncOperation.fromMap(e.key, e.value)).toList();
+  }
+
+  Future<void> removeSyncOperation(int id) async {
+    await _syncQueueStore.record(id).delete(_database);
+  }
+
+  Future<void> clearSyncQueue() async {
+    await _syncQueueStore.delete(_database);
+  }
+
+  Future<int> getSyncQueueCount() async {
+    return await _syncQueueStore.count(_database);
   }
 
   // ==================== MATCH EVENTS ====================

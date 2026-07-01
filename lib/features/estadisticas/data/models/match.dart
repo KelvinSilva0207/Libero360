@@ -79,6 +79,13 @@ class Match {
   bool get isFinalizado => estado == EstadoPartido.finalizado;
   bool get isActivo => estado == EstadoPartido.enProgreso;
 
+  int get setsParaGanar => setsTotales ~/ 2 + 1;
+  bool get isDecidingSet => setActual == setsTotales;
+  bool get isGoldenSet => isDecidingSet;
+
+  int get puntosParaGanarSetActual => isDecidingSet ? 15 : puntosParaGanarSet;
+  int get puntosDiferenciaSetActual => isDecidingSet ? 2 : puntosDiferenciaSet;
+
   String get tipoPartidoLabel {
     switch (tipoPartido) {
       case TipoPartido.amistoso: return 'Amistoso';
@@ -101,8 +108,10 @@ class Match {
   }
 
   void _verificarCambioSet() {
-    if (puntosLocal >= puntosParaGanarSet || puntosVisitante >= puntosParaGanarSet) {
-      if ((puntosLocal - puntosVisitante).abs() >= puntosDiferenciaSet) {
+    final targetPts = puntosParaGanarSetActual;
+    final targetDiff = puntosDiferenciaSetActual;
+    if (puntosLocal >= targetPts || puntosVisitante >= targetPts) {
+      if ((puntosLocal - puntosVisitante).abs() >= targetDiff) {
         if (puntosLocal > puntosVisitante) {
           setsLocal++;
         } else {
@@ -112,7 +121,7 @@ class Match {
         puntosLocal = 0;
         puntosVisitante = 0;
 
-        if (setsLocal == 3 || setsVisitante == 3) {
+        if (setsLocal == setsParaGanar || setsVisitante == setsParaGanar) {
           estado = EstadoPartido.finalizado;
           resultadoFinal = resultadoSets;
         }

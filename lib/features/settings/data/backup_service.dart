@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:crypto/crypto.dart' show sha256;
@@ -20,6 +21,8 @@ class BackupMetadata {
   final String? driveAppVersion;
   final String? driveChecksum;
   final String? driveAccountEmail;
+  final int driveVersionCount;
+  final bool isAutoBackupEnabled;
 
   const BackupMetadata({
     this.lastBackup,
@@ -32,6 +35,8 @@ class BackupMetadata {
     this.driveAppVersion,
     this.driveChecksum,
     this.driveAccountEmail,
+    this.driveVersionCount = 0,
+    this.isAutoBackupEnabled = false,
   });
 
   BackupMetadata copyWith({
@@ -45,6 +50,8 @@ class BackupMetadata {
     String? driveAppVersion,
     String? driveChecksum,
     String? driveAccountEmail,
+    int? driveVersionCount,
+    bool? isAutoBackupEnabled,
   }) =>
       BackupMetadata(
         lastBackup: lastBackup ?? this.lastBackup,
@@ -57,6 +64,8 @@ class BackupMetadata {
         driveAppVersion: driveAppVersion ?? this.driveAppVersion,
         driveChecksum: driveChecksum ?? this.driveChecksum,
         driveAccountEmail: driveAccountEmail ?? this.driveAccountEmail,
+        driveVersionCount: driveVersionCount ?? this.driveVersionCount,
+        isAutoBackupEnabled: isAutoBackupEnabled ?? this.isAutoBackupEnabled,
       );
 }
 
@@ -68,13 +77,17 @@ class BackupService {
   final LogService _log = LogService.instance;
   final GoogleDriveService _drive = GoogleDriveService.instance;
   BackupMetadata _metadata = const BackupMetadata();
+  Timer? _autoBackupTimer;
 
   BackupMetadata get metadata => _metadata;
 
   static const _lastBackupKey = 'backup_last_date';
   static const _connectedAccountKey = 'backup_connected_account';
+  static const _autoBackupKey = 'backup_auto_enabled';
+  static const _lastIncrementalKey = 'backup_last_incremental';
   static const _settingsSectionKey = 'appSettings';
   static const _appVersion = '1.0.0';
+  static const _autoBackupInterval = Duration(hours: 24);
 
   static String get _platform {
     if (kIsWeb) return 'web';
@@ -91,9 +104,11 @@ class BackupService {
   Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
     final lastDateStr = prefs.getString(_lastBackupKey);
+    final autoEnabled = prefs.getBool(_autoBackupKey) ?? false;
     _metadata = _metadata.copyWith(
       lastBackup: lastDateStr != null ? DateTime.tryParse(lastDateStr) : null,
       connectedAccount: prefs.getString(_connectedAccountKey),
+      isAutoBackupEnabled: autoEnabled,
     );
     await _drive.refreshMetadata();
     _metadata = _metadata.copyWith(
@@ -103,7 +118,60 @@ class BackupService {
       driveAppVersion: _drive.metadata.appVersion,
       driveChecksum: _drive.metadata.checksum,
       driveAccountEmail: _drive.account?.email,
+      driveVersionCount: _drive.metadata.versionHistory.length,
     );
+    if (autoEnabled && _drive.isConnected) {
+      _scheduleAutoBackup();
+    }
+  }
+
+  void _scheduleAutoBackup() {
+    _autoBackupTimer?.cancel();
+    final lastBackup = _metadata.lastBackup ?? DateTime(2000);
+    final nextBackup = lastBackup.add(_autoBackupInterval);
+    if (DateTime.now().isAfter(nextBackup)) {
+      _autoBackupTimer = Timer.periodic(_autoBackupInterval, (_) => _autoBackup());
+    } else {
+      final delay = nextBackup.difference(DateTime.now());
+      _autoBackupTimer = Timer(delay, () {
+        _autoBackup();
+        _autoBackupTimer = Timer.periodic(_autoBackupInterval, (_) => _autoBackup());
+      });
+    }
+  }
+
+  void stopAutoBackup() {
+    _autoBackupTimer?.cancel();
+    _autoBackupTimer = null;
+  }
+
+  Future<void> setAutoBackup(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_autoBackupKey, enabled);
+    _metadata = _metadata.copyWith(isAutoBackupEnabled: enabled);
+    if (enabled && _drive.isConnected) {
+      _scheduleAutoBackup();
+    } else {
+      stopAutoBackup();
+    }
+  }
+
+  Future<void> _autoBackup() async {
+    if (!_drive.isConnected) return;
+    await _log.system('🔵 AUTO BACKUP — Iniciando respaldo automático', source: 'BackupService');
+    await createBackup();
+  }
+
+  String? _computeChecksum(Map<String, dynamic> data) {
+    try {
+      final extracted = {...data};
+      extracted.remove('checksum');
+      extracted.remove(_settingsSectionKey);
+      final reEncoded = const JsonEncoder.withIndent('  ').convert(extracted);
+      return sha256.convert(utf8.encode(reEncoded)).toString();
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<String?> createBackup() async {
@@ -128,6 +196,9 @@ class BackupService {
       }
       data[_settingsSectionKey] = settings;
 
+      final checksum = _computeChecksum(data);
+      if (checksum != null) data['checksum'] = checksum;
+
       final enrichedJson = const JsonEncoder.withIndent('  ').convert(data);
 
       final date = DateTime.now().toIso8601String().split('T').first;
@@ -136,16 +207,16 @@ class BackupService {
       await file.writeAsString(enrichedJson);
 
       await prefs.setString(_lastBackupKey, DateTime.now().toIso8601String());
+      await prefs.setString(_lastIncrementalKey, DateTime.now().toIso8601String());
       _metadata = _metadata.copyWith(lastBackup: DateTime.now());
       await _log.system('🟢 EXPORT VERIFIED — Respaldo creado: libero360_backup_$date.json', source: 'BackupService');
       await _log.system('🔵 BACKUP SETTINGS — ${settings.length} preferencias respaldadas', source: 'BackupService');
 
-      final extractedChecksum = data['checksum'] as String?;
       if (_drive.isConnected) {
         await _log.system('🔵 Subiendo respaldo a Google Drive...', source: 'BackupService');
         final driveErr = await _drive.uploadBackup(
           enrichedJson,
-          checksum: extractedChecksum,
+          checksum: checksum,
           appVersion: _appVersion,
         );
         if (driveErr != null) {
@@ -157,8 +228,9 @@ class BackupService {
             driveLastBackup: DateTime.now(),
             driveFileSize: enrichedJson.length,
             driveAppVersion: _appVersion,
-            driveChecksum: extractedChecksum,
+            driveChecksum: checksum,
             driveAccountEmail: _drive.account?.email,
+            driveVersionCount: _drive.metadata.versionHistory.length,
           );
         }
       }
@@ -172,14 +244,14 @@ class BackupService {
     }
   }
 
-  Future<bool> restoreBackup({String? filePath, bool fromDrive = false}) async {
+  Future<bool> restoreBackup({String? filePath, bool fromDrive = false, String? driveFileId}) async {
     _metadata = _metadata.copyWith(isRestoring: true);
     try {
       String jsonStr;
 
       if (fromDrive) {
         await _log.system('🔵 Descargando respaldo desde Google Drive...', source: 'BackupService');
-        final driveJson = await _drive.downloadBackup();
+        final driveJson = await _drive.downloadBackup(fileId: driveFileId);
         if (driveJson == null) {
           await _log.error('🔴 No se pudo descargar respaldo de Drive', source: 'BackupService');
           return false;
@@ -210,12 +282,8 @@ class BackupService {
       final storedChecksum = data['checksum'] as String?;
 
       if (storedChecksum != null) {
-        final extractedData = {...data};
-        extractedData.remove('checksum');
-        extractedData.remove(_settingsSectionKey);
-        final reEncoded = const JsonEncoder.withIndent('  ').convert(extractedData);
-        final computedChecksum = _sha256(reEncoded);
-        if (computedChecksum != storedChecksum) {
+        final computed = _computeChecksum(data);
+        if (computed == null || computed != storedChecksum) {
           await _log.error('🔴 Backup corrupto — Checksum no coincide. No se importará.', source: 'BackupService');
           return false;
         }
@@ -259,6 +327,10 @@ class BackupService {
     }
   }
 
+  Future<List<Map<String, dynamic>>> listDriveVersions() async {
+    return await _drive.listBackupVersions();
+  }
+
   Future<void> setConnectedAccount(String? email) async {
     final prefs = await SharedPreferences.getInstance();
     if (email != null) {
@@ -269,7 +341,7 @@ class BackupService {
     _metadata = _metadata.copyWith(connectedAccount: email);
   }
 
-  String _sha256(String input) {
-    return sha256.convert(utf8.encode(input)).toString();
+  void dispose() {
+    stopAutoBackup();
   }
 }

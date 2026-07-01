@@ -11,6 +11,7 @@ class DriveMetadata {
   final String? appVersion;
   final String? checksum;
   final bool isConnected;
+  final List<String> versionHistory; // fileIds of last N backups
 
   const DriveMetadata({
     this.fileId,
@@ -20,6 +21,7 @@ class DriveMetadata {
     this.appVersion,
     this.checksum,
     this.isConnected = false,
+    this.versionHistory = const [],
   });
 
   DriveMetadata copyWith({
@@ -30,6 +32,7 @@ class DriveMetadata {
     String? appVersion,
     String? checksum,
     bool? isConnected,
+    List<String>? versionHistory,
   }) =>
       DriveMetadata(
         fileId: fileId ?? this.fileId,
@@ -39,6 +42,7 @@ class DriveMetadata {
         appVersion: appVersion ?? this.appVersion,
         checksum: checksum ?? this.checksum,
         isConnected: isConnected ?? this.isConnected,
+        versionHistory: versionHistory ?? this.versionHistory,
       );
 }
 
@@ -52,6 +56,7 @@ class GoogleDriveService {
 
   GoogleSignInAccount? _account;
   DriveMetadata _metadata = const DriveMetadata();
+  static const int _maxVersions = 5;
 
   GoogleSignInAccount? get account => _account;
   DriveMetadata get metadata => _metadata;
@@ -66,7 +71,7 @@ class GoogleDriveService {
       _account = await _googleSignIn.signInSilently();
       _account ??= await _googleSignIn.signIn();
       if (_account != null) {
-        await _findExistingBackup();
+        await _findExistingBackups();
         _metadata = _metadata.copyWith(isConnected: true);
         LogService.instance
             .system('🔵 Google Drive conectado: ${_account!.email}', source: 'GoogleDriveService');
@@ -119,7 +124,7 @@ class GoogleDriveService {
     return jsonDecode(res.body)['id'] as String;
   }
 
-  Future<void> _findExistingBackup() async {
+  Future<void> _findExistingBackups() async {
     try {
       final headers = await _getAuthHeaders();
       final folderId = await _getAppFolderId();
@@ -129,7 +134,7 @@ class GoogleDriveService {
         'q': "'$folderId' in parents and name contains 'libero360_backup' and trashed=false",
         'fields': 'files(id,name,size,createdTime,appProperties)',
         'orderBy': 'createdTime desc',
-        'pageSize': '1',
+        'pageSize': '$_maxVersions',
       });
       final res = await http.get(query, headers: headers);
       if (res.statusCode != 200) return;
@@ -139,6 +144,7 @@ class GoogleDriveService {
       if (files == null || files.isEmpty) return;
 
       final file = files[0] as Map<String, dynamic>;
+      final history = files.map((f) => (f as Map<String, dynamic>)['id'] as String).toList();
       _metadata = _metadata.copyWith(
         fileId: file['id'] as String?,
         fileName: file['name'] as String?,
@@ -152,8 +158,16 @@ class GoogleDriveService {
         checksum: (file['appProperties'] as Map?)?.containsKey('checksum') == true
             ? (file['appProperties'] as Map)['checksum'] as String?
             : null,
+        versionHistory: history,
       );
     } catch (_) {}
+  }
+
+  Future<String?> pickBackupFromDrive() async {
+    // Re-scan files for latest version list
+    await _findExistingBackups();
+    if (_metadata.fileId == null) return null;
+    return _metadata.fileId;
   }
 
   Future<String?> uploadBackup(String jsonContent, {String? checksum, String? appVersion}) async {
@@ -164,14 +178,8 @@ class GoogleDriveService {
       if (folderId == null) return 'No se pudo crear carpeta en Drive';
 
       final date = DateTime.now().toIso8601String().split('T').first;
-      final fileName = 'libero360_backup_$date.json';
-
-      if (_metadata.fileId != null) {
-        await http.delete(
-          Uri.parse('$_driveApi/files/${_metadata.fileId}'),
-          headers: headers,
-        );
-      }
+      final time = DateTime.now().millisecondsSinceEpoch;
+      final fileName = 'libero360_backup_${date}_$time.json';
 
       final metadata = {
         'name': fileName,
@@ -179,6 +187,7 @@ class GoogleDriveService {
         'appProperties': {
           if (checksum != null) 'checksum': checksum,
           if (appVersion != null) 'version': appVersion,
+          'createdAt': DateTime.now().toIso8601String(),
         },
       };
 
@@ -205,6 +214,19 @@ class GoogleDriveService {
 
       final result = jsonDecode(res.body);
       final fileId = result['id'] as String;
+
+      // Trim old backups
+      final newHistory = [fileId, ..._metadata.versionHistory];
+      if (newHistory.length > _maxVersions) {
+        final toDelete = newHistory.sublist(_maxVersions);
+        for (final oldId in toDelete) {
+          try {
+            await http.delete(Uri.parse('$_driveApi/files/$oldId'), headers: headers);
+          } catch (_) {}
+        }
+        newHistory.removeRange(_maxVersions, newHistory.length);
+      }
+
       _metadata = _metadata.copyWith(
         fileId: fileId,
         fileName: fileName,
@@ -212,6 +234,7 @@ class GoogleDriveService {
         fileSize: jsonContent.length,
         checksum: checksum,
         appVersion: appVersion,
+        versionHistory: newHistory,
       );
 
       LogService.instance.auto('🟢 Backup subido: $fileName', source: 'GoogleDriveService');
@@ -222,17 +245,18 @@ class GoogleDriveService {
     }
   }
 
-  Future<String?> downloadBackup() async {
+  Future<String?> downloadBackup({String? fileId}) async {
     try {
       if (_account == null) return null;
-      if (_metadata.fileId == null) {
+      final targetId = fileId ?? _metadata.fileId;
+      if (targetId == null) {
         LogService.instance.error('🔴 No hay backup en Drive', source: 'GoogleDriveService');
         return null;
       }
 
       final headers = await _getAuthHeaders();
       final res = await http.get(
-        Uri.parse('$_driveApi/files/${_metadata.fileId}?alt=media'),
+        Uri.parse('$_driveApi/files/$targetId?alt=media'),
         headers: headers,
       );
 
@@ -246,6 +270,28 @@ class GoogleDriveService {
     } catch (e) {
       LogService.instance.error('🔴 Error al descargar backup de Drive: $e', source: 'GoogleDriveService');
       return null;
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> listBackupVersions() async {
+    try {
+      if (_account == null) return [];
+      final headers = await _getAuthHeaders();
+      final folderId = await _getAppFolderId();
+      if (folderId == null) return [];
+
+      final query = Uri.parse(_driveApi).replace(queryParameters: {
+        'q': "'$folderId' in parents and name contains 'libero360_backup' and trashed=false",
+        'fields': 'files(id,name,size,createdTime,appProperties)',
+        'orderBy': 'createdTime desc',
+        'pageSize': '$_maxVersions',
+      });
+      final res = await http.get(query, headers: headers);
+      if (res.statusCode != 200) return [];
+      final data = jsonDecode(res.body);
+      return (data['files'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+    } catch (_) {
+      return [];
     }
   }
 
@@ -267,7 +313,7 @@ class GoogleDriveService {
   }
 
   Future<void> refreshMetadata() async {
-    await _findExistingBackup();
+    await _findExistingBackups();
   }
 }
 

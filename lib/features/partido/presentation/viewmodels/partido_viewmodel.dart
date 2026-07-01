@@ -46,6 +46,8 @@ class PartidoViewModel extends ChangeNotifier {
   int get rotacionLocal => _controller.rotacionLocal;
   int get rotacionVisitante => _controller.rotacionVisitante;
   bool get isLocalServing => _controller.isLocalServing;
+  bool get isGoldenSet => _controller.isGoldenSet;
+  int get setsTotales => _controller.setsTotales;
 
   // Timeout
   TimeoutState get timeoutState => _controller.timeoutState;

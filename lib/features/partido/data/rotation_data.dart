@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../../../../core/services/log_service.dart';
 import 'court_state.dart';
 
 class RotationManager extends ChangeNotifier {
@@ -25,23 +26,56 @@ class RotationManager extends ChangeNotifier {
   static const visualToZone = [4, 3, 2, 5, 6, 1];
   static const zoneToVisual = [null, 5, 2, 1, 0, 3, 4];
 
-  CourtState courtStateWithLiberos(bool Function(int) isLibero) {
-    final zones = List.generate(6, (i) {
-      final zoneNum = visualToZone[i];
-      final athleteNum = currentSet.currentSlots[i];
-      return CourtZone(
-        zoneNumber: zoneNum,
-        athleteNumber: athleteNum,
-        isLibero: athleteNum != null && isLibero(athleteNum),
-        isServing: zoneNum == 1,
-      );
-    });
-    return CourtState(zones: zones);
+  // ========== VALIDATION ==========
+
+  Set<int?> get assignedNumbers => slots.where((s) => s != null).toSet();
+
+  bool hasDuplicates() {
+    final nums = slots.where((s) => s != null).toList();
+    return nums.toSet().length != nums.length;
   }
 
-  CourtState get courtState {
-    return courtStateWithLiberos((_) => false);
+  bool isComplete() => slots.where((s) => s != null).length == 6;
+
+  int occupiedCount() => slots.where((s) => s != null).length;
+
+  bool isZoneOccupied(int zoneNumber) {
+    final vi = zoneToVisual[zoneNumber];
+    if (vi == null) return false;
+    return slots[vi] != null;
   }
+
+  int? playerInZone(int zoneNumber) {
+    final vi = zoneToVisual[zoneNumber];
+    if (vi == null || vi >= slots.length) return null;
+    return slots[vi];
+  }
+
+  // ========== SWAP ==========
+
+  void swapZones(int zoneA, int zoneB) {
+    final viA = zoneToVisual[zoneA];
+    final viB = zoneToVisual[zoneB];
+    if (viA == null || viB == null) return;
+    if (viA >= slots.length || viB >= slots.length) return;
+
+    final temp = slots[viA];
+    slots[viA] = slots[viB];
+    slots[viB] = temp;
+
+    LogService.instance.auto('🔵 Rotación — swap zonas $zoneA ↔ $zoneB (jugadores ${slots[viA]} ↔ ${slots[viB]})', source: 'RotationManager');
+    notifyListeners();
+  }
+
+  void clearZone(int zoneNumber) {
+    final vi = zoneToVisual[zoneNumber];
+    if (vi == null || vi >= slots.length) return;
+    slots[vi] = null;
+    LogService.instance.auto('🟡 Rotación — zona $zoneNumber liberada', source: 'RotationManager');
+    notifyListeners();
+  }
+
+  // ========== ASSIGN ==========
 
   void assignPlayerByZone(int zoneNumber, int playerNumber) {
     final visualIdx = zoneToVisual[zoneNumber];
@@ -55,8 +89,11 @@ class RotationManager extends ChangeNotifier {
     if (currentSet.initialSlots.every((s) => s == null)) {
       currentSet.initialSlots[slotIndex] = playerNumber;
     }
+    LogService.instance.auto('🟢 Rotación — jugador #$playerNumber asignado a zona ${visualToZone[slotIndex]}', source: 'RotationManager');
     notifyListeners();
   }
+
+  // ========== ROTATION ==========
 
   final List<ServiceRecord> serviceHistory = [];
   int _consecutivePoints = 0;
@@ -80,6 +117,14 @@ class RotationManager extends ChangeNotifier {
               serviceHistory.length;
 
   void rotate() {
+    if (!isComplete()) {
+      LogService.instance.auto('🔴 Rotación — mínimo 6 jugadores requeridos (actual: ${occupiedCount()})', source: 'RotationManager');
+      return;
+    }
+    if (hasDuplicates()) {
+      LogService.instance.auto('🔴 Rotación — jugadores duplicados detectados', source: 'RotationManager');
+      return;
+    }
     _closeCurrentService();
     final newSlots = RotationEngine.rotate(slots);
     currentSet.rotationIndex = (currentSet.rotationIndex + 1) % 6;
@@ -92,6 +137,7 @@ class RotationManager extends ChangeNotifier {
       serverNumber: currentSet.currentSlots[5],
       fromInitialRotation: currentSet.rotationIndex,
     ));
+    LogService.instance.auto('🔵 Rotación — ejecutada (índice ${currentSet.rotationIndex})', source: 'RotationManager');
   }
 
   void recordPointForCurrentRotation({required bool localScored}) {
@@ -183,6 +229,24 @@ class RotationManager extends ChangeNotifier {
     }
     notifyListeners();
   }
+
+  CourtState courtStateWithLiberos(bool Function(int) isLibero) {
+    final zones = List.generate(6, (i) {
+      final zoneNum = visualToZone[i];
+      final athleteNum = currentSet.currentSlots[i];
+      return CourtZone(
+        zoneNumber: zoneNum,
+        athleteNumber: athleteNum,
+        isLibero: athleteNum != null && isLibero(athleteNum),
+        isServing: zoneNum == 1,
+      );
+    });
+    return CourtState(zones: zones);
+  }
+
+  CourtState get courtState {
+    return courtStateWithLiberos((_) => false);
+  }
 }
 
 class RotationEngine {
@@ -230,6 +294,9 @@ class SetRotationState {
   bool get hasInitialFormation =>
       initialSlots.any((s) => s != null) ||
       (initialSlots.every((s) => s == null) && setNumber == 1);
+
+  int occupiedCount() => currentSlots.where((s) => s != null).length;
+  bool isComplete() => currentSlots.where((s) => s != null).length == 6;
 }
 
 class RotationSnapshot {

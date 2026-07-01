@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../../core/services/log_service.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../../../../core/utils/name_formatter.dart';
 import '../../../estadisticas/data/local_db/database_service.dart';
@@ -366,6 +367,21 @@ class _MatchScreenState extends State<MatchScreen>
     _setStartTimes[setNumber] = DateTime.now();
   }
 
+  void _handleZoneDragAccept(int fromZone, int toZone) {
+    if (fromZone == toZone) return;
+    LogService.instance.auto('🟣 Cancha — drag jugador: zona $fromZone → $toZone', source: 'MatchScreen');
+    _rotationManager.swapZones(fromZone, toZone);
+    if (_rotationManager.hasDuplicates()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('⚠️ Jugadores duplicados en la cancha'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+      LogService.instance.auto('🔴 Cancha — duplicados tras swap $fromZone ↔ $toZone', source: 'MatchScreen');
+    }
+  }
+
   void _onRotate() {
     _rotationManager.rotate();
     _checkLiberoAutoZone();
@@ -457,14 +473,15 @@ class _MatchScreenState extends State<MatchScreen>
       );
       return;
     }
+    final csAssign = Theme.of(context).colorScheme;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
         padding: const EdgeInsets.all(16),
-        decoration: const BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        decoration: BoxDecoration(
+          color: csAssign.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -472,19 +489,19 @@ class _MatchScreenState extends State<MatchScreen>
           children: [
             Row(
               children: [
-                const Icon(Icons.person_add, color: AppColors.accent, size: 20),
+                Icon(Icons.person_add, color: csAssign.primary, size: 20),
                 const SizedBox(width: 8),
                 Text(
                   'Asignar jugador — Zona $zoneNumber',
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: csAssign.onSurface,
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 const Spacer(),
                 IconButton(
-                  icon: const Icon(Icons.close, color: Colors.white38),
+                  icon: Icon(Icons.close, color: csAssign.onSurface.withValues(alpha: 0.38)),
                   onPressed: () {
                     setState(() => _selectedZone = null);
                     Navigator.of(ctx).pop();
@@ -493,7 +510,7 @@ class _MatchScreenState extends State<MatchScreen>
               ],
             ),
             const SizedBox(height: 12),
-            const Divider(color: Colors.white12, height: 1),
+            Divider(color: csAssign.onSurface.withValues(alpha: 0.12), height: 1),
             const SizedBox(height: 8),
             ConstrainedBox(
               constraints: BoxConstraints(
@@ -502,29 +519,29 @@ class _MatchScreenState extends State<MatchScreen>
               child: ListView.separated(
                 shrinkWrap: true,
                 itemCount: available.length,
-                separatorBuilder: (_, __) => const Divider(
-                  color: Colors.white12, height: 1, indent: 48,
+                separatorBuilder: (_, __) => Divider(
+                  color: csAssign.onSurface.withValues(alpha: 0.12), height: 1, indent: 48,
                 ),
                 itemBuilder: (_, i) {
                   final p = available[i];
                   return ListTile(
                     leading: CircleAvatar(
                       radius: 18,
-                      backgroundColor: AppColors.primary.withValues(alpha: 0.3),
+                      backgroundColor: csAssign.primary.withValues(alpha: 0.3),
                       child: Text(
                         '${p.numero ?? '?'}',
-                        style: const TextStyle(
-                          color: Colors.white, fontWeight: FontWeight.bold,
+                        style: TextStyle(
+                          color: csAssign.onPrimary, fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
                     title: Text(
                       NameFormatter.playerShortName(p),
-                      style: const TextStyle(color: Colors.white, fontSize: 14),
+                      style: TextStyle(color: csAssign.onSurface, fontSize: 14),
                     ),
                     subtitle: Text(
                       p.rol?.toUpperCase() ?? '',
-                      style: const TextStyle(color: Colors.white38, fontSize: 11),
+                      style: TextStyle(color: csAssign.onSurface.withValues(alpha: 0.38), fontSize: 11),
                     ),
                     onTap: () {
                       _rotationManager.assignPlayerByZone(zoneNumber, p.numero ?? 0);
@@ -623,6 +640,14 @@ class _MatchScreenState extends State<MatchScreen>
     });
   }
 
+  int? _findCaptainNumber(PartidoViewModel vm) {
+    try {
+      return vm.jugadores.firstWhere((p) => p.esCapitan).numero;
+    } catch (_) {
+      return null;
+    }
+  }
+
   List<Player> _benchPlayers(PartidoViewModel vm) {
     final courtNumbers = _rotationManager.slots
         .whereType<int>()
@@ -673,19 +698,23 @@ class _MatchScreenState extends State<MatchScreen>
       child: Consumer<PartidoViewModel>(
         builder: (context, vm, _) {
           if (vm.isLoading && vm.match == null) {
-            return const Scaffold(
-              backgroundColor: AppColors.background,
-              body: Center(child: CircularProgressIndicator()),
+            final csLoading = Theme.of(context).colorScheme;
+            return Scaffold(
+              backgroundColor: csLoading.surface,
+              body: Center(
+                child: CircularProgressIndicator(color: csLoading.primary),
+              ),
             );
           }
           if (vm.error != null && vm.match == null) {
+            final csError = Theme.of(context).colorScheme;
             return Scaffold(
-              backgroundColor: AppColors.background,
+              backgroundColor: csError.surface,
               body: Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(vm.error!, style: const TextStyle(color: Colors.white54)),
+                    Text(vm.error!, style: TextStyle(color: csError.onSurface.withValues(alpha: 0.54))),
                     const SizedBox(height: 12),
                     ElevatedButton(
                       onPressed: () => vm.init(widget.config),
@@ -717,6 +746,7 @@ class _MatchScreenState extends State<MatchScreen>
                   if (_liberoManager != null) _liberoManager!,
                 ]),
                 builder: (context, _) {
+                  final cs = Theme.of(context).colorScheme;
                   final courtState = (_liberoManager != null
                           ? _rotationManager.courtStateWithLiberos(
                               (n) => _liberoManager!.isLibero(n))
@@ -724,18 +754,18 @@ class _MatchScreenState extends State<MatchScreen>
                       .withPerspective(_perspective);
 
                   return Scaffold(
-                backgroundColor: AppColors.background,
+                backgroundColor: cs.surface,
                 endDrawer: PlayersDrawer(
                   benchPlayers: _benchPlayers(vm),
                   onSubstitute: (p) => _onSubstitute(p, vm),
                 ),
                 appBar: AppBar(
-                  backgroundColor: AppColors.surface,
+                  backgroundColor: cs.surfaceContainerHighest,
                   elevation: 0,
                   title: Text(
                     '${vm.nombreLocal} vs ${vm.nombreVisitante}',
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: cs.onSurface,
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
                     ),
@@ -743,10 +773,10 @@ class _MatchScreenState extends State<MatchScreen>
                   centerTitle: true,
                   bottom: TabBar(
                     controller: _tabController,
-                    indicatorColor: AppColors.accent,
-                    labelColor: Colors.white,
-                    unselectedLabelColor: Colors.white38,
-                    labelStyle: const TextStyle(
+                    indicatorColor: cs.primary,
+                    labelColor: cs.onSurface,
+                    unselectedLabelColor: cs.onSurface.withValues(alpha: 0.38),
+                    labelStyle: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                     ),
@@ -764,8 +794,8 @@ class _MatchScreenState extends State<MatchScreen>
                               ? Icons.edit
                               : Icons.edit_outlined,
                           color: vm.editMode
-                              ? AppColors.accent
-                              : Colors.white54,
+                              ? cs.primary
+                              : cs.onSurface.withValues(alpha: 0.54),
                           size: 20,
                         ),
                         onPressed: vm.toggleEditMode,
@@ -774,7 +804,7 @@ class _MatchScreenState extends State<MatchScreen>
                     ),
                     Builder(
                       builder: (ctx) => IconButton(
-                        icon: const Icon(Icons.people_outline, color: Colors.white54),
+                        icon: Icon(Icons.people_outline, color: cs.onSurface.withValues(alpha: 0.54)),
                         onPressed: () => Scaffold.of(ctx).openEndDrawer(),
                         tooltip: 'Atletas',
                       ),
@@ -957,6 +987,14 @@ class _MatchScreenState extends State<MatchScreen>
             localSets: vm.setsLocal,
             visitorSets: vm.setsVisitante,
             isLocalServing: vm.isLocalServing,
+            setActual: vm.setActual,
+            setsTotales: vm.setsTotales,
+            localName: vm.nombreLocal,
+            visitorName: vm.nombreVisitante,
+            onIncrementLocal: vm.isPartidoActivo ? () => vm.sumarPuntoLocal() : null,
+            onIncrementVisitor: vm.isPartidoActivo ? () => vm.sumarPuntoVisitante() : null,
+            onDecrementLocal: vm.isPartidoActivo ? () => vm.restarPuntoLocal() : null,
+            onDecrementVisitor: vm.isPartidoActivo ? () => vm.restarPuntoVisitante() : null,
           ),
           _buildTimeoutRow(vm),
           CourtWidget(
@@ -966,8 +1004,10 @@ class _MatchScreenState extends State<MatchScreen>
               final player = _playerForZone(z, vm);
               if (player != null) _showPlayerStats(player);
             },
+            onZoneDragAccept: _handleZoneDragAccept,
             onTogglePerspective: _togglePerspective,
             selectedZone: _selectedZone,
+            captainNumber: _findCaptainNumber(vm),
             players: vm.jugadores,
           ),
           _buildRotationInfoRow(context, vm),
@@ -988,6 +1028,7 @@ class _MatchScreenState extends State<MatchScreen>
   }
 
   Widget _buildTimeoutRow(PartidoViewModel vm) {
+    final csTR = Theme.of(context).colorScheme;
     final isActive = vm.isPartidoActivo;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -1007,7 +1048,7 @@ class _MatchScreenState extends State<MatchScreen>
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.05),
+              color: csTR.onSurface.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(8),
             ),
             child: const Text(
@@ -1068,6 +1109,7 @@ class _MatchScreenState extends State<MatchScreen>
   }
 
   Widget _buildRotationInfoRow(BuildContext context, PartidoViewModel vm) {
+    final csRI = Theme.of(context).colorScheme;
     final currentRot = _rotationManager.rotationIndex + 1;
     final totalRot = _rotationManager.history.length;
 
@@ -1078,18 +1120,18 @@ class _MatchScreenState extends State<MatchScreen>
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: AppColors.accent.withValues(alpha: 0.12),
+              color: csRI.primary.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(6),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.rotate_right, size: 12, color: AppColors.accent),
+                Icon(Icons.rotate_right, size: 12, color: csRI.primary),
                 const SizedBox(width: 4),
                 Text(
                   'R$currentRot',
-                  style: const TextStyle(
-                    color: AppColors.accent,
+                  style: TextStyle(
+                    color: csRI.primary,
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                   ),
@@ -1100,7 +1142,7 @@ class _MatchScreenState extends State<MatchScreen>
           const SizedBox(width: 8),
           Text(
             '$totalRot rotac.',
-            style: const TextStyle(color: Colors.white24, fontSize: 11),
+            style: TextStyle(color: csRI.onSurface.withValues(alpha: 0.24), fontSize: 11),
           ),
           const Spacer(),
           GestureDetector(
@@ -1108,18 +1150,18 @@ class _MatchScreenState extends State<MatchScreen>
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.06),
+                color: csRI.onSurface.withValues(alpha: 0.06),
                 borderRadius: BorderRadius.circular(6),
               ),
-              child: const Row(
+              child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.history, size: 12, color: Colors.white38),
-                  SizedBox(width: 4),
+                  Icon(Icons.history, size: 12, color: csRI.onSurface.withValues(alpha: 0.38)),
+                  const SizedBox(width: 4),
                   Text(
                     'Historial',
                     style: TextStyle(
-                      color: Colors.white38,
+                      color: csRI.onSurface.withValues(alpha: 0.38),
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
                     ),
@@ -1134,30 +1176,31 @@ class _MatchScreenState extends State<MatchScreen>
   }
 
   Widget _buildTimelineButton(BuildContext context, PartidoViewModel vm) {
+    final csTB = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: () => _openTimelineSheet(vm),
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: AppColors.accent.withValues(alpha: 0.1),
+          color: csTB.primary.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.accent.withValues(alpha: 0.25)),
+          border: Border.all(color: csTB.primary.withValues(alpha: 0.25)),
         ),
-        child: const Row(
+        child: Row(
           children: [
-            Icon(Icons.timeline, size: 14, color: AppColors.accent),
-            SizedBox(width: 8),
+            Icon(Icons.timeline, size: 14, color: csTB.primary),
+            const SizedBox(width: 8),
             Text(
               'Crónica completa',
               style: TextStyle(
-                color: AppColors.accent,
+                color: csTB.primary,
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),
             ),
-            Spacer(),
-            Icon(Icons.chevron_right, size: 16, color: AppColors.accent),
+            const Spacer(),
+            Icon(Icons.chevron_right, size: 16, color: csTB.primary),
           ],
         ),
       ),
@@ -1175,6 +1218,7 @@ class _MatchScreenState extends State<MatchScreen>
   }
 
   Widget _buildServiceHistoryButton(BuildContext context, PartidoViewModel vm) {
+    final csSH = Theme.of(context).colorScheme;
     final count = _rotationManager.serviceHistory.length;
     return GestureDetector(
       onTap: () => _openServiceHistory(vm),
@@ -1182,18 +1226,18 @@ class _MatchScreenState extends State<MatchScreen>
         margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: csSH.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+          border: Border.all(color: csSH.outlineVariant.withValues(alpha: 0.3)),
         ),
         child: Row(
           children: [
-            const Icon(Icons.swap_vert, size: 14, color: Colors.white38),
+            Icon(Icons.swap_vert, size: 14, color: csSH.onSurface.withValues(alpha: 0.38)),
             const SizedBox(width: 8),
-            const Text(
+            Text(
               'Historial de servicio',
               style: TextStyle(
-                color: Colors.white54,
+                color: csSH.onSurface.withValues(alpha: 0.54),
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),
@@ -1201,10 +1245,10 @@ class _MatchScreenState extends State<MatchScreen>
             const Spacer(),
             Text(
               '$count servicio${count == 1 ? '' : 's'}',
-              style: const TextStyle(color: Colors.white24, fontSize: 11),
+              style: TextStyle(color: csSH.onSurface.withValues(alpha: 0.24), fontSize: 11),
             ),
             const SizedBox(width: 6),
-            const Icon(Icons.chevron_right, size: 16, color: Colors.white24),
+            Icon(Icons.chevron_right, size: 16, color: csSH.onSurface.withValues(alpha: 0.24)),
           ],
         ),
       ),
@@ -1212,6 +1256,7 @@ class _MatchScreenState extends State<MatchScreen>
   }
 
   Widget _buildServerioRow() {
+    final csSR = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       child: Row(
@@ -1219,8 +1264,8 @@ class _MatchScreenState extends State<MatchScreen>
           Expanded(
             child: Text(
               'Rotación #${_rotationManager.rotationIndex + 1}',
-              style: const TextStyle(
-                color: Colors.white38,
+              style: TextStyle(
+                color: csSR.onSurface.withValues(alpha: 0.38),
                 fontSize: 11,
                 fontWeight: FontWeight.w500,
               ),
@@ -1231,7 +1276,7 @@ class _MatchScreenState extends State<MatchScreen>
               borderRadius: BorderRadius.circular(8),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.accent.withValues(alpha: 0.2),
+                  color: csSR.primary.withValues(alpha: 0.2),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -1242,8 +1287,8 @@ class _MatchScreenState extends State<MatchScreen>
               icon: const Icon(Icons.rotate_right, size: 16),
               label: const Text('Rotar', style: TextStyle(fontSize: 12)),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.accent,
-                foregroundColor: Colors.white,
+                backgroundColor: csSR.primary,
+                foregroundColor: csSR.onPrimary,
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -1278,17 +1323,18 @@ class _PlayerNumberPicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final csPN = Theme.of(context).colorScheme;
     return Dialog(
-      backgroundColor: AppColors.surface,
+      backgroundColor: csPN.surface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
+            Text(
               'Número de jugador',
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              style: TextStyle(color: csPN.onSurface, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             Wrap(
@@ -1303,14 +1349,14 @@ class _PlayerNumberPicker extends StatelessWidget {
                     height: 44,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: AppColors.primary.withValues(alpha: 0.3),
-                      border: Border.all(color: Colors.white24),
+                      color: csPN.primary.withValues(alpha: 0.3),
+                      border: Border.all(color: csPN.onSurface.withValues(alpha: 0.24)),
                     ),
                     child: Center(
                       child: Text(
                         '$num',
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: csPN.onSurface,
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
                         ),

@@ -66,6 +66,8 @@ class MatchController extends ChangeNotifier {
   String get nombreVisitante => _match?.equipoVisitante ?? 'Visitante';
   EstadoPartido get estado => _match?.estado ?? EstadoPartido.noIniciado;
   bool get isFinalizado => _match?.isFinalizado ?? false;
+  bool get isGoldenSet => _match?.isGoldenSet ?? false;
+  int get setsParaGanar => _match?.setsParaGanar ?? 3;
 
   List<MapEntry<int, int>> get setScores => UnmodifiableListView(_setScores);
   int get puntosPorSet => _puntosPorSet;
@@ -74,6 +76,7 @@ class MatchController extends ChangeNotifier {
   int get timeoutsPerSet => _timeoutsPerSet;
   int get timeoutDurationSeconds => _timeoutDurationSeconds;
   Categoria get categoria => _categoria;
+  int get setsTotales => _match?.setsTotales ?? _setsPorPartido;
   List<Player> get jugadores => _jugadores;
   List<Player> get jugadoresVisitante => _jugadoresVisitante;
   int get rotacionLocal => _rotacionLocal;
@@ -184,6 +187,7 @@ class MatchController extends ChangeNotifier {
       final oldSet = _match!.setActual;
       final oldLocal = _match!.puntosLocal;
       final oldVisitor = _match!.puntosVisitante;
+      final wasGolden = _match!.isGoldenSet;
 
       _match = await _matchRepository.agregarPuntoLocal(_match!.id);
       _actualizarSetScores(
@@ -201,12 +205,16 @@ class MatchController extends ChangeNotifier {
       }
 
       if (_match!.setActual > oldSet) {
+        if (wasGolden) {
+          LogService.instance.auto('🏆 Set de oro — ganado por ${_match!.equipoLocal}', source: 'MatchController');
+        }
         _resetSetTimeouts();
         await _guardarDuracion();
         if (!_match!.isFinalizado) {
           await _matchRepository.pausarPartido(_match!.id);
         } else {
           _detenerTimer();
+          LogService.instance.auto('🏆 Partido finalizado — ${_match!.equipoLocal} ${_match!.setsLocal}-${_match!.setsVisitante} ${_match!.equipoVisitante}', source: 'MatchController');
         }
       }
 
@@ -223,6 +231,7 @@ class MatchController extends ChangeNotifier {
       final oldSet = _match!.setActual;
       final oldLocal = _match!.puntosLocal;
       final oldVisitor = _match!.puntosVisitante;
+      final wasGolden = _match!.isGoldenSet;
 
       _match = await _matchRepository.agregarPuntoVisitante(_match!.id);
       _actualizarSetScores(
@@ -240,12 +249,16 @@ class MatchController extends ChangeNotifier {
       }
 
       if (_match!.setActual > oldSet) {
+        if (wasGolden) {
+          LogService.instance.auto('🏆 Set de oro — ganado por ${_match!.equipoVisitante}', source: 'MatchController');
+        }
         _resetSetTimeouts();
         await _guardarDuracion();
         if (!_match!.isFinalizado) {
           await _matchRepository.pausarPartido(_match!.id);
         } else {
           _detenerTimer();
+          LogService.instance.auto('🏆 Partido finalizado — ${_match!.equipoLocal} ${_match!.setsLocal}-${_match!.setsVisitante} ${_match!.equipoVisitante}', source: 'MatchController');
         }
       }
 

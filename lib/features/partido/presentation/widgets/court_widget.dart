@@ -358,7 +358,7 @@ class _CourtWidgetState extends State<CourtWidget> {
   Widget _buildAthleteContent(CourtZone zone, ColorScheme cs, bool isCaptain) {
     final player = _playerForNumber(zone.athleteNumber);
     final displayName = player != null
-        ? NameFormatter.courtName(player)
+        ? NameFormatter.playerShortName(player)
         : '#${zone.athleteNumber}';
     final isServer = zone.zoneNumber == 1;
 

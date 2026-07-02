@@ -55,26 +55,26 @@ class LiberoSwapRecord {
   }) : timestamp = timestamp ?? DateTime.now();
 }
 
-enum LogLevel { info, success, warning }
+enum LiberoLogLevel { info, success, warning }
 
 class LiberoLogEntry {
   final String message;
-  final LogLevel level;
+  final LiberoLogLevel level;
   final DateTime timestamp;
 
   LiberoLogEntry({
     required this.message,
-    this.level = LogLevel.info,
+    this.level = LiberoLogLevel.info,
     DateTime? timestamp,
   }) : timestamp = timestamp ?? DateTime.now();
 
   String get icon {
     switch (level) {
-      case LogLevel.success:
+      case LiberoLogLevel.success:
         return '🟢';
-      case LogLevel.info:
+      case LiberoLogLevel.info:
         return '🔵';
-      case LogLevel.warning:
+      case LiberoLogLevel.warning:
         return '🔴';
     }
   }

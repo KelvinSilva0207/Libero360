@@ -279,7 +279,7 @@ class _MatchScreenState extends State<MatchScreen>
 
     _liberoManager?.logs.add(LiberoLogEntry(
       message: 'MATCH: finalizado — ${_matchEndRecord!.winnerName} (${_matchEndRecord!.localSets}-${_matchEndRecord!.visitorSets})',
-      level: LogLevel.success,
+      level: LiberoLogLevel.success,
     ));
 
     switch (result) {
@@ -332,11 +332,11 @@ class _MatchScreenState extends State<MatchScreen>
     // Log
     _liberoManager?.logs.add(LiberoLogEntry(
       message: 'SET: finalizado — SET ${info.setNumber} (${info.localScore}-${info.visitorScore})',
-      level: LogLevel.success,
+      level: LiberoLogLevel.success,
     ));
     _liberoManager?.logs.add(LiberoLogEntry(
       message: 'SET: resumen generado',
-      level: LogLevel.info,
+      level: LiberoLogLevel.info,
     ));
 
     if (shouldContinue == true) {
@@ -540,7 +540,7 @@ class _MatchScreenState extends State<MatchScreen>
                       style: TextStyle(color: csAssign.onSurface, fontSize: 14),
                     ),
                     subtitle: Text(
-                      p.rol?.toUpperCase() ?? '',
+                      p.posicionLabel.toUpperCase(),
                       style: TextStyle(color: csAssign.onSurface.withValues(alpha: 0.38), fontSize: 11),
                     ),
                     onTap: () {

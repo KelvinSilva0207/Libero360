@@ -20,10 +20,10 @@ class RadarChartCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.radar, color: AppColors.accent, size: 16),
-              SizedBox(width: 8),
+              const Icon(Icons.radar, color: AppColors.accent, size: 16),
+              const SizedBox(width: 8),
               Text('Radar de Habilidades',
                 style: TextStyle(color: cs.onSurface, fontSize: 15, fontWeight: FontWeight.bold)),
             ],
@@ -107,10 +107,10 @@ class BarChartCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.bar_chart_rounded, color: AppColors.accent, size: 16),
-              SizedBox(width: 8),
+              const Icon(Icons.bar_chart_rounded, color: AppColors.accent, size: 16),
+              const SizedBox(width: 8),
               Text('Acciones', style: TextStyle(color: cs.onSurface, fontSize: 15, fontWeight: FontWeight.bold)),
             ],
           ),
@@ -193,10 +193,10 @@ class PieChartCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.pie_chart_rounded, color: AppColors.accent, size: 16),
-              SizedBox(width: 8),
+              const Icon(Icons.pie_chart_rounded, color: AppColors.accent, size: 16),
+              const SizedBox(width: 8),
               Text('Victorias / Derrotas',
                 style: TextStyle(color: cs.onSurface, fontSize: 15, fontWeight: FontWeight.bold)),
             ],
@@ -290,10 +290,10 @@ class LineChartCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.trending_up_rounded, color: AppColors.accent, size: 16),
-              SizedBox(width: 8),
+              const Icon(Icons.trending_up_rounded, color: AppColors.accent, size: 16),
+              const SizedBox(width: 8),
               Text('Últimos 10 Partidos',
                 style: TextStyle(color: cs.onSurface, fontSize: 15, fontWeight: FontWeight.bold)),
             ],
@@ -384,10 +384,10 @@ class MatchHistoryCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.history_rounded, color: AppColors.accent, size: 16),
-              SizedBox(width: 8),
+              const Icon(Icons.history_rounded, color: AppColors.accent, size: 16),
+              const SizedBox(width: 8),
               Text('Historial de Partidos',
                 style: TextStyle(color: cs.onSurface, fontSize: 15, fontWeight: FontWeight.bold)),
             ],
@@ -492,10 +492,10 @@ class RankingSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.leaderboard_rounded, color: AppColors.accent, size: 16),
-              SizedBox(width: 8),
+              const Icon(Icons.leaderboard_rounded, color: AppColors.accent, size: 16),
+              const SizedBox(width: 8),
               Text('Ranking del Equipo',
                 style: TextStyle(color: cs.onSurface, fontSize: 15, fontWeight: FontWeight.bold)),
             ],

@@ -23,7 +23,7 @@ class HallOfFameSection extends StatelessWidget {
         if (entries.isEmpty)
           _emptyState()
         else
-          ...List.generate(entries.length, (i) => _rankRow(entries[i])),
+          ...List.generate(entries.length, (i) => _rankRow(context, entries[i])),
       ],
     );
   }
@@ -53,7 +53,7 @@ class HallOfFameSection extends StatelessWidget {
     );
   }
 
-  Widget _rankRow(HallOfFameEntry entry) {
+  Widget _rankRow(BuildContext context, HallOfFameEntry entry) {
     final cs = Theme.of(context).colorScheme;
     final p = entry.player;
     final bg = cs.surfaceContainerHighest;

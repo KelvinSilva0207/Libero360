@@ -354,7 +354,7 @@ class _AdminScreenState extends State<AdminScreen> {
           child: FilledButton.icon(
             onPressed: meta.isBackingUp ? null : _handleCreateBackup,
             icon: meta.isBackingUp
-                ? const SizedBox(
+                ? SizedBox(
                     width: 16, height: 16,
                     child: CircularProgressIndicator(strokeWidth: 2, color: cs.onPrimary),
                   )

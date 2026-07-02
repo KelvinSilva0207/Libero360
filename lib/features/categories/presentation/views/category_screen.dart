@@ -205,6 +205,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
   }
 
   Future<void> _delete(CategoryViewModel vm, CategoryConfig cat) async {
+    final cs = Theme.of(context).colorScheme;
     final athleteCount = await vm.countAthletesUsing(cat.name);
     final confirm = await showDialog<bool>(
       context: context,

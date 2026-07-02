@@ -197,8 +197,8 @@ class CompactProfileSelector extends StatelessWidget {
                           icon: const Icon(Icons.delete_outline, size: 16),
                           label: const Text('Eliminar', style: TextStyle(fontSize: 13, color: Colors.red)),
                           style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: Colors.red)),
-                          foregroundColor: Colors.red,
+                            side: const BorderSide(color: Colors.red),
+                            foregroundColor: Colors.red),
                         ),
                       ),
                     ],

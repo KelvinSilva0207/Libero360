@@ -293,8 +293,8 @@ class ExportService {
       final player = await _db.getPlayerById(entry.key);
       final name = player?.displayName ?? 'ID ${entry.key}';
       final total = entry.value.length;
-      final puntos = entry.value.where((e) => e.resultado == ResultadoAccion.exitoso).length;
-      final errores = entry.value.where((e) => e.resultado == ResultadoAccion.error).length;
+      final puntos = entry.value.where((e) => e.resultado == ResultadoAccion.positivo).length;
+      final errores = entry.value.where((e) => e.resultado == ResultadoAccion.negativo).length;
       final eff = total > 0 ? ((puntos - errores) / total * 100).toStringAsFixed(1) : '0.0';
       buf.writeln('"$name",$total,$puntos,$errores,$eff%');
     }
@@ -496,8 +496,8 @@ class ExportService {
       final player = await _db.getPlayerById(entry.key);
       final name = player?.displayName ?? 'ID ${entry.key}';
       final total = entry.value.length;
-      final pts = entry.value.where((e) => e.resultado == ResultadoAccion.exitoso).length;
-      final errs = entry.value.where((e) => e.resultado == ResultadoAccion.error).length;
+      final pts = entry.value.where((e) => e.resultado == ResultadoAccion.positivo).length;
+      final errs = entry.value.where((e) => e.resultado == ResultadoAccion.negativo).length;
       final eff = total > 0 ? ((pts - errs) / total * 100).toStringAsFixed(1) : '0.0';
       _writeExcelRow(sheet, row++, [name, total.toString(), pts.toString(), errs.toString(), '$eff%']);
     }
@@ -527,10 +527,24 @@ class ExportService {
 
   Future<Uint8List> _buildPdf(ExportDataType type, {String? profileId, String? clubId}) async {
     final doc = pw.Document();
-    final theme = pw.ThemeDataWith(
-      base: pw.ThemeData(),
-      defaultTextStyle: const pw.TextStyle(fontSize: 10),
+    final theme = pw.ThemeData(
+      defaultTextStyle: pw.TextStyle(fontSize: 10),
     );
+
+    final title = '$_brand - ${_pdfTitle(type)}';
+    final exportedDate = 'Exportado: ${_dateTimeFmt.format(DateTime.now())}';
+
+    final sections = switch (type) {
+      ExportDataType.playerStats => await _buildPlayerStatsPdf(null),
+      ExportDataType.teamStats => await _buildTeamStatsPdf(null),
+      ExportDataType.attendance => await _buildAttendancePdf(null, profileId: profileId),
+      ExportDataType.medicalLeaves => await _buildMedicalLeavesPdf(null),
+      ExportDataType.matches => await _buildMatchesPdf(null, profileId: profileId),
+      ExportDataType.timeline => await _buildTimelinePdf(null, profileId: profileId),
+      ExportDataType.rotations => await _buildRotationsPdf(null),
+      ExportDataType.service => await _buildServicePdf(null, profileId: profileId),
+      ExportDataType.dashboard => await _buildDashboardPdf(null, profileId: profileId),
+    };
 
     doc.addPage(
       pw.MultiPage(
@@ -541,21 +555,11 @@ class ExportService {
         build: (context) => [
           pw.Header(
             level: 0,
-            child: pw.Text('$_brand - ${_pdfTitle(type)}', style: const pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
+            child: pw.Text(title, style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
           ),
-          pw.Paragraph(text: 'Exportado: ${_dateTimeFmt.format(DateTime.now())}'),
+          pw.Paragraph(text: exportedDate),
           pw.SizedBox(height: 12),
-          ...switch (type) {
-            ExportDataType.playerStats => await _buildPlayerStatsPdf(context),
-            ExportDataType.teamStats => await _buildTeamStatsPdf(context),
-            ExportDataType.attendance => await _buildAttendancePdf(context, profileId: profileId),
-            ExportDataType.medicalLeaves => await _buildMedicalLeavesPdf(context),
-            ExportDataType.matches => await _buildMatchesPdf(context, profileId: profileId),
-            ExportDataType.timeline => await _buildTimelinePdf(context, profileId: profileId),
-            ExportDataType.rotations => await _buildRotationsPdf(context),
-            ExportDataType.service => await _buildServicePdf(context, profileId: profileId),
-            ExportDataType.dashboard => await _buildDashboardPdf(context, profileId: profileId),
-          },
+          ...sections,
         ],
       ),
     );
@@ -608,7 +612,7 @@ class ExportService {
     );
   }
 
-  Future<List<pw.Widget>> _buildPlayerStatsPdf(pw.Context context) async {
+  Future<List<pw.Widget>> _buildPlayerStatsPdf(pw.Context? context) async {
     final players = await _getPlayers();
     final events = await _getStats();
     final headers = ['Jugadora', 'Nº', 'Posición', 'Ataques', 'Bloqueos', 'Servicios', 'Total'];
@@ -627,7 +631,7 @@ class ExportService {
     return [_buildTable(headers, rows)];
   }
 
-  Future<List<pw.Widget>> _buildTeamStatsPdf(pw.Context context) async {
+  Future<List<pw.Widget>> _buildTeamStatsPdf(pw.Context? context) async {
     final events = await _getStats();
     final porTipo = <String, int>{};
     for (final e in events) {
@@ -643,7 +647,7 @@ class ExportService {
     return [_buildTable(headers, rows)];
   }
 
-  Future<List<pw.Widget>> _buildAttendancePdf(pw.Context context, {String? profileId}) async {
+  Future<List<pw.Widget>> _buildAttendancePdf(pw.Context? context, {String? profileId}) async {
     final records = await _getAttendance(profileId: profileId);
     final headers = ['Jugadora', 'Fecha', 'Asistió', 'Observaciones'];
     final rows = <List<String>>[];
@@ -655,7 +659,7 @@ class ExportService {
     return [_buildTable(headers, rows)];
   }
 
-  Future<List<pw.Widget>> _buildMedicalLeavesPdf(pw.Context context) async {
+  Future<List<pw.Widget>> _buildMedicalLeavesPdf(pw.Context? context) async {
     final leaves = await _getMedicalLeaves();
     final headers = ['Jugadora', 'Razón', 'Inicio', 'Fin', 'Estado'];
     final rows = <List<String>>[];
@@ -668,7 +672,7 @@ class ExportService {
     return [_buildTable(headers, rows)];
   }
 
-  Future<List<pw.Widget>> _buildMatchesPdf(pw.Context context, {String? profileId}) async {
+  Future<List<pw.Widget>> _buildMatchesPdf(pw.Context? context, {String? profileId}) async {
     final matches = await _getMatches(profileId: profileId);
     final headers = ['Fecha', 'Local', 'Visitante', 'Resultado', 'Tipo'];
     final rows = matches.map((m) => [
@@ -681,7 +685,7 @@ class ExportService {
     return [_buildTable(headers, rows)];
   }
 
-  Future<List<pw.Widget>> _buildTimelinePdf(pw.Context context, {String? profileId}) async {
+  Future<List<pw.Widget>> _buildTimelinePdf(pw.Context? context, {String? profileId}) async {
     final events = await _getStats(profileId: profileId);
     final headers = ['Fecha', 'Jugadora', 'Acción', 'Resultado'];
     final rows = <List<String>>[];
@@ -697,7 +701,7 @@ class ExportService {
     ];
   }
 
-  Future<List<pw.Widget>> _buildRotationsPdf(pw.Context context) async {
+  Future<List<pw.Widget>> _buildRotationsPdf(pw.Context? context) async {
     final rotations = await _getRotations();
     final headers = ['Partido', 'Set', 'Rotación', 'Pts Ganados', 'Pts Perdidos', 'Efectividad'];
     final rows = rotations.map((r) {
@@ -710,7 +714,7 @@ class ExportService {
     return [_buildTable(headers, rows)];
   }
 
-  Future<List<pw.Widget>> _buildServicePdf(pw.Context context, {String? profileId}) async {
+  Future<List<pw.Widget>> _buildServicePdf(pw.Context? context, {String? profileId}) async {
     final events = await _getStats(profileId: profileId);
     final serves = events.where((e) => e.tipoAccion == TipoAccion.saque).toList();
     final byPlayer = <int, List<StatEvent>>{};
@@ -724,15 +728,15 @@ class ExportService {
       final player = await _db.getPlayerById(entry.key);
       final name = player?.displayName ?? 'ID ${entry.key}';
       final total = entry.value.length;
-      final pts = entry.value.where((e) => e.resultado == ResultadoAccion.exitoso).length;
-      final errs = entry.value.where((e) => e.resultado == ResultadoAccion.error).length;
+      final pts = entry.value.where((e) => e.resultado == ResultadoAccion.positivo).length;
+      final errs = entry.value.where((e) => e.resultado == ResultadoAccion.negativo).length;
       final eff = total > 0 ? ((pts - errs) / total * 100).toStringAsFixed(1) : '0.0';
       rows.add([name, total.toString(), pts.toString(), errs.toString(), '$eff%']);
     }
     return [_buildTable(headers, rows)];
   }
 
-  Future<List<pw.Widget>> _buildDashboardPdf(pw.Context context, {String? profileId}) async {
+  Future<List<pw.Widget>> _buildDashboardPdf(pw.Context? context, {String? profileId}) async {
     final players = await _getPlayers(profileId: profileId);
     final matches = await _getMatches(profileId: profileId);
     final attendance = await _getAttendance(profileId: profileId);
@@ -761,10 +765,10 @@ class ExportService {
 
   pw.Widget _buildTable(List<String> headers, List<List<String>> rows) {
     return pw.TableHelper.fromTextArray(
-      headerStyle: const pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9),
-      cellStyle: const pw.TextStyle(fontSize: 8),
+      headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9),
+      cellStyle: pw.TextStyle(fontSize: 8),
       border: pw.TableBorder.all(color: PdfColors.grey400, width: 0.5),
-      headerDecoration: const pw.BoxDecoration(color: PdfColors.blue800),
+      headerDecoration: pw.BoxDecoration(color: PdfColors.blue800),
       headerAlignment: pw.Alignment.centerLeft,
       cellAlignment: pw.Alignment.centerLeft,
       headers: headers,

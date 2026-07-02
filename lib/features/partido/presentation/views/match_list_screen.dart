@@ -137,7 +137,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
     copy.competitionName = m.competitionName;
     copy.profileId = m.profileId;
     copy.clubId = m.clubId;
-    await DatabaseService.instance.insertMatch(copy);
+    await DatabaseService.instance.saveMatch(copy);
     _loadMatches();
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(

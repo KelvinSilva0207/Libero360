@@ -10,7 +10,7 @@ class PendingSyncOperation {
   final int retryCount;
   final String? errorMessage;
 
-  const PendingSyncOperation({
+  PendingSyncOperation({
     this.id = 0,
     required this.type,
     required this.collection,

@@ -69,7 +69,7 @@ class LiberoManager extends ChangeNotifier {
       message: isManual
           ? 'LIBERO: cambio realizado — $playerInName (#$playerInNumber) ↔ $playerOutName'
           : 'LIBERO: sugerencia automática — $playerInName (#$playerInNumber)',
-      level: isManual ? LogLevel.success : LogLevel.info,
+      level: isManual ? LiberoLogLevel.success : LiberoLogLevel.info,
     ));
 
     notifyListeners();
@@ -82,7 +82,7 @@ class LiberoManager extends ChangeNotifier {
   }) {
     logs.add(LiberoLogEntry(
       message: 'LIBERO: $reason',
-      level: LogLevel.warning,
+      level: LiberoLogLevel.warning,
     ));
     notifyListeners();
   }

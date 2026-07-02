@@ -142,6 +142,7 @@ class _CreateClubScreenState extends State<CreateClubScreen> {
   }
 
   Future<void> _create(BuildContext context, ClubViewModel vm) async {
+    final cs = Theme.of(context).colorScheme;
     final name = _nameCtrl.text.trim();
     final nameError = _validateName(name);
     if (nameError != null) {

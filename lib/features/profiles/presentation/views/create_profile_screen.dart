@@ -101,7 +101,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
                   child: _saving
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 20,
                           height: 20,
                           child:                           CircularProgressIndicator(

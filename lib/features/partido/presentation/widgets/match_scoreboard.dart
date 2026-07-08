@@ -15,6 +15,10 @@ class MatchScoreBoard extends StatefulWidget {
   final VoidCallback? onDecrementLocal;
   final VoidCallback? onDecrementVisitor;
   final bool readOnly;
+  final int localTimeoutsRemaining;
+  final int visitorTimeoutsRemaining;
+  final int currentRotation;
+  final String tiempoTranscurrido;
 
   const MatchScoreBoard({
     super.key,
@@ -32,6 +36,10 @@ class MatchScoreBoard extends StatefulWidget {
     this.onDecrementLocal,
     this.onDecrementVisitor,
     this.readOnly = false,
+    this.localTimeoutsRemaining = 0,
+    this.visitorTimeoutsRemaining = 0,
+    this.currentRotation = 1,
+    this.tiempoTranscurrido = '00:00',
   });
 
   @override
@@ -125,6 +133,8 @@ class _MatchScoreBoardState extends State<MatchScoreBoard>
         children: [
           _buildScoreRow(cs),
           const SizedBox(height: 6),
+          _buildInfoBar(cs),
+          const SizedBox(height: 6),
           _buildSetRow(cs),
           if (_isGolden)
             Padding(
@@ -147,6 +157,59 @@ class _MatchScoreBoardState extends State<MatchScoreBoard>
                 ),
               ),
             ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoBar(ColorScheme cs) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        _buildInfoChip(
+          cs,
+          icon: Icons.rotate_right,
+          label: 'R${widget.currentRotation}',
+          color: cs.primary,
+        ),
+        const SizedBox(width: 8),
+        _buildInfoChip(
+          cs,
+          icon: Icons.timer_outlined,
+          label: widget.tiempoTranscurrido,
+          color: cs.onSurface.withValues(alpha: 0.54),
+        ),
+        const SizedBox(width: 8),
+        _buildInfoChip(
+          cs,
+          icon: Icons.timer_off_outlined,
+          label: 'TO: ${widget.localTimeoutsRemaining}/${widget.visitorTimeoutsRemaining}',
+          color: cs.tertiary,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInfoChip(ColorScheme cs, {required IconData icon, required String label, required Color color}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: color),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ],
       ),
     );

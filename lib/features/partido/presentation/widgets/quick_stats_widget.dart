@@ -2,11 +2,38 @@ import 'package:flutter/material.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../../../estadisticas/data/local_db/database_service.dart';
 import '../../../estadisticas/data/models/models.dart';
+import '../../../estadisticas/data/stat_event_bus.dart';
 
-class QuickStatsWidget extends StatelessWidget {
+class QuickStatsWidget extends StatefulWidget {
   final int matchId;
 
   const QuickStatsWidget({super.key, required this.matchId});
+
+  @override
+  State<QuickStatsWidget> createState() => _QuickStatsWidgetState();
+}
+
+class _QuickStatsWidgetState extends State<QuickStatsWidget> {
+  late Future<List<StatEvent>> _eventsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _eventsFuture = DatabaseService.instance.getEventsByMatch(widget.matchId);
+    StatEventBus.instance.addListener(_onStatEvent);
+  }
+
+  @override
+  void dispose() {
+    StatEventBus.instance.removeListener(_onStatEvent);
+    super.dispose();
+  }
+
+  void _onStatEvent() {
+    setState(() {
+      _eventsFuture = DatabaseService.instance.getEventsByMatch(widget.matchId);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +64,7 @@ class QuickStatsWidget extends StatelessWidget {
             ],
           ),
           SizedBox(height: 8),
-          _StatsBody(matchId: matchId),
+          _StatsBody(future: _eventsFuture),
         ],
       ),
     );
@@ -45,14 +72,14 @@ class QuickStatsWidget extends StatelessWidget {
 }
 
 class _StatsBody extends StatelessWidget {
-  final int matchId;
+  final Future<List<StatEvent>> future;
 
-  const _StatsBody({required this.matchId});
+  const _StatsBody({required this.future});
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<List<StatEvent>>(
-      future: DatabaseService.instance.getEventsByMatch(matchId),
+      future: future,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Center(

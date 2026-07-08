@@ -54,6 +54,8 @@ class _MatchScreenState extends State<MatchScreen>
   int _previousSet = 1;
   int _prevLocalPoints = 0;
   int _prevVisitorPoints = 0;
+  bool _prevLocalServing = true;
+  int _prevTrackedSet = 1;
   CourtPerspective _perspective = CourtPerspective.right;
   int? _selectedZone;
 
@@ -92,11 +94,38 @@ class _MatchScreenState extends State<MatchScreen>
   void _trackPoints(PartidoViewModel vm) {
     final localPoints = vm.puntosLocal;
     final visitorPoints = vm.puntosVisitante;
+    final currentSet = vm.setActual;
+
+    // Sync serving state on set change (avoids false side-out detection)
+    if (currentSet != _prevTrackedSet) {
+      _prevLocalServing = vm.isLocalServing;
+      _prevTrackedSet = currentSet;
+      _prevLocalPoints = localPoints;
+      _prevVisitorPoints = visitorPoints;
+      LogService.instance.auto('🟡 Rotation — nuevo set $currentSet, servicio: ${vm.isLocalServing ? 'local' : 'visitante'}', source: 'MatchScreen');
+      return;
+    }
 
     if (localPoints > _prevLocalPoints) {
       _rotationManager.recordPointForCurrentRotation(localScored: true);
+      LogService.instance.auto('🟢 Service — punto registrado (local)', source: 'MatchScreen');
     } else if (visitorPoints > _prevVisitorPoints) {
       _rotationManager.recordPointForCurrentRotation(localScored: false);
+      LogService.instance.auto('🟢 Service — punto registrado (visitante)', source: 'MatchScreen');
+    }
+
+    // Side-out detection: serving team changed
+    final currentServing = vm.isLocalServing;
+    if (currentServing != _prevLocalServing) {
+      if (currentServing && _rotationManager.isComplete()) {
+        LogService.instance.auto('🟡 Rotation — side-out, local rota', source: 'MatchScreen');
+        _rotationManager.rotate();
+        _checkLiberoAutoZone();
+      }
+      if (!currentServing) {
+        LogService.instance.auto('🟢 Service — local pierde saque', source: 'MatchScreen');
+      }
+      _prevLocalServing = currentServing;
     }
 
     _prevLocalPoints = localPoints;
@@ -203,28 +232,116 @@ class _MatchScreenState extends State<MatchScreen>
     }
   }
 
-  MatchEndRecord _computeMatchEndInfo(PartidoViewModel vm) {
-    final allActions = _actionEvents;
-    // MVP across entire match
+  int _eventValue(TipoAccion tipo, ResultadoAccion resultado) {
+    if (resultado == ResultadoAccion.negativo) return -2;
+    if (resultado == ResultadoAccion.neutral) return 1;
+    switch (tipo) {
+      case TipoAccion.ataque: return 3;
+      case TipoAccion.saque: return 4;
+      case TipoAccion.bloqueo: return 4;
+      case TipoAccion.defensa: return 2;
+      case TipoAccion.recepcion: return 2;
+      case TipoAccion.colocacion: return 1;
+      case TipoAccion.errorContrario: return 0;
+    }
+  }
+
+  Future<MatchEndRecord> _computeMatchEndInfo(PartidoViewModel vm) async {
+    final matchId = vm.match?.id;
+    final events = matchId != null
+        ? await DatabaseService.instance.getEventsByMatch(matchId)
+        : <StatEvent>[];
+    final allPlayers = await DatabaseService.instance.getAllPlayers();
+    final playerNameMap = {for (final p in allPlayers) p.id: p.nombre};
+
+    String? playerName(int id) => playerNameMap[id] ?? '#$id';
+
+    // Per-player aggregates from persisted StatEvents
+    final pointsByPlayer = <int, int>{};
+    final attacksByPlayer = <int, int>{};
+    final blocksByPlayer = <int, int>{};
+    final receptionsByPlayer = <int, int>{};
+    final servicesByPlayer = <int, int>{};
+
+    for (final e in events) {
+      final value = _eventValue(e.tipoAccion, e.resultado);
+      pointsByPlayer.update(e.playerId, (v) => v + value, ifAbsent: () => value);
+
+      if (e.tipoAccion == TipoAccion.ataque && e.resultado == ResultadoAccion.positivo) {
+        attacksByPlayer.update(e.playerId, (v) => v + 1, ifAbsent: () => 1);
+      }
+      if (e.tipoAccion == TipoAccion.bloqueo) {
+        blocksByPlayer.update(e.playerId, (v) => v + 1, ifAbsent: () => 1);
+      }
+      if (e.tipoAccion == TipoAccion.recepcion) {
+        receptionsByPlayer.update(e.playerId, (v) => v + 1, ifAbsent: () => 1);
+      }
+      if (e.tipoAccion == TipoAccion.saque) {
+        servicesByPlayer.update(e.playerId, (v) => v + 1, ifAbsent: () => 1);
+      }
+    }
+
+    // MVP
     String? mvpName;
     int? mvpPts;
-    if (allActions.isNotEmpty) {
-      final pointsByPlayer = <int, int>{};
-      for (final a in allActions) {
-        pointsByPlayer.update(a.playerNumber, (v) => v + a.type.value, ifAbsent: () => a.type.value);
-      }
+    if (pointsByPlayer.isNotEmpty) {
       final best = pointsByPlayer.entries.reduce((a, b) => a.value > b.value ? a : b);
-      mvpName = _findPlayerName(best.key, vm) ?? '#${best.key}';
+      mvpName = playerName(best.key);
       mvpPts = best.value;
     }
 
-    // Best service across entire match
-    String? bestServer;
+    // Best scorer (most positive attacks)
+    String? bestScorerName;
+    int? bestScorerPts;
+    if (attacksByPlayer.isNotEmpty) {
+      final best = attacksByPlayer.entries.reduce((a, b) => a.value > b.value ? a : b);
+      bestScorerName = playerName(best.key);
+      bestScorerPts = best.value;
+    }
+
+    // Best server (most services)
+    String? bestServerStatName;
+    int? bestServerStatCount;
+    if (servicesByPlayer.isNotEmpty) {
+      final best = servicesByPlayer.entries.reduce((a, b) => a.value > b.value ? a : b);
+      bestServerStatName = playerName(best.key);
+      bestServerStatCount = best.value;
+    }
+
+    // Best blocker
+    String? bestBlockerName;
+    int? bestBlockerCount;
+    if (blocksByPlayer.isNotEmpty) {
+      final best = blocksByPlayer.entries.reduce((a, b) => a.value > b.value ? a : b);
+      bestBlockerName = playerName(best.key);
+      bestBlockerCount = best.value;
+    }
+
+    // Best receiver
+    String? bestReceiverName;
+    int? bestReceiverCount;
+    if (receptionsByPlayer.isNotEmpty) {
+      final best = receptionsByPlayer.entries.reduce((a, b) => a.value > b.value ? a : b);
+      bestReceiverName = playerName(best.key);
+      bestReceiverCount = best.value;
+    }
+
+    // Statistics per action type
+    final statistics = <TipoAccion, int>{};
+    for (final e in events) {
+      statistics[e.tipoAccion] = (statistics[e.tipoAccion] ?? 0) + 1;
+    }
+
+    // Set scores from VM
+    final setScores = vm.setScores.map((e) => MapEntry(e.key, e.value)).toList();
+
+    // Best service streak from rotation manager (consecutive points serving)
+    String? bestServerName;
     int? bestStreak;
     if (_rotationManager.serviceHistory.isNotEmpty) {
       final best = _rotationManager.serviceHistory
           .reduce((a, b) => a.consecutivePoints > b.consecutivePoints ? a : b);
-      bestServer = _findPlayerName(best.playerNumber, vm) ?? '#${best.playerNumber}';
+      bestServerName = _findPlayerName(best.playerNumber, vm) ?? '#${best.playerNumber}';
       bestStreak = best.consecutivePoints;
     }
 
@@ -250,7 +367,7 @@ class _MatchScreenState extends State<MatchScreen>
     }
 
     return MatchEndRecord(
-      matchId: vm.match?.id,
+      matchId: matchId,
       localName: vm.nombreLocal,
       visitorName: vm.nombreVisitante,
       localSets: vm.setsLocal,
@@ -259,16 +376,24 @@ class _MatchScreenState extends State<MatchScreen>
       winnerName: vm.setsLocal > vm.setsVisitante ? vm.nombreLocal : vm.nombreVisitante,
       mvpPlayerName: mvpName,
       mvpPoints: mvpPts,
-      bestServerName: bestServer,
+      bestServerName: bestServerName,
       bestServerStreak: bestStreak,
+      bestScorerName: bestScorerName,
+      bestScorerPoints: bestScorerPts,
+      bestBlockerName: bestBlockerName,
+      bestBlockerCount: bestBlockerCount,
+      bestReceiverName: bestReceiverName,
+      bestReceiverCount: bestReceiverCount,
       bestRotationIndex: bestRotIdx,
       bestRotationDiff: bestRotDiff,
       startTime: _matchStartTime,
       endTime: DateTime.now(),
+      setScores: setScores,
+      statistics: statistics,
     );
   }
 
-  Future<void> _showMatchEndDialog(PartidoViewModel vm) async {
+  Future<void> _showMatchEndDialog() async {
     final result = await showDialog<String>(
       context: context,
       barrierDismissible: false,
@@ -284,7 +409,6 @@ class _MatchScreenState extends State<MatchScreen>
 
     switch (result) {
       case 'stats':
-        // TODO: navigate to match stats screen
         break;
       case 'finalize':
         Navigator.of(context).pop();
@@ -369,7 +493,7 @@ class _MatchScreenState extends State<MatchScreen>
 
   void _handleZoneDragAccept(int fromZone, int toZone) {
     if (fromZone == toZone) return;
-    LogService.instance.auto('🟣 Cancha — drag jugador: zona $fromZone → $toZone', source: 'MatchScreen');
+    LogService.instance.auto('🔵 Court — drag jugador: zona $fromZone → $toZone', source: 'MatchScreen');
     _rotationManager.swapZones(fromZone, toZone);
     if (_rotationManager.hasDuplicates()) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -378,7 +502,7 @@ class _MatchScreenState extends State<MatchScreen>
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
-      LogService.instance.auto('🔴 Cancha — duplicados tras swap $fromZone ↔ $toZone', source: 'MatchScreen');
+      LogService.instance.auto('🔴 Error — duplicados tras swap $fromZone ↔ $toZone', source: 'MatchScreen');
     }
   }
 
@@ -430,7 +554,7 @@ class _MatchScreenState extends State<MatchScreen>
     }
   }
 
-  void _showPlayerActions(Player player, PartidoViewModel vm) {
+  void _showPlayerActions(int zoneNumber, Player player, PartidoViewModel vm) {
     final name = NameFormatter.playerMatchName(player);
 
     // If player is a libero, show swap sheet
@@ -459,6 +583,7 @@ class _MatchScreenState extends State<MatchScreen>
           _lastActionPlayer = name;
           _lastActionKey = ++_actionAnimCounter;
         },
+        onReplace: () => _showPlayerReplace(zoneNumber, vm),
       ),
     );
   }
@@ -544,8 +669,138 @@ class _MatchScreenState extends State<MatchScreen>
                       style: TextStyle(color: csAssign.onSurface.withValues(alpha: 0.38), fontSize: 11),
                     ),
                     onTap: () {
-                      _rotationManager.assignPlayerByZone(zoneNumber, p.numero ?? 0);
+                      try {
+                        _rotationManager.assignPlayerByZone(zoneNumber, p.numero ?? 0);
+                        LogService.instance.auto('🔵 Court — jugador #${p.numero} asignado a zona $zoneNumber', source: 'MatchScreen');
+                        LogService.instance.auto('🔵 Court — banca: ${_benchPlayers(vm).length} disponibles', source: 'MatchScreen');
+                        LogService.instance.auto('🔵 Court — zona $zoneNumber ocupada', source: 'MatchScreen');
+                      } catch (e) {
+                        LogService.instance.auto('🔴 Error — asignar jugador a zona $zoneNumber: $e', source: 'MatchScreen');
+                      }
                       setState(() => _selectedZone = null);
+                      Navigator.of(ctx).pop();
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    ).whenComplete(() {
+      if (mounted) setState(() => _selectedZone = null);
+    });
+  }
+
+  void _showPlayerReplace(int zoneNumber, PartidoViewModel vm) {
+    final oldPlayer = _playerForZone(zoneNumber, vm);
+    final bench = _benchPlayers(vm);
+    if (bench.isEmpty) {
+      LogService.instance.auto('🔴 Sustitución — no hay jugadores en banca', source: 'MatchScreen');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No hay jugadores en banca')),
+      );
+      return;
+    }
+    final csRep = Theme.of(context).colorScheme;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: csRep.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.swap_horiz, color: Colors.orange, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  'Sustituir — Zona $zoneNumber',
+                  style: TextStyle(
+                    color: csRep.onSurface,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const Spacer(),
+                IconButton(
+                  icon: Icon(Icons.close, color: csRep.onSurface.withValues(alpha: 0.38)),
+                  onPressed: () => Navigator.of(ctx).pop(),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Divider(color: csRep.onSurface.withValues(alpha: 0.12), height: 1),
+            const SizedBox(height: 8),
+            if (oldPlayer != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: csRep.error.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: csRep.error.withValues(alpha: 0.15)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.arrow_downward, color: csRep.error, size: 16),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Sale: #${oldPlayer.numero} ${NameFormatter.playerMatchName(oldPlayer)}',
+                        style: TextStyle(color: csRep.error, fontSize: 13, fontWeight: FontWeight.w500),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.35,
+              ),
+              child: ListView.separated(
+                shrinkWrap: true,
+                itemCount: bench.length,
+                separatorBuilder: (_, __) => Divider(
+                  color: csRep.onSurface.withValues(alpha: 0.12), height: 1, indent: 48,
+                ),
+                itemBuilder: (_, i) {
+                  final p = bench[i];
+                  return ListTile(
+                    leading: CircleAvatar(
+                      radius: 18,
+                      backgroundColor: csRep.primary.withValues(alpha: 0.3),
+                      child: Text(
+                        '${p.numero ?? '?'}',
+                        style: TextStyle(
+                          color: csRep.onPrimary, fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    title: Text(
+                      NameFormatter.playerShortName(p),
+                      style: TextStyle(color: csRep.onSurface, fontSize: 14),
+                    ),
+                    subtitle: Text(
+                      p.posicionLabel.toUpperCase(),
+                      style: TextStyle(color: csRep.onSurface.withValues(alpha: 0.38), fontSize: 11),
+                    ),
+                    onTap: () {
+                      try {
+                        _rotationManager.clearZone(zoneNumber);
+                        _rotationManager.assignPlayerByZone(zoneNumber, p.numero ?? 0);
+      LogService.instance.auto('🟡 Rotation — sustitución: #${p.numero} → zona $zoneNumber', source: 'MatchScreen');
+                        LogService.instance.auto('🔵 Court — zona $zoneNumber reasignada', source: 'MatchScreen');
+                        setState(() => _selectedZone = null);
+                      } catch (e) {
+                      LogService.instance.auto('🔴 Error — sustitución: $e', source: 'MatchScreen');
+                      }
                       Navigator.of(ctx).pop();
                     },
                   );
@@ -592,11 +847,12 @@ class _MatchScreenState extends State<MatchScreen>
   }
 
   void _onZoneTap(int zoneNumber, PartidoViewModel vm) {
+    setState(() => _selectedZone = zoneNumber);
+    LogService.instance.auto('🔵 Court — zona seleccionada: $zoneNumber', source: 'MatchScreen');
     final player = _playerForZone(zoneNumber, vm);
     if (player != null) {
-      _showPlayerActions(player, vm);
+      _showPlayerActions(zoneNumber, player, vm);
     } else {
-      setState(() => _selectedZone = zoneNumber);
       _showPlayerAssign(zoneNumber, vm);
     }
   }
@@ -731,10 +987,11 @@ class _MatchScreenState extends State<MatchScreen>
 
           if (vm.isFinalizado && !_matchEndShown && vm.match != null) {
             _matchEndShown = true;
-            _matchEndRecord = _computeMatchEndInfo(vm);
             _persistRotationStats(vm.match!.id);
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) _showMatchEndDialog(vm);
+            WidgetsBinding.instance.addPostFrameCallback((_) async {
+              if (!mounted) return;
+              _matchEndRecord = await _computeMatchEndInfo(vm);
+              if (mounted) _showMatchEndDialog();
             });
           }
 
@@ -995,6 +1252,10 @@ class _MatchScreenState extends State<MatchScreen>
             onIncrementVisitor: vm.isPartidoActivo ? () => vm.sumarPuntoVisitante() : null,
             onDecrementLocal: vm.isPartidoActivo ? () => vm.restarPuntoLocal() : null,
             onDecrementVisitor: vm.isPartidoActivo ? () => vm.restarPuntoVisitante() : null,
+            localTimeoutsRemaining: vm.localTimeoutsRemaining,
+            visitorTimeoutsRemaining: vm.visitorTimeoutsRemaining,
+            currentRotation: _rotationManager.rotationIndex + 1,
+            tiempoTranscurrido: vm.tiempoTranscurrido,
           ),
           _buildTimeoutRow(vm),
           CourtWidget(

@@ -585,6 +585,7 @@ class MatchController extends ChangeNotifier {
         message: '${_match!.equipoLocal} ${_match!.setsLocal}-${_match!.setsVisitante} ${_match!.equipoVisitante}',
         relatedMatchId: _match!.id.toString(),
       );
+      StatEventBus.instance.notifyEvent(0, _match!.id);
       notifyListeners();
     } catch (e) {
       _error = 'Error: $e';

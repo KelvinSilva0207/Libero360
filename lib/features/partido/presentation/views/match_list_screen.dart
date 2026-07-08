@@ -2,12 +2,13 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
-import '../../../../core/services/log_service.dart';
 import '../../../../core/widgets_globales/route_transitions.dart';
 import '../../../cancha/presentation/views/court_screen.dart';
 import '../../../estadisticas/data/local_db/database_service.dart';
 import '../../../estadisticas/data/models/models.dart';
 import '../../data/match_config.dart';
+import '../widgets/match_history_card.dart';
+import '../widgets/match_summary_sheet.dart';
 import 'match_screen.dart';
 import 'match_start_dialog.dart';
 
@@ -28,13 +29,17 @@ class _MatchListScreenState extends State<MatchListScreen> {
   String _searchQuery = '';
 
   TipoPartido? _filterTipo;
-  bool? _filterResultado; // true=ganados, false=perdidos, null=all
+  bool? _filterResultado;
   int? _filterSeasonId;
+  DateTime? _filterDateStart;
+  DateTime? _filterDateEnd;
+  String? _filterCompetition;
+
+  List<String> _uniqueCompetitions = [];
 
   @override
   void initState() {
     super.initState();
-    LogService.instance.auto('🟢 MatchListScreen — initState', source: 'MatchListScreen');
     _searchCtrl.addListener(() => setState(() => _searchQuery = _searchCtrl.text));
     _loadMatches();
   }
@@ -46,24 +51,29 @@ class _MatchListScreenState extends State<MatchListScreen> {
   }
 
   Future<void> _loadMatches() async {
-    LogService.instance.auto('🔵 MatchListScreen — cargando partidos', source: 'MatchListScreen');
     try {
       await DatabaseService.instance.initialize();
       final active = await DatabaseService.instance.getMatchesByState(EstadoPartido.enProgreso);
       final paused = await DatabaseService.instance.getMatchesByState(EstadoPartido.pausado);
       final finished = await DatabaseService.instance.getMatchesByState(EstadoPartido.finalizado);
       final seasons = await DatabaseService.instance.getAllSeasons();
+      final competitions = finished
+          .map((m) => m.competitionName)
+          .where((n) => n != null && n!.isNotEmpty)
+          .cast<String>()
+          .toSet()
+          .toList()
+        ..sort();
       if (!mounted) return;
       setState(() {
         _activeMatches = [...active, ...paused]
           ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
         _finishedMatches = finished..sort((a, b) => b.fecha.compareTo(a.fecha));
         _seasons = seasons;
+        _uniqueCompetitions = competitions;
         _loading = false;
       });
-      LogService.instance.auto('🟢 MatchListScreen — activos=${_activeMatches.length}, historial=${_finishedMatches.length}, seasons=${_seasons.length}', source: 'MatchListScreen');
     } catch (e) {
-      LogService.instance.auto('🔴 MatchListScreen — error: $e', source: 'MatchListScreen');
       if (mounted) setState(() => _loading = false);
     }
   }
@@ -96,6 +106,17 @@ class _MatchListScreenState extends State<MatchListScreen> {
       list = list.where((m) => m.seasonId == _filterSeasonId).toList();
     }
 
+    if (_filterDateStart != null) {
+      list = list.where((m) => m.fecha.isAfter(_filterDateStart!.subtract(const Duration(days: 1)))).toList();
+    }
+    if (_filterDateEnd != null) {
+      list = list.where((m) => m.fecha.isBefore(_filterDateEnd!.add(const Duration(days: 1)))).toList();
+    }
+
+    if (_filterCompetition != null) {
+      list = list.where((m) => m.competitionName == _filterCompetition).toList();
+    }
+
     return list;
   }
 
@@ -106,9 +127,13 @@ class _MatchListScreenState extends State<MatchListScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: cs.surface,
         title: Text('Eliminar partido', style: TextStyle(color: cs.onSurface)),
-        content: Text('¿Eliminar ${m.equipoLocal} vs ${m.equipoVisitante}?', style: TextStyle(color: cs.onSurfaceVariant)),
+        content: Text('¿Eliminar ${m.equipoLocal} vs ${m.equipoVisitante}?',
+            style: TextStyle(color: cs.onSurfaceVariant)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('Cancelar', style: TextStyle(color: cs.onSurfaceVariant))),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('Cancelar', style: TextStyle(color: cs.onSurfaceVariant)),
+          ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text('Eliminar', style: TextStyle(color: Colors.red)),
@@ -123,7 +148,6 @@ class _MatchListScreenState extends State<MatchListScreen> {
   }
 
   Future<void> _duplicateMatch(Match m) async {
-    LogService.instance.auto('🟡 MatchListScreen — duplicar partido: ${m.equipoLocal} vs ${m.equipoVisitante}', source: 'MatchListScreen');
     final copy = Match.create(
       equipoLocal: m.equipoLocal,
       equipoVisitante: m.equipoVisitante,
@@ -147,7 +171,6 @@ class _MatchListScreenState extends State<MatchListScreen> {
   }
 
   Future<void> _exportMatch(Match m) async {
-    LogService.instance.auto('🟡 MatchListScreen — exportar partido: ${m.equipoLocal} vs ${m.equipoVisitante}', source: 'MatchListScreen');
     final dateStr = DateFormat('dd/MM/yyyy HH:mm').format(m.fecha);
     final winner = m.setsLocal > m.setsVisitante ? m.equipoLocal : m.equipoVisitante;
     final lines = <String>[
@@ -175,6 +198,9 @@ class _MatchListScreenState extends State<MatchListScreen> {
       _filterTipo = null;
       _filterResultado = null;
       _filterSeasonId = null;
+      _filterDateStart = null;
+      _filterDateEnd = null;
+      _filterCompetition = null;
       _searchCtrl.clear();
     });
   }
@@ -183,24 +209,27 @@ class _MatchListScreenState extends State<MatchListScreen> {
     _filterTipo != null ||
     _filterResultado != null ||
     _filterSeasonId != null ||
+    _filterDateStart != null ||
+    _filterDateEnd != null ||
+    _filterCompetition != null ||
     _searchQuery.isNotEmpty;
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final filteredCount = _filteredFinished.length;
+    final isWide = MediaQuery.of(context).size.width > 600;
 
     return Scaffold(
       backgroundColor: cs.surface,
       appBar: AppBar(
-        title: Text('Partidos', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: cs.onSurface)),
+        title: Text('Partidos',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: cs.onSurface)),
         actions: [
           IconButton(
             icon: Icon(Icons.history_rounded, color: cs.onSurfaceVariant),
             tooltip: 'Historial completo',
-            onPressed: _finishedMatches.isNotEmpty
-                ? () => _showFullHistory(cs)
-                : null,
+            onPressed: _finishedMatches.isNotEmpty ? () => _showFullHistory(cs) : null,
           ),
         ],
       ),
@@ -209,7 +238,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
           : RefreshIndicator(
               onRefresh: _loadMatches,
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                padding: EdgeInsets.fromLTRB(16, 8, 16, 24),
                 children: [
                   _buildNuevoPartidoCard(cs),
                   const SizedBox(height: 20),
@@ -224,7 +253,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
                     const SizedBox(height: 20),
                   ],
                   if (_finishedMatches.isNotEmpty) ...[
-                    _buildHistorySection(cs, filteredCount),
+                    _buildHistorySection(cs, filteredCount, isWide),
                   ],
                   if (_activeMatches.isEmpty && _finishedMatches.isEmpty)
                     _buildEmptyState(cs),
@@ -268,49 +297,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
       scrollDirection: Axis.horizontal,
       child: Row(
         children: [
-          _buildChip(cs, 'Tipo', _filterTipo?.name, () {
-            showModalBottomSheet(
-              context: context,
-              backgroundColor: cs.surface,
-              shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-              ),
-              builder: (ctx) => Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const SizedBox(height: 12),
-                  Container(width: 40, height: 4,
-                      decoration: BoxDecoration(color: cs.outlineVariant, borderRadius: BorderRadius.circular(2))),
-                  const SizedBox(height: 12),
-                  Text('Filtrar por tipo', style: TextStyle(color: cs.onSurface, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 8),
-                  ...TipoPartido.values.map((t) => ListTile(
-                    leading: Radio<TipoPartido>(
-                      value: t,
-                      groupValue: _filterTipo,
-                      onChanged: (v) {
-                        Navigator.pop(ctx);
-                        setState(() => _filterTipo = v);
-                      },
-                    ),
-                    title: Text(t.name, style: TextStyle(color: cs.onSurface)),
-                    onTap: () {
-                      Navigator.pop(ctx);
-                      setState(() => _filterTipo = t);
-                    },
-                  )),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pop(ctx);
-                      setState(() => _filterTipo = null);
-                    },
-                    child: const Text('Limpiar filtro'),
-                  ),
-                  const SizedBox(height: 12),
-                ],
-              ),
-            );
-          }),
+          _buildChip(cs, 'Tipo', _filterTipo?.name, () => _showTypeFilter(cs)),
           const SizedBox(width: 6),
           _buildChip(cs, 'Resultado',
             _filterResultado == null ? null : (_filterResultado! ? 'Ganados' : 'Perdidos'),
@@ -330,51 +317,22 @@ class _MatchListScreenState extends State<MatchListScreen> {
               padding: const EdgeInsets.only(right: 6),
               child: _buildChip(cs, 'Temporada',
                 _seasons.where((s) => s.id == _filterSeasonId).firstOrNull?.label,
-                () {
-                  showModalBottomSheet(
-                    context: context,
-                    backgroundColor: cs.surface,
-                    shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-                    ),
-                    builder: (ctx) => Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const SizedBox(height: 12),
-                        Container(width: 40, height: 4,
-                            decoration: BoxDecoration(color: cs.outlineVariant, borderRadius: BorderRadius.circular(2))),
-                        const SizedBox(height: 12),
-                        Text('Filtrar por temporada', style: TextStyle(color: cs.onSurface, fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 8),
-                        ..._seasons.map((s) => ListTile(
-                          leading: Radio<int>(
-                            value: s.id,
-                            groupValue: _filterSeasonId,
-                            onChanged: (v) {
-                              Navigator.pop(ctx);
-                              setState(() => _filterSeasonId = v);
-                            },
-                          ),
-                          title: Text(s.label, style: TextStyle(color: cs.onSurface)),
-                          onTap: () {
-                            Navigator.pop(ctx);
-                            setState(() => _filterSeasonId = s.id);
-                          },
-                        )),
-                        TextButton(
-                          onPressed: () {
-                            Navigator.pop(ctx);
-                            setState(() => _filterSeasonId = null);
-                          },
-                          child: const Text('Limpiar filtro'),
-                        ),
-                        const SizedBox(height: 12),
-                      ],
-                    ),
-                  );
-                },
+                () => _showSeasonFilter(cs),
               ),
             ),
+          if (_uniqueCompetitions.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(right: 6),
+              child: _buildChip(cs, 'Competición', _filterCompetition,
+                () => _showCompetitionFilter(cs),
+              ),
+            ),
+          _buildChip(cs, 'Fecha',
+            _filterDateStart != null
+                ? '${DateFormat('dd/MM').format(_filterDateStart!)}-${DateFormat('dd/MM').format(_filterDateEnd ?? _filterDateStart!)}'
+                : null,
+            () => _showDateFilter(cs),
+          ),
           if (_hasActiveFilters)
             Padding(
               padding: const EdgeInsets.only(left: 4),
@@ -400,6 +358,134 @@ class _MatchListScreenState extends State<MatchListScreen> {
         ],
       ),
     );
+  }
+
+  void _showTypeFilter(ColorScheme cs) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: cs.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 12),
+          Container(width: 40, height: 4,
+              decoration: BoxDecoration(color: cs.outlineVariant, borderRadius: BorderRadius.circular(2))),
+          const SizedBox(height: 12),
+          Text('Filtrar por tipo', style: TextStyle(color: cs.onSurface, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          ...TipoPartido.values.map((t) => ListTile(
+            leading: Radio<TipoPartido>(
+              value: t,
+              groupValue: _filterTipo,
+              onChanged: (v) { Navigator.pop(ctx); setState(() => _filterTipo = v); },
+            ),
+            title: Text(t.name, style: TextStyle(color: cs.onSurface)),
+            onTap: () { Navigator.pop(ctx); setState(() => _filterTipo = t); },
+          )),
+          TextButton(
+            onPressed: () { Navigator.pop(ctx); setState(() => _filterTipo = null); },
+            child: const Text('Limpiar filtro'),
+          ),
+          const SizedBox(height: 12),
+        ],
+      ),
+    );
+  }
+
+  void _showSeasonFilter(ColorScheme cs) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: cs.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 12),
+          Container(width: 40, height: 4,
+              decoration: BoxDecoration(color: cs.outlineVariant, borderRadius: BorderRadius.circular(2))),
+          const SizedBox(height: 12),
+          Text('Filtrar por temporada', style: TextStyle(color: cs.onSurface, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          ..._seasons.map((s) => ListTile(
+            leading: Radio<int>(
+              value: s.id,
+              groupValue: _filterSeasonId,
+              onChanged: (v) { Navigator.pop(ctx); setState(() => _filterSeasonId = v); },
+            ),
+            title: Text(s.label, style: TextStyle(color: cs.onSurface)),
+            onTap: () { Navigator.pop(ctx); setState(() => _filterSeasonId = s.id); },
+          )),
+          TextButton(
+            onPressed: () { Navigator.pop(ctx); setState(() => _filterSeasonId = null); },
+            child: const Text('Limpiar filtro'),
+          ),
+          const SizedBox(height: 12),
+        ],
+      ),
+    );
+  }
+
+  void _showCompetitionFilter(ColorScheme cs) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: cs.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 12),
+          Container(width: 40, height: 4,
+              decoration: BoxDecoration(color: cs.outlineVariant, borderRadius: BorderRadius.circular(2))),
+          const SizedBox(height: 12),
+          Text('Filtrar por competición', style: TextStyle(color: cs.onSurface, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          ..._uniqueCompetitions.map((c) => ListTile(
+            leading: Radio<String>(
+              value: c,
+              groupValue: _filterCompetition,
+              onChanged: (v) { Navigator.pop(ctx); setState(() => _filterCompetition = v); },
+            ),
+            title: Text(c, style: TextStyle(color: cs.onSurface)),
+            onTap: () { Navigator.pop(ctx); setState(() => _filterCompetition = c); },
+          )),
+          TextButton(
+            onPressed: () { Navigator.pop(ctx); setState(() => _filterCompetition = null); },
+            child: const Text('Limpiar filtro'),
+          ),
+          const SizedBox(height: 12),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showDateFilter(ColorScheme cs) async {
+    final range = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now().add(const Duration(days: 1)),
+      initialDateRange: _filterDateStart != null && _filterDateEnd != null
+          ? DateTimeRange(start: _filterDateStart!, end: _filterDateEnd!)
+          : null,
+      builder: (ctx, child) => Theme(
+        data: Theme.of(context).copyWith(
+          colorScheme: cs.copyWith(primary: cs.primary),
+        ),
+        child: child!,
+      ),
+    );
+    if (range != null) {
+      setState(() {
+        _filterDateStart = range.start;
+        _filterDateEnd = range.end;
+      });
+    }
   }
 
   Widget _buildChip(ColorScheme cs, String label, String? value, VoidCallback onTap) {
@@ -602,7 +688,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
     );
   }
 
-  Widget _buildHistorySection(ColorScheme cs, int filteredCount) {
+  Widget _buildHistorySection(ColorScheme cs, int filteredCount, bool isWide) {
     final displayList = _filteredFinished;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -626,10 +712,24 @@ class _MatchListScreenState extends State<MatchListScreen> {
           ),
         ),
         if (_hasActiveFilters)
-          ...displayList.map((m) => _buildHistoryTile(cs, m))
+          ...displayList.map((m) => MatchHistoryCard(
+            key: ValueKey('history_${m.id}'),
+            match: m,
+            onDuplicate: () => _duplicateMatch(m),
+            onExport: () => _exportMatch(m),
+            onDelete: () => _deleteMatch(m),
+            onViewDetails: () => _verResumen(m),
+          ))
         else ...[
-          ..._finishedMatches.take(5).map((m) => _buildHistoryTile(cs, m)),
-          if (_finishedMatches.length > 5)
+          ..._finishedMatches.take(isWide ? 8 : 5).map((m) => MatchHistoryCard(
+            key: ValueKey('history_${m.id}'),
+            match: m,
+            onDuplicate: () => _duplicateMatch(m),
+            onExport: () => _exportMatch(m),
+            onDelete: () => _deleteMatch(m),
+            onViewDetails: () => _verResumen(m),
+          )),
+          if (_finishedMatches.length > (isWide ? 8 : 5))
             Padding(
               padding: const EdgeInsets.only(top: 8),
               child: Center(
@@ -643,87 +743,6 @@ class _MatchListScreenState extends State<MatchListScreen> {
             ),
         ],
       ],
-    );
-  }
-
-  Widget _buildHistoryTile(ColorScheme cs, Match m) {
-    final dateStr = DateFormat('dd/MM/yyyy').format(m.fecha);
-    final isWin = m.setsLocal > m.setsVisitante;
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      margin: const EdgeInsets.only(bottom: 6),
-      decoration: BoxDecoration(
-        color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.5)),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () => _verResumen(m),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          child: Row(
-            children: [
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                width: 36, height: 36,
-                decoration: BoxDecoration(
-                  color: isWin
-                      ? cs.tertiary.withValues(alpha: 0.2)
-                      : cs.error.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  isWin ? Icons.emoji_events_rounded : Icons.sports_volleyball_rounded,
-                  color: isWin ? cs.tertiary : cs.error,
-                  size: 18,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('${m.equipoLocal} vs ${m.equipoVisitante}',
-                        style: TextStyle(color: cs.onSurface, fontSize: 13, fontWeight: FontWeight.w500)),
-                    Row(
-                      children: [
-                        Text('$dateStr · ${m.resultadoSets}',
-                            style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11)),
-                        if (m.tipoPartido != TipoPartido.amistoso) ...[
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                            decoration: BoxDecoration(
-                              color: cs.primary.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(m.tipoPartidoLabel,
-                                style: TextStyle(color: cs.primary, fontSize: 9, fontWeight: FontWeight.w500)),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              PopupMenuButton<String>(
-                icon: Icon(Icons.more_horiz_rounded, size: 16, color: cs.onSurfaceVariant),
-                onSelected: (v) {
-                  if (v == 'duplicate') _duplicateMatch(m);
-                  if (v == 'export') _exportMatch(m);
-                  if (v == 'delete') _deleteMatch(m);
-                },
-                itemBuilder: (_) => [
-                  const PopupMenuItem(value: 'duplicate', child: Text('Duplicar')),
-                  const PopupMenuItem(value: 'export', child: Text('Exportar')),
-                  const PopupMenuItem(value: 'delete', child: Text('Eliminar', style: TextStyle(color: Colors.red))),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 
@@ -779,9 +798,9 @@ class _MatchListScreenState extends State<MatchListScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) => DraggableScrollableSheet(
-        initialChildSize: 0.7,
+        initialChildSize: 0.85,
         minChildSize: 0.4,
-        maxChildSize: 0.9,
+        maxChildSize: 0.95,
         expand: false,
         builder: (_, scrollCtrl) => Column(
           children: [
@@ -809,7 +828,17 @@ class _MatchListScreenState extends State<MatchListScreen> {
                 controller: scrollCtrl,
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 itemCount: _finishedMatches.length,
-                itemBuilder: (_, i) => _buildHistoryTile(cs, _finishedMatches[i]),
+                itemBuilder: (_, i) => MatchHistoryCard(
+                  key: ValueKey('full_${_finishedMatches[i].id}'),
+                  match: _finishedMatches[i],
+                  onDuplicate: () => _duplicateMatch(_finishedMatches[i]),
+                  onExport: () => _exportMatch(_finishedMatches[i]),
+                  onDelete: () => _deleteMatch(_finishedMatches[i]),
+                  onViewDetails: () {
+                    Navigator.pop(ctx);
+                    _verResumen(_finishedMatches[i]);
+                  },
+                ),
               ),
             ),
           ],
@@ -819,7 +848,6 @@ class _MatchListScreenState extends State<MatchListScreen> {
   }
 
   void _nuevoPartido() {
-    LogService.instance.auto('🟡 MatchListScreen — crear nuevo partido', source: 'MatchListScreen');
     showDialog(
       context: context,
       builder: (_) => const MatchStartDialog(),
@@ -827,7 +855,6 @@ class _MatchListScreenState extends State<MatchListScreen> {
   }
 
   void _continuarPartido(Match m) {
-    LogService.instance.auto('🟡 MatchListScreen — continuar partido: ${m.equipoLocal} vs ${m.equipoVisitante}', source: 'MatchListScreen');
     final config = MatchConfig(
       localName: m.equipoLocal,
       visitorName: m.equipoVisitante,
@@ -841,59 +868,16 @@ class _MatchListScreenState extends State<MatchListScreen> {
   }
 
   void _verResumen(Match m) {
-    final cs = Theme.of(context).colorScheme;
-    LogService.instance.auto('🟡 MatchListScreen — ver resumen: ${m.equipoLocal} ${m.resultadoSets} ${m.equipoVisitante}', source: 'MatchListScreen');
     showModalBottomSheet(
       context: context,
-      backgroundColor: cs.surface,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(width: 40, height: 4,
-                decoration: BoxDecoration(color: cs.outlineVariant, borderRadius: BorderRadius.circular(2))),
-            const SizedBox(height: 16),
-            Text('${m.equipoLocal} vs ${m.equipoVisitante}',
-                style: TextStyle(color: cs.onSurface, fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            Text(m.resultadoSets,
-                style: TextStyle(color: cs.primary, fontSize: 32, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            Text(m.isFinalizado
-                ? (m.setsLocal > m.setsVisitante ? 'Ganó ${m.equipoLocal}' : 'Ganó ${m.equipoVisitante}')
-                : m.estado.name,
-                style: TextStyle(color: cs.onSurfaceVariant, fontSize: 14)),
-            const SizedBox(height: 4),
-            Text(DateFormat('dd/MM/yyyy HH:mm').format(m.fecha),
-                style: TextStyle(color: cs.onSurfaceVariant.withValues(alpha: 0.6), fontSize: 12)),
-            if (m.competitionName != null) ...[
-              const SizedBox(height: 4),
-              Text(m.competitionName!,
-                  style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
-            ],
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                TextButton.icon(
-                  onPressed: () { Navigator.pop(ctx); _duplicateMatch(m); },
-                  icon: Icon(Icons.copy_rounded, size: 16),
-                  label: const Text('Duplicar', style: TextStyle(fontSize: 12)),
-                ),
-                TextButton.icon(
-                  onPressed: () { Navigator.pop(ctx); _exportMatch(m); },
-                  icon: Icon(Icons.share_rounded, size: 16),
-                  label: const Text('Exportar', style: TextStyle(fontSize: 12)),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-          ],
-        ),
+      builder: (_) => MatchSummarySheet(
+        match: m,
+        onDuplicate: () => _duplicateMatch(m),
+        onExport: () => _exportMatch(m),
       ),
     );
   }

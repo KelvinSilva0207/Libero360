@@ -7,11 +7,13 @@ import '../../data/player_action.dart';
 class PlayerActionSheet extends StatelessWidget {
   final Player player;
   final ValueChanged<ActionType> onAction;
+  final VoidCallback? onReplace;
 
   const PlayerActionSheet({
     super.key,
     required this.player,
     required this.onAction,
+    this.onReplace,
   });
 
   @override
@@ -80,6 +82,50 @@ class PlayerActionSheet extends StatelessWidget {
               },
             ),
           )),
+          if (onReplace != null) ...[
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 4),
+              child: Divider(color: Colors.white12, height: 1),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () {
+                    onReplace!();
+                    Navigator.of(context).pop();
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.orange.withValues(alpha: 0.15)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.swap_horiz, color: Colors.orange, size: 18),
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Text(
+                            'Sustituir',
+                            style: TextStyle(
+                              color: Colors.orange,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        const Icon(Icons.chevron_right, color: Colors.orange, size: 18),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );

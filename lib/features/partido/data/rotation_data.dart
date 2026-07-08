@@ -63,7 +63,7 @@ class RotationManager extends ChangeNotifier {
     slots[viA] = slots[viB];
     slots[viB] = temp;
 
-    LogService.instance.auto('🔵 Rotación — swap zonas $zoneA ↔ $zoneB (jugadores ${slots[viA]} ↔ ${slots[viB]})', source: 'RotationManager');
+    LogService.instance.auto('🔵 Court — swap zonas $zoneA ↔ $zoneB (jugadores ${slots[viA]} ↔ ${slots[viB]})', source: 'RotationManager');
     notifyListeners();
   }
 
@@ -71,7 +71,7 @@ class RotationManager extends ChangeNotifier {
     final vi = zoneToVisual[zoneNumber];
     if (vi == null || vi >= slots.length) return;
     slots[vi] = null;
-    LogService.instance.auto('🟡 Rotación — zona $zoneNumber liberada', source: 'RotationManager');
+    LogService.instance.auto('🔵 Court — zona $zoneNumber liberada', source: 'RotationManager');
     notifyListeners();
   }
 
@@ -89,7 +89,7 @@ class RotationManager extends ChangeNotifier {
     if (currentSet.initialSlots.every((s) => s == null)) {
       currentSet.initialSlots[slotIndex] = playerNumber;
     }
-    LogService.instance.auto('🟢 Rotación — jugador #$playerNumber asignado a zona ${visualToZone[slotIndex]}', source: 'RotationManager');
+    LogService.instance.auto('🔵 Court — jugador #$playerNumber asignado a zona ${visualToZone[slotIndex]}', source: 'RotationManager');
     notifyListeners();
   }
 
@@ -118,11 +118,11 @@ class RotationManager extends ChangeNotifier {
 
   void rotate() {
     if (!isComplete()) {
-      LogService.instance.auto('🔴 Rotación — mínimo 6 jugadores requeridos (actual: ${occupiedCount()})', source: 'RotationManager');
+      LogService.instance.auto('🔴 Error — mínimo 6 jugadores requeridos (actual: ${occupiedCount()})', source: 'RotationManager');
       return;
     }
     if (hasDuplicates()) {
-      LogService.instance.auto('🔴 Rotación — jugadores duplicados detectados', source: 'RotationManager');
+      LogService.instance.auto('🔴 Error — jugadores duplicados detectados', source: 'RotationManager');
       return;
     }
     _closeCurrentService();
@@ -137,7 +137,7 @@ class RotationManager extends ChangeNotifier {
       serverNumber: currentSet.currentSlots[5],
       fromInitialRotation: currentSet.rotationIndex,
     ));
-    LogService.instance.auto('🔵 Rotación — ejecutada (índice ${currentSet.rotationIndex})', source: 'RotationManager');
+    LogService.instance.auto('🟡 Rotation — ejecutada (índice ${currentSet.rotationIndex})', source: 'RotationManager');
   }
 
   void recordPointForCurrentRotation({required bool localScored}) {

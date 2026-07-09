@@ -1,11 +1,4 @@
-/// Módulo de Estadísticas Play-by-Play
-/// 
-/// Flujo completo:
-/// 1. Seleccionar jugador
-/// 2. Registrar acción
-/// 3. Guardar en Isar
-/// 4. UI se actualiza automáticamente
-/// 5. Mostrar estadísticas
+/// Módulo de Estadísticas
 
 // ==================== DATA ====================
 // Models
@@ -25,12 +18,6 @@ export 'domain/services/stats_calculator.dart';
 export 'domain/services/mvp_calculator.dart';
 
 // ==================== PRESENTATION ====================
-// ViewModels
-export 'presentation/viewmodels/play_by_play_viewmodel.dart';
-
-// Screens
-export 'presentation/views/play_by_play_screen.dart';
-
 // Widgets
 export 'presentation/widgets/stat_recorder_widget.dart';
 export 'presentation/widgets/live_stats_widget.dart';

@@ -9,7 +9,6 @@ import '../../../profiles/presentation/viewmodels/profile_viewmodel.dart';
 import '../../../teams/presentation/viewmodels/club_viewmodel.dart';
 import '../../../teams/data/team_models.dart' show ClubRole;
 import '../../../asistencia/presentation/views/athlete_list_screen.dart' as asis_athlete;
-import '../../../estadisticas/presentation/views/play_by_play_screen.dart';
 import '../../../admin/presentation/views/admin_screen.dart';
 import '../../../atleta/presentation/viewmodels/athlete_viewmodel.dart';
 import '../../../atleta/presentation/views/athlete_list_screen.dart' as atleta_athlete;

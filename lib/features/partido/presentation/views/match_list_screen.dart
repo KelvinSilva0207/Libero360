@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/widgets_globales/route_transitions.dart';
-import '../../../cancha/presentation/views/court_screen.dart';
 import '../../../estadisticas/data/local_db/database_service.dart';
 import '../../../estadisticas/data/models/models.dart';
 import '../../data/match_config.dart';

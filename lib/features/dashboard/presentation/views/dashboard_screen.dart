@@ -400,7 +400,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             TextButton.icon(
               onPressed: type == 'registerAthlete'
                   ? () => context.pushSlide(const asis_athlete.AthleteListScreen())
-                  : () => context.pushSlide(const PlayByPlayScreen()),
+                  : () => context.pushSlide(const MatchListScreen()),
               icon: Icon(type == 'registerAthlete' ? Icons.person_add_rounded : Icons.sports_volleyball_rounded, size: 16),
               label: Text(type == 'registerAthlete' ? 'Registrar atleta' : 'Crear partido'),
               style: TextButton.styleFrom(

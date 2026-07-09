@@ -4,7 +4,7 @@ import '../../../../core/widgets_globales/route_transitions.dart';
 import '../../../asistencia/presentation/views/athlete_list_screen.dart';
 import '../../../asistencia/presentation/views/attendance_analytics_screen.dart';
 import '../../../asistencia/presentation/views/pdf_export_screen.dart';
-import '../../../estadisticas/presentation/views/play_by_play_screen.dart';
+import '../../../partido/presentation/views/match_list_screen.dart';
 import '../../../statistics/presentation/views/statistics_screen.dart';
 import '../../../asistencia/presentation/views/attendance_screen.dart';
 import '../../../admin/presentation/views/admin_screen.dart';
@@ -62,7 +62,7 @@ class QuickAccessRow extends StatelessWidget {
 
   static final _items = [
     _QuickItem('👥', 'Atletas', AppColors.primary, () => const AthleteListScreen()),
-    _QuickItem('🏐', 'Partido', AppColors.accent, () => const PlayByPlayScreen()),
+    _QuickItem('🏐', 'Partido', AppColors.accent, () => const MatchListScreen()),
     _QuickItem('📈', 'Stats', AppColors.success, () => const StatisticsScreen()),
     _QuickItem('📅', 'Asistencia', AppColors.info, () => const AttendanceScreen()),
     _QuickItem('📊', 'Analytics', AppColors.info, () => const AttendanceAnalyticsScreen()),

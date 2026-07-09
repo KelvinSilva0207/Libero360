@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../../../../core/widgets_globales/route_transitions.dart';
-import '../../../estadisticas/presentation/views/play_by_play_screen.dart';
+import '../../../partido/presentation/views/match_list_screen.dart';
 import '../../../statistics/presentation/views/statistics_screen.dart';
 import '../../data/dashboard_model.dart';
 
@@ -61,7 +61,7 @@ class LastMatchBanner extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               TextButton.icon(
-                onPressed: () => context.pushSlide(const PlayByPlayScreen()),
+                onPressed: () => context.pushSlide(const MatchListScreen()),
                 icon: const Icon(Icons.add_rounded, size: 16),
                 label: const Text('Jugar partido'),
                 style: TextButton.styleFrom(

@@ -993,7 +993,7 @@ class _MatchScreenState extends State<MatchScreen>
               final numbers = players
                   .where((p) => p.numero != null)
                   .take(6)
-                  .map((p) => p.numero!)
+                  .map<int?>((p) => p.numero)
                   .toList();
               while (numbers.length < 6) {
                 numbers.add(null);

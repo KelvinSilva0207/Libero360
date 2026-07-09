@@ -71,6 +71,7 @@ class _MatchScreenState extends State<MatchScreen>
   final List<TimelineEvent> _setEndEntries = [];
   int _eventIdCounter = 0;
   bool _matchEndShown = false;
+  bool _initialAssignmentDone = false;
   MatchEndRecord? _matchEndRecord;
 
   @override
@@ -984,6 +985,22 @@ class _MatchScreenState extends State<MatchScreen>
 
           _checkSetChange(vm);
           _trackPoints(vm);
+
+          if (!_initialAssignmentDone && !vm.isLoading && vm.match != null) {
+            _initialAssignmentDone = true;
+            final players = vm.jugadores;
+            if (players.isNotEmpty) {
+              final numbers = players
+                  .where((p) => p.numero != null)
+                  .take(6)
+                  .map((p) => p.numero!)
+                  .toList();
+              while (numbers.length < 6) {
+                numbers.add(null);
+              }
+              _rotationManager.setSlots(numbers);
+            }
+          }
 
           if (vm.isFinalizado && !_matchEndShown && vm.match != null) {
             _matchEndShown = true;

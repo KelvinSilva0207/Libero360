@@ -42,10 +42,27 @@ class CategoryService {
       _loaded = true;
       return;
     }
-    _categories = snapshots
+    var loaded = snapshots
         .map((e) => CategoryConfig.fromMap(e.value, id: e.key))
-        .toList()
-      ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+        .toList();
+
+    final seen = <String>{};
+    final duplicates = <int>[];
+    final deduplicated = <CategoryConfig>[];
+    for (final cat in loaded) {
+      final key = cat.name.toLowerCase();
+      if (seen.contains(key)) {
+        duplicates.add(cat.id!);
+      } else {
+        seen.add(key);
+        deduplicated.add(cat);
+      }
+    }
+    for (final id in duplicates) {
+      await _store.record(id).delete(db);
+    }
+
+    _categories = deduplicated..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
     _loaded = true;
   }
 
@@ -104,9 +121,6 @@ class CategoryService {
   }
 
   Future<bool> delete(int id) async {
-    final existing = _categories.where((c) => c.id == id).toList();
-    if (existing.isEmpty) return false;
-    if (existing.first.isDefault) return false;
     final db = await _database;
     await _store.record(id).delete(db);
     _categories.removeWhere((c) => c.id == id);

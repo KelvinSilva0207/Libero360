@@ -50,14 +50,6 @@ class _CategoryManagerScreenState extends State<CategoryManagerScreen> {
   }
 
   Future<void> _delete(CategoryConfig cat) async {
-    if (cat.isDefault) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No se puede eliminar una categoría predeterminada')),
-        );
-      }
-      return;
-    }
     final cs = Theme.of(context).colorScheme;
     final confirm = await showDialog<bool>(
       context: context,

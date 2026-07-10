@@ -160,7 +160,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
             ),
             IconButton(
               icon: const Icon(Icons.delete_outline, color: Colors.red, size: 18),
-              onPressed: cat.isDefault ? null : () => _delete(vm, cat),
+              onPressed: () => _delete(vm, cat),
             ),
           ],
         ),

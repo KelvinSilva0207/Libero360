@@ -4,6 +4,8 @@ import '../../../../core/themes/app_colors.dart';
 import '../../../../core/theme_provider/theme_notifier.dart';
 import '../../../../core/services/log_service.dart';
 import '../../../auth/presentation/viewmodels/auth_viewmodel.dart';
+import '../../../settings/data/settings_repository.dart';
+import '../../../settings/presentation/viewmodels/settings_viewmodel.dart';
 import '../../../settings/presentation/views/account_section.dart';
 import '../../../settings/presentation/views/club_section.dart';
 import '../../../settings/presentation/views/staff_section.dart';
@@ -50,26 +52,34 @@ class _AdminScreenState extends State<AdminScreen> {
     final isWide = MediaQuery.of(context).size.width >= 900;
     final bg = isDark ? const Color(0xFF0A0E21) : const Color(0xFFF5F5F5);
 
-    return Scaffold(
-      backgroundColor: bg,
-      appBar: !isWide
-          ? AppBar(
-              backgroundColor: cs.surface,
-              leading: IconButton(
-                icon: const Icon(Icons.menu_rounded),
-                onPressed: () => setState(() => _mobileOpen = !_mobileOpen),
-              ),
-              title: Text(_sectionTitle(_selected)),
-            )
-          : null,
-      body: SafeArea(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (isWide) _buildSidebar(cs, isDark),
-            if (_mobileOpen && !isWide) _buildMobileOverlay(cs, isDark),
-            Expanded(child: _buildContent(cs, isDark)),
-          ],
+    return ChangeNotifierProvider(
+      create: (_) => SettingsViewModel(
+        repository: SettingsRepository(),
+        themeNotifier: context.read<ThemeNotifier>(),
+        authViewModel: context.read<AuthViewModel>(),
+        clubViewModel: context.read<ClubViewModel>(),
+      ),
+      child: Scaffold(
+        backgroundColor: bg,
+        appBar: !isWide
+            ? AppBar(
+                backgroundColor: cs.surface,
+                leading: IconButton(
+                  icon: const Icon(Icons.menu_rounded),
+                  onPressed: () => setState(() => _mobileOpen = !_mobileOpen),
+                ),
+                title: Text(_sectionTitle(_selected)),
+              )
+            : null,
+        body: SafeArea(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (isWide) _buildSidebar(cs, isDark),
+              if (_mobileOpen && !isWide) _buildMobileOverlay(cs, isDark),
+              Expanded(child: _buildContent(cs, isDark)),
+            ],
+          ),
         ),
       ),
     );

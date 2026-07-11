@@ -4,6 +4,7 @@ import '../../../../core/themes/app_colors.dart';
 import '../../../../core/theme_provider/theme_notifier.dart';
 import '../../../../core/services/log_service.dart';
 import '../../../auth/presentation/viewmodels/auth_viewmodel.dart';
+import '../../../teams/presentation/viewmodels/club_viewmodel.dart';
 import '../../../settings/data/settings_repository.dart';
 import '../../../settings/presentation/viewmodels/settings_viewmodel.dart';
 import '../../../settings/presentation/views/account_section.dart';

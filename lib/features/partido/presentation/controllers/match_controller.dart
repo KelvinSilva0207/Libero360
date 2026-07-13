@@ -150,9 +150,11 @@ class MatchController extends ChangeNotifier {
       _timeoutDurationSeconds = config?.timeoutDurationSeconds ?? 30;
       _categoria = config?.categoria ?? Categoria.libre;
 
-      _jugadores = config?.selectedPlayers != null
-          ? List.from(config!.selectedPlayers)
-          : [];
+      if (config?.selectedPlayers != null && config!.selectedPlayers.isNotEmpty) {
+        _jugadores = List.from(config.selectedPlayers);
+      } else {
+        _jugadores = await DatabaseService.instance.getAllPlayers();
+      }
 
       final serviceStartsLocal = (config != null &&
               config.serviceOrderPerSet.isNotEmpty)

@@ -70,12 +70,7 @@ class _AppShellState extends State<AppShell> {
           appBar: useMobileLayout
               ? AppBar(
                   backgroundColor: Theme.of(context).colorScheme.surface,
-                  leading: _selectedIndex != 0
-                      ? IconButton(
-                          icon: const Icon(Icons.arrow_back_rounded),
-                          onPressed: () => setState(() => _selectedIndex = 0),
-                        )
-                      : null,
+                  leading: null,
                   title: Row(
                     children: [
                       Image.asset('assets/images/logo_libero.png', width: 24, height: 24),

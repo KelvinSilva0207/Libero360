@@ -9,6 +9,7 @@ import 'core/theme_provider/theme_notifier.dart';
 import 'core/theme_provider/typography_viewmodel.dart';
 import 'core/theme_provider/text_scale_viewmodel.dart';
 import 'core/services/gender_migration_service.dart';
+import 'core/services/category_service.dart';
 import 'core/config.dart';
 import 'features/auth/auth.dart';
 import 'features/auth/data/repositories/firebase_auth_repository.dart';
@@ -28,6 +29,7 @@ void main() async {
   AppConfig.enableFirebase();
   _initServices();
   await GenderMigrationService.run();
+  await CategoryService.instance.load();
   runApp(
     MultiProvider(
       providers: [

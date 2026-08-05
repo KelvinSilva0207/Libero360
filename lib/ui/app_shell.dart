@@ -70,7 +70,7 @@ class _AppShellState extends State<AppShell> {
           appBar: useMobileLayout
               ? AppBar(
                   backgroundColor: Theme.of(context).colorScheme.surface,
-                  leading: null,
+                  automaticallyImplyLeading: false,
                   title: Row(
                     children: [
                       Image.asset('assets/images/logo_libero.png', width: 24, height: 24),

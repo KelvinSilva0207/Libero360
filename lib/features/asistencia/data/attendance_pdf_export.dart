@@ -14,8 +14,10 @@ class AttendancePdfExport {
   final MedicalLeaveRepository _medicalRepo = MedicalLeaveRepository.instance;
 
   Future<pw.Document> generate({
-    required int year,
-    required int month,
+    int? year,
+    int? month,
+    DateTime? start,
+    DateTime? end,
     String? category,
     String clubName = 'Club',
     String coachName = '',
@@ -27,12 +29,20 @@ class AttendancePdfExport {
     final playerOnLeave = activeLeaves.map((l) => l.playerId).toSet();
     final players = <int, Player>{for (final p in allPlayers) p.id: p};
 
-    final monthRecords = records.where((r) =>
-      r.fecha.year == year && r.fecha.month == month
-    ).toList();
+    final isRange = start != null && end != null;
+    final rangeStart = isRange ? DateTime(start.year, start.month, start.day) : null;
+    final rangeEnd = isRange ? DateTime(end.year, end.month, end.day).add(const Duration(days: 1)) : null;
+
+    final periodRecords = records.where((r) {
+      if (isRange) {
+        final day = DateTime(r.fecha.year, r.fecha.month, r.fecha.day);
+        return !day.isBefore(rangeStart!) && day.isBefore(rangeEnd!);
+      }
+      return r.fecha.year == year && r.fecha.month == month;
+    }).toList();
 
     final playerStats = <int, _PlayerAttendance>{};
-    for (final r in monthRecords) {
+    for (final r in periodRecords) {
       playerStats.putIfAbsent(r.playerId, () => _PlayerAttendance(playerId: r.playerId));
       if (r.asistio) {
         playerStats[r.playerId]!.present++;
@@ -45,10 +55,12 @@ class AttendancePdfExport {
       }
     }
 
-    final totalDays = monthRecords.map((r) => '${r.fecha.year}-${r.fecha.month}-${r.fecha.day}').toSet().length;
+    final totalDays = periodRecords.map((r) => '${r.fecha.year}-${r.fecha.month}-${r.fecha.day}').toSet().length;
 
     final pdf = pw.Document();
-    final monthName = DateFormat.MMMM('es').format(DateTime(year, month));
+    final periodLabel = isRange
+        ? '${_shortDate(rangeStart!)} al ${_shortDate(rangeEnd!.subtract(const Duration(days: 1)))}'
+        : '${DateFormat.MMMM('es').format(DateTime(year!, month!))} $year';
     final genDate = DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now());
 
     pdf.addPage(
@@ -56,7 +68,7 @@ class AttendancePdfExport {
         pageFormat: PdfPageFormat.a4,
         margin: const pw.EdgeInsets.all(40),
         build: (ctx) => [
-          _header(clubName, monthName, year, coachName, genDate),
+          _header(clubName, periodLabel, coachName, genDate),
           pw.SizedBox(height: 20),
           if (totalDays > 0) _summaryRow(totalDays, playerStats.values.toList()),
           pw.SizedBox(height: 16),
@@ -75,7 +87,9 @@ class AttendancePdfExport {
     return pdf;
   }
 
-  pw.Widget _header(String club, String monthName, int year, String coach, String genDate) {
+  String _shortDate(DateTime d) => '${d.day}/${d.month}/${d.year}';
+
+  pw.Widget _header(String club, String periodLabel, String coach, String genDate) {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
@@ -92,7 +106,7 @@ class AttendancePdfExport {
           children: [
             _infoBlock('Club', club),
             pw.SizedBox(width: 40),
-            _infoBlock('Período', '$monthName $year'),
+            _infoBlock('Período', periodLabel),
             pw.SizedBox(width: 40),
             if (coach.isNotEmpty) _infoBlock('Entrenador', coach),
           ],
@@ -191,14 +205,23 @@ class AttendancePdfExport {
     );
   }
 
-  Future<void> saveAndShare({required int year, required int month, String? category, String clubName = '', String coachName = ''}) async {
-    final pdf = await generate(year: year, month: month, category: category, clubName: clubName, coachName: coachName);
+  Future<void> saveAndShare({int? year, int? month, DateTime? start, DateTime? end, String? category, String clubName = '', String coachName = ''}) async {
+    final pdf = await generate(year: year, month: month, start: start, end: end, category: category, clubName: clubName, coachName: coachName);
     final bytes = await pdf.save();
     final dir = await getTemporaryDirectory();
-    final monthName = DateFormat.MMMM('es').format(DateTime(year, month));
-    final file = File('${dir.path}/asistencia_${monthName}_$year.pdf');
+    final isRange = start != null && end != null;
+    final (fileName, shareText) = isRange
+        ? (
+            'asistencia_semana_${start.day.toString().padLeft(2, '0')}${start.month.toString().padLeft(2, '0')}_${end.day.toString().padLeft(2, '0')}${end.month.toString().padLeft(2, '0')}.pdf',
+            'Reporte de Asistencia - ${_shortDate(start)} al ${_shortDate(end)}',
+          )
+        : (
+            'asistencia_${DateFormat.MMMM('es').format(DateTime(year!, month!))}_$year.pdf',
+            'Reporte de Asistencia - ${DateFormat.MMMM('es').format(DateTime(year, month))} $year',
+          );
+    final file = File('${dir.path}/$fileName');
     await file.writeAsBytes(bytes);
-    await Share.shareXFiles([XFile(file.path)], text: 'Reporte de Asistencia - $monthName $year');
+    await Share.shareXFiles([XFile(file.path)], text: shareText);
   }
 }
 

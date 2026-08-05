@@ -4,8 +4,14 @@ import '../../../../core/themes/app_colors.dart';
 import '../../../teams/presentation/viewmodels/club_viewmodel.dart';
 import '../../data/attendance_pdf_export.dart';
 
+enum _ExportMode { month, week }
+
 class PdfExportScreen extends StatefulWidget {
-  const PdfExportScreen({super.key});
+  const PdfExportScreen({super.key, this.initialMonth, this.initialYear, this.initialDate});
+
+  final int? initialMonth;
+  final int? initialYear;
+  final DateTime? initialDate;
 
   @override
   State<PdfExportScreen> createState() => _PdfExportScreenState();
@@ -14,15 +20,36 @@ class PdfExportScreen extends StatefulWidget {
 class _PdfExportScreenState extends State<PdfExportScreen> {
   late int _year;
   late int _month;
+  late DateTime _weekAnchor;
+  _ExportMode _mode = _ExportMode.month;
   bool _exporting = false;
 
   @override
   void initState() {
     super.initState();
     final now = DateTime.now();
-    _year = now.year;
-    _month = now.month;
+    _year = widget.initialYear ?? now.year;
+    _month = widget.initialMonth ?? now.month;
+    _weekAnchor = widget.initialDate ?? now;
   }
+
+  DateTime get _weekStart {
+    final d = DateTime(_weekAnchor.year, _weekAnchor.month, _weekAnchor.day);
+    return d.subtract(Duration(days: d.weekday - 1));
+  }
+
+  DateTime get _weekEnd => _weekStart.add(const Duration(days: 6));
+
+  String get _monthName => ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'][_month - 1];
+
+  String get _periodLabel {
+    if (_mode == _ExportMode.week) {
+      return '${_shortDate(_weekStart)} al ${_shortDate(_weekEnd)}';
+    }
+    return '$_monthName $_year';
+  }
+
+  String _shortDate(DateTime d) => '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
 
   @override
   Widget build(BuildContext context) {
@@ -46,6 +73,15 @@ class _PdfExportScreenState extends State<PdfExportScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Selecciona el período', style: TextStyle(color: cs.onSurface, fontSize: 16, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 16),
+            SegmentedButton<_ExportMode>(
+              segments: const [
+                ButtonSegment(value: _ExportMode.month, label: Text('Mes'), icon: Icon(Icons.calendar_month, size: 18)),
+                ButtonSegment(value: _ExportMode.week, label: Text('Semana'), icon: Icon(Icons.date_range, size: 18)),
+              ],
+              selected: {_mode},
+              onSelectionChanged: (s) => setState(() => _mode = s.first),
+            ),
             const SizedBox(height: 20),
             Container(
               padding: const EdgeInsets.all(16),
@@ -53,13 +89,47 @@ class _PdfExportScreenState extends State<PdfExportScreen> {
                 color: cs.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(14),
               ),
-              child: Column(
-                children: [
-                  _periodRow(cs, 'Mes', _monthName, () => _pickMonth(cs)),
-                  const SizedBox(height: 12),
-                  _periodRow(cs, 'Año', _year.toString(), () => _pickYear(cs)),
-                ],
-              ),
+              child: _mode == _ExportMode.month
+                  ? Column(
+                      children: [
+                        _periodRow(cs, 'Mes', _monthName, () => _pickMonth(cs)),
+                        const SizedBox(height: 12),
+                        _periodRow(cs, 'Año', _year.toString(), () => _pickYear(cs)),
+                      ],
+                    )
+                  : Column(
+                      children: [
+                        _periodRow(cs, 'Semana', _periodLabel, () => _pickWeekDate(cs)),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: () => setState(() => _weekAnchor = DateTime.now()),
+                                icon: const Icon(Icons.today, size: 16),
+                                label: const Text('Esta semana'),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: cs.primary,
+                                  side: BorderSide(color: cs.primary.withValues(alpha: 0.5)),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: () => setState(() => _weekAnchor = DateTime.now().subtract(const Duration(days: 7))),
+                                icon: const Icon(Icons.history, size: 16),
+                                label: const Text('Semana pasada'),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: cs.primary,
+                                  side: BorderSide(color: cs.primary.withValues(alpha: 0.5)),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
             ),
             const SizedBox(height: 32),
             Text('Vista previa', style: TextStyle(color: cs.onSurface, fontSize: 16, fontWeight: FontWeight.bold)),
@@ -73,7 +143,7 @@ class _PdfExportScreenState extends State<PdfExportScreen> {
                     const SizedBox(height: 16),
                     Text('Reporte de Asistencia', style: TextStyle(color: cs.onSurface, fontSize: 15, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 4),
-                    Text('$_monthName $_year', style: TextStyle(color: cs.onSurface.withValues(alpha: 0.5), fontSize: 13)),
+                    Text(_periodLabel, style: TextStyle(color: cs.onSurface.withValues(alpha: 0.5), fontSize: 13)),
                     const SizedBox(height: 20),
                     Container(
                       padding: const EdgeInsets.all(12),
@@ -99,8 +169,6 @@ class _PdfExportScreenState extends State<PdfExportScreen> {
       ),
     );
   }
-
-  String get _monthName => ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'][_month - 1];
 
   Widget _periodRow(ColorScheme cs, String label, String value, VoidCallback onTap) {
     return InkWell(
@@ -150,15 +218,43 @@ class _PdfExportScreenState extends State<PdfExportScreen> {
     if (picked != null) setState(() => _year = picked);
   }
 
+  Future<void> _pickWeekDate(ColorScheme cs) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _weekAnchor,
+      firstDate: DateTime(2024),
+      lastDate: DateTime.now().add(const Duration(days: 1)),
+      helpText: 'Elige un día de la semana',
+      builder: (context, child) => Theme(
+        data: ThemeData.dark().copyWith(
+          colorScheme: ColorScheme.dark(
+            primary: cs.primary,
+            onPrimary: cs.onPrimary,
+          ),
+        ),
+        child: child!,
+      ),
+    );
+    if (picked != null) setState(() => _weekAnchor = picked);
+  }
+
   Future<void> _export() async {
     setState(() => _exporting = true);
     try {
       final clubName = context.read<ClubViewModel>().currentClub?.name ?? 'Club';
-      await AttendancePdfExport().saveAndShare(
-        year: _year,
-        month: _month,
-        clubName: clubName,
-      );
+      if (_mode == _ExportMode.week) {
+        await AttendancePdfExport().saveAndShare(
+          start: _weekStart,
+          end: _weekEnd,
+          clubName: clubName,
+        );
+      } else {
+        await AttendancePdfExport().saveAndShare(
+          year: _year,
+          month: _month,
+          clubName: clubName,
+        );
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));

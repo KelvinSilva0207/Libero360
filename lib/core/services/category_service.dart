@@ -33,24 +33,27 @@ class CategoryService {
     if (_loaded) return;
     final db = await _database;
     final snapshots = await _store.find(db);
+
     if (snapshots.isEmpty) {
-      _categories = List.from(_defaults);
-      for (final cat in _categories) {
-        final key = await _store.add(db, cat.toMap());
-        (cat as dynamic).id = key;
+      _categories = [];
+      for (final def in _defaults) {
+        final key = await _store.add(db, def.toMap());
+        _categories.add(CategoryConfig.fromMap(def.toMap(), id: key));
       }
       _loaded = true;
       return;
     }
+
     var loaded = snapshots
         .map((e) => CategoryConfig.fromMap(e.value, id: e.key))
+        .where((c) => c.name.trim().isNotEmpty)
         .toList();
 
     final seen = <String>{};
     final duplicates = <int>[];
     final deduplicated = <CategoryConfig>[];
     for (final cat in loaded) {
-      final key = cat.name.toLowerCase();
+      final key = cat.name.trim().toLowerCase();
       if (seen.contains(key)) {
         duplicates.add(cat.id!);
       } else {
@@ -58,6 +61,34 @@ class CategoryService {
         deduplicated.add(cat);
       }
     }
+
+    // Heal default categories: add any missing default and restore the
+    // canonical age range/order for default-marked entries whose stored
+    // values drifted (fixes stale DBs where, e.g., U9 matches every age).
+    for (final def in _defaults) {
+      final match = deduplicated
+          .where((c) => c.name.trim().toLowerCase() == def.name.toLowerCase())
+          .toList();
+      if (match.isEmpty) {
+        final key = await _store.add(db, def.toMap());
+        deduplicated.add(CategoryConfig.fromMap(def.toMap(), id: key));
+      } else {
+        final target = match.first;
+        if (target.isDefault &&
+            (target.minAge != def.minAge ||
+                target.maxAge != def.maxAge ||
+                target.sortOrder != def.sortOrder)) {
+          final updated = target.copyWith(
+            minAge: def.minAge,
+            maxAge: def.maxAge,
+            sortOrder: def.sortOrder,
+          );
+          await _store.record(target.id!).put(db, updated.toMap());
+          deduplicated[deduplicated.indexOf(target)] = updated;
+        }
+      }
+    }
+
     for (final id in duplicates) {
       await _store.record(id).delete(db);
     }

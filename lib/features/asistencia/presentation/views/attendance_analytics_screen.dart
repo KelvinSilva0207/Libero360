@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../viewmodels/attendance_analytics_viewmodel.dart';
+import 'pdf_export_screen.dart';
 
 class AttendanceAnalyticsScreen extends StatefulWidget {
   const AttendanceAnalyticsScreen({super.key});
@@ -28,7 +29,21 @@ class _AttendanceAnalyticsScreenState extends State<AttendanceAnalyticsScreen> {
 
     return Scaffold(
       backgroundColor: cs.surface,
-      appBar: AppBar(title: const Text('Estad\u00edsticas de Asistencia')),
+      appBar: AppBar(
+        title: const Text('Estad\u00edsticas de Asistencia'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.picture_as_pdf_outlined, color: cs.primary),
+            tooltip: 'Exportar PDF',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const PdfExportScreen()),
+              );
+            },
+          ),
+        ],
+      ),
       body: vm.loading
           ? Center(child: CircularProgressIndicator(color: cs.primary))
           : data == null

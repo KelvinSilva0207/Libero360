@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:libero360/core/themes/app_colors.dart';
 import 'package:libero360/features/asistencia/data/attendance_history_model.dart';
 import 'package:libero360/features/asistencia/presentation/viewmodels/attendance_history_viewmodel.dart';
 import 'package:libero360/features/asistencia/presentation/views/attendance_history_detail_screen.dart';
+import 'package:libero360/features/asistencia/presentation/views/pdf_export_screen.dart';
 
 class AttendanceHistoryScreen extends StatefulWidget {
   const AttendanceHistoryScreen({super.key});
@@ -28,6 +28,25 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
       backgroundColor: cs.surface,
       appBar: AppBar(
         title: const Text('Historial de Asistencia'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.picture_as_pdf_outlined, color: cs.primary),
+            tooltip: 'Exportar PDF',
+            onPressed: () {
+              final vm = context.read<AttendanceHistoryViewModel>();
+              final now = DateTime.now();
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => PdfExportScreen(
+                    initialMonth: vm.filterMonth ?? now.month,
+                    initialYear: vm.filterYear ?? now.year,
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: Consumer<AttendanceHistoryViewModel>(
         builder: (_, vm, __) => Column(
@@ -82,6 +101,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
       child: TextField(
         onChanged: vm.setSearchQuery,
+        style: TextStyle(color: cs.onSurface),
         decoration: InputDecoration(
           hintText: 'Buscar atleta...',
           hintStyle: TextStyle(color: cs.onSurface.withValues(alpha: 0.4), fontSize: 13),

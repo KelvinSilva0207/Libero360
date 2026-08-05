@@ -8,6 +8,7 @@ import '../../../estadisticas/data/models/models.dart';
 import '../../../estadisticas/data/local_db/database_service.dart';
 import '../../../../core/utils/name_formatter.dart';
 import 'attendance_history_screen.dart';
+import 'pdf_export_screen.dart';
 
 class AttendanceScreen extends StatefulWidget {
   const AttendanceScreen({super.key});
@@ -165,12 +166,29 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       appBar: AppBar(
         title: const Text('Asistencia'),
         actions: [
-          if (!_loading)
+          if (!_loading) ...[
+            IconButton(
+              icon: Icon(Icons.picture_as_pdf_outlined, color: cs.primary),
+              tooltip: 'Exportar PDF',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => PdfExportScreen(
+                      initialMonth: _selectedDate.month,
+                      initialYear: _selectedDate.year,
+                      initialDate: _selectedDate,
+                    ),
+                  ),
+                );
+              },
+            ),
             IconButton(
               icon: Icon(Icons.save, color: cs.primary),
               onPressed: _saving ? null : _save,
               tooltip: 'Guardar',
             ),
+          ],
         ],
       ),
       body: _buildBody(dateStr, cs),

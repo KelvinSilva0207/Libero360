@@ -433,6 +433,7 @@ class _AthleteSearchDelegate extends SearchDelegate<void> {
       appBarTheme: AppBarTheme(
         backgroundColor: cs.surface,
         iconTheme: IconThemeData(color: cs.onSurface),
+        titleTextStyle: TextStyle(color: cs.onSurface, fontSize: 18, fontWeight: FontWeight.w500),
       ),
       inputDecorationTheme: InputDecorationTheme(
         hintStyle: TextStyle(color: cs.onSurface.withValues(alpha: 0.6)),

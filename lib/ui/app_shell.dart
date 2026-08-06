@@ -80,8 +80,6 @@ class _AppShellState extends State<AppShell> {
                   ),
                   actions: [
                     const NotificationBell(),
-                    const ClubSwitcher(),
-                    const ProfileSelector(),
                     _userMenu(context, user),
                   ],
                 )
@@ -142,15 +140,12 @@ class _AppShellState extends State<AppShell> {
               ],
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             child: Row(
               children: [
-                const ClubSwitcher(),
-                const SizedBox(width: 8),
-                const ProfileSelector(),
-                const Spacer(),
-                const NotificationBell(),
+                Spacer(),
+                NotificationBell(),
               ],
             ),
           ),

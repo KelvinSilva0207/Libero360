@@ -1079,11 +1079,26 @@ class DatabaseService extends AbstractDataService {
       categories = (await _categoryStore.find(_database)).map((e) => e.value).toList();
     } catch (_) { return null; }
 
+    List<Map<String, dynamic>> clubs;
+    try {
+      clubs = (await getAllCachedClubs()).map((m) => Map<String, dynamic>.from(m)).toList();
+    } catch (_) { return null; }
+
+    List<Map<String, dynamic>> clubMembers;
+    try {
+      clubMembers = (await _memberCacheStore.find(_database)).map((e) => Map<String, dynamic>.from(e.value)).toList();
+    } catch (_) { return null; }
+
+    List<Map<String, dynamic>> clubInvitations;
+    try {
+      clubInvitations = (await getAllCachedInvitations()).map((m) => Map<String, dynamic>.from(m)).toList();
+    } catch (_) { return null; }
+
     // Build data map without checksum
     final data = {
-      'version': '2.0.0',
+      'version': '2.1.0',
       'appVersion': _appVersion,
-      'schemaVersion': '2.0.0',
+      'schemaVersion': '2.1.0',
       'createdAt': now.toIso8601String(),
       'devicePlatform': _devicePlatform,
       'databaseVersion': '1.0.0',
@@ -1102,6 +1117,9 @@ class DatabaseService extends AbstractDataService {
       'totalStaffInvitations': staffInvitations.length,
       'totalStaffActivities': staffActivities.length,
       'totalCategories': categories.length,
+      'totalClubs': clubs.length,
+      'totalClubMembers': clubMembers.length,
+      'totalClubInvitations': clubInvitations.length,
       'players': players,
       'matches': matches,
       'events': events,
@@ -1118,6 +1136,9 @@ class DatabaseService extends AbstractDataService {
       'staffInvitations': staffInvitations,
       'staffActivities': staffActivities,
       'categories': categories,
+      'clubs': clubs,
+      'clubMembers': clubMembers,
+      'clubInvitations': clubInvitations,
     };
 
     final preChecksumJson = const JsonEncoder.withIndent('  ').convert(data);
@@ -1180,6 +1201,27 @@ class DatabaseService extends AbstractDataService {
       }
       for (final c in (data['categories'] as List? ?? [])) {
         await _categoryStore.add(_database, c as Map<String, dynamic>);
+      }
+      for (final c in (data['clubs'] as List? ?? [])) {
+        final m = c as Map<String, dynamic>;
+        final key = m['id'] as String? ?? '';
+        if (key.isNotEmpty) {
+          await _clubCacheStore.record(key).put(_database, m);
+        } else {
+          await _clubCacheStore.add(_database, m);
+        }
+      }
+      for (final cm in (data['clubMembers'] as List? ?? [])) {
+        await _memberCacheStore.add(_database, cm as Map<String, dynamic>);
+      }
+      for (final ci in (data['clubInvitations'] as List? ?? [])) {
+        final m = ci as Map<String, dynamic>;
+        final key = m['id'] as String? ?? '';
+        if (key.isNotEmpty) {
+          await _invitationCacheStore.record(key).put(_database, m);
+        } else {
+          await _invitationCacheStore.add(_database, m);
+        }
       }
       await CategoryService.instance.reload();
       return true;
@@ -1245,7 +1287,7 @@ class DatabaseService extends AbstractDataService {
 
   Future<void> cacheMember(String clubId, Map<String, dynamic> memberMap) async {
     final key = '${clubId}_${memberMap['userId']}';
-    await _memberCacheStore.record(key).put(_database, memberMap);
+    await _memberCacheStore.record(key).put(_database, {...memberMap, 'clubId': clubId});
   }
 
   Future<void> cacheMembers(String clubId, List<Map<String, dynamic>> memberMaps) async {
@@ -1257,7 +1299,7 @@ class DatabaseService extends AbstractDataService {
       }
     }
     for (final m in memberMaps) {
-      await _memberCacheStore.record('$prefix${m['userId']}').put(_database, m);
+      await _memberCacheStore.record('$prefix${m['userId']}').put(_database, {...m, 'clubId': clubId});
     }
   }
 
@@ -1265,7 +1307,7 @@ class DatabaseService extends AbstractDataService {
     final prefix = '${clubId}_';
     final snapshots = await _memberCacheStore.find(_database);
     return snapshots
-        .where((e) => e.key.startsWith(prefix))
+        .where((e) => e.key.startsWith(prefix) || e.value['clubId'] == clubId)
         .map((e) => e.value)
         .toList();
   }

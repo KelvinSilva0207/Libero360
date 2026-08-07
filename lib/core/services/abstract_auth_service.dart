@@ -7,4 +7,7 @@ abstract class AbstractAuthService {
   Future<void> loadSession();
   AppUser? get currentUser;
   bool get isLoggedIn;
+
+  /// Mensaje legible del último error de login (null si no hubo).
+  String? get lastLoginError => null;
 }

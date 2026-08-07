@@ -6,14 +6,19 @@ import '../models/user_model.dart';
 
 class FirebaseAuthRepository extends AbstractAuthService {
   AppUser? _currentUser;
+  String? _lastLoginError;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     serverClientId: '977265581819-lsf2k2370img9f2204v5n173oikvjhdv.apps.googleusercontent.com',
   );
 
   @override
+  String? get lastLoginError => _lastLoginError;
+
+  @override
   Future<AppUser?> login(String email, String password) async {
     print("🔵 LOGIN EMAIL: Iniciando sesión con correo: $email");
+    _lastLoginError = null;
     try {
       final cred = await fb.FirebaseAuth.instance.signInWithEmailAndPassword(
         email: email,
@@ -23,6 +28,11 @@ class FirebaseAuthRepository extends AbstractAuthService {
       return _fromFirebaseUser(cred.user);
     } on fb.FirebaseAuthException catch (e) {
       print("🔴 LOGIN EMAIL: Login fallido — código: ${e.code}, mensaje: ${e.message}");
+      _lastLoginError = _mapAuthError(e);
+      return null;
+    } catch (e) {
+      print("🔴 LOGIN EMAIL: Login fallido (error inesperado) — ${e.runtimeType}: $e");
+      _lastLoginError = 'Error inesperado al iniciar sesión. Inténtalo de nuevo.';
       return null;
     }
   }
@@ -141,10 +151,16 @@ class FirebaseAuthRepository extends AbstractAuthService {
       case 'email-already-in-use': return 'El correo ya está registrado';
       case 'invalid-email': return 'Correo inválido';
       case 'weak-password': return 'Contraseña muy débil (mínimo 6 caracteres)';
-      case 'user-not-found': return 'Usuario no encontrado';
-      case 'wrong-password': return 'Contraseña incorrecta';
-      case 'too-many-requests': return 'Demasiados intentos. Intenta más tarde';
-      case 'network-request-failed': return 'Error de conexión';
+      case 'user-not-found':
+      case 'wrong-password':
+      case 'invalid-credential':
+      case 'invalid-login-credentials': return 'Correo o contraseña incorrectos';
+      case 'user-disabled': return 'Esta cuenta está deshabilitada';
+      case 'too-many-requests': return 'Demasiados intentos de inicio de sesión. Espera unos minutos y vuelve a intentarlo.';
+      case 'network-request-failed':
+      case 'network-error': return 'Error de conexión. Verifica tu internet.';
+      case 'operation-not-allowed': return 'El inicio de sesión con correo no está habilitado en Firebase.';
+      case 'account-exists-with-different-credential': return 'Ya existe una cuenta con este correo usando otro método de inicio de sesión.';
       default: return 'Error: ${e.message ?? e.code}';
     }
   }

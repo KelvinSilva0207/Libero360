@@ -4,7 +4,7 @@ import '../../../../core/themes/app_colors.dart';
 import '../../../teams/presentation/viewmodels/club_viewmodel.dart';
 import '../../data/attendance_pdf_export.dart';
 
-enum _ExportMode { month, week }
+enum _ExportMode { month, week, day }
 
 class PdfExportScreen extends StatefulWidget {
   const PdfExportScreen({super.key, this.initialMonth, this.initialYear, this.initialDate});
@@ -21,6 +21,7 @@ class _PdfExportScreenState extends State<PdfExportScreen> {
   late int _year;
   late int _month;
   late DateTime _weekAnchor;
+  late DateTime _dayAnchor;
   _ExportMode _mode = _ExportMode.month;
   bool _exporting = false;
 
@@ -31,6 +32,7 @@ class _PdfExportScreenState extends State<PdfExportScreen> {
     _year = widget.initialYear ?? now.year;
     _month = widget.initialMonth ?? now.month;
     _weekAnchor = widget.initialDate ?? now;
+    _dayAnchor = widget.initialDate ?? now;
   }
 
   DateTime get _weekStart {
@@ -43,6 +45,9 @@ class _PdfExportScreenState extends State<PdfExportScreen> {
   String get _monthName => ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'][_month - 1];
 
   String get _periodLabel {
+    if (_mode == _ExportMode.day) {
+      return _shortDate(_dayAnchor);
+    }
     if (_mode == _ExportMode.week) {
       return '${_shortDate(_weekStart)} al ${_shortDate(_weekEnd)}';
     }
@@ -78,6 +83,7 @@ class _PdfExportScreenState extends State<PdfExportScreen> {
               segments: const [
                 ButtonSegment(value: _ExportMode.month, label: Text('Mes'), icon: Icon(Icons.calendar_month, size: 18)),
                 ButtonSegment(value: _ExportMode.week, label: Text('Semana'), icon: Icon(Icons.date_range, size: 18)),
+                ButtonSegment(value: _ExportMode.day, label: Text('Día'), icon: Icon(Icons.today, size: 18)),
               ],
               selected: {_mode},
               onSelectionChanged: (s) => setState(() => _mode = s.first),
@@ -97,39 +103,55 @@ class _PdfExportScreenState extends State<PdfExportScreen> {
                         _periodRow(cs, 'Año', _year.toString(), () => _pickYear(cs)),
                       ],
                     )
-                  : Column(
-                      children: [
-                        _periodRow(cs, 'Semana', _periodLabel, () => _pickWeekDate(cs)),
-                        const SizedBox(height: 12),
-                        Row(
+                  : _mode == _ExportMode.week
+                      ? Column(
                           children: [
-                            Expanded(
-                              child: OutlinedButton.icon(
-                                onPressed: () => setState(() => _weekAnchor = DateTime.now()),
-                                icon: const Icon(Icons.today, size: 16),
-                                label: const Text('Esta semana'),
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: cs.primary,
-                                  side: BorderSide(color: cs.primary.withValues(alpha: 0.5)),
+                            _periodRow(cs, 'Semana', _periodLabel, () => _pickWeekDate(cs)),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: OutlinedButton.icon(
+                                    onPressed: () => setState(() => _weekAnchor = DateTime.now()),
+                                    icon: const Icon(Icons.today, size: 16),
+                                    label: const Text('Esta semana'),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: cs.primary,
+                                      side: BorderSide(color: cs.primary.withValues(alpha: 0.5)),
+                                    ),
+                                  ),
                                 ),
-                              ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: OutlinedButton.icon(
+                                    onPressed: () => setState(() => _weekAnchor = DateTime.now().subtract(const Duration(days: 7))),
+                                    icon: const Icon(Icons.history, size: 16),
+                                    label: const Text('Semana pasada'),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: cs.primary,
+                                      side: BorderSide(color: cs.primary.withValues(alpha: 0.5)),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: OutlinedButton.icon(
-                                onPressed: () => setState(() => _weekAnchor = DateTime.now().subtract(const Duration(days: 7))),
-                                icon: const Icon(Icons.history, size: 16),
-                                label: const Text('Semana pasada'),
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: cs.primary,
-                                  side: BorderSide(color: cs.primary.withValues(alpha: 0.5)),
-                                ),
+                          ],
+                        )
+                      : Column(
+                          children: [
+                            _periodRow(cs, 'Día', _periodLabel, () => _pickDay(cs)),
+                            const SizedBox(height: 12),
+                            OutlinedButton.icon(
+                              onPressed: () => setState(() => _dayAnchor = DateTime.now()),
+                              icon: const Icon(Icons.today, size: 16),
+                              label: const Text('Hoy'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: cs.primary,
+                                side: BorderSide(color: cs.primary.withValues(alpha: 0.5)),
                               ),
                             ),
                           ],
                         ),
-                      ],
-                    ),
             ),
             const SizedBox(height: 32),
             Text('Vista previa', style: TextStyle(color: cs.onSurface, fontSize: 16, fontWeight: FontWeight.bold)),
@@ -238,21 +260,51 @@ class _PdfExportScreenState extends State<PdfExportScreen> {
     if (picked != null) setState(() => _weekAnchor = picked);
   }
 
+  Future<void> _pickDay(ColorScheme cs) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _dayAnchor,
+      firstDate: DateTime(2024),
+      lastDate: DateTime.now().add(const Duration(days: 1)),
+      helpText: 'Elige el día',
+      builder: (context, child) => Theme(
+        data: ThemeData.dark().copyWith(
+          colorScheme: ColorScheme.dark(
+            primary: cs.primary,
+            onPrimary: cs.onPrimary,
+          ),
+        ),
+        child: child!,
+      ),
+    );
+    if (picked != null) setState(() => _dayAnchor = picked);
+  }
+
   Future<void> _export() async {
     setState(() => _exporting = true);
     try {
-      final clubName = context.read<ClubViewModel>().currentClub?.name ?? 'Club';
-      if (_mode == _ExportMode.week) {
+      final vm = context.read<ClubViewModel>();
+      final clubName = vm.currentClub?.name ?? 'Club';
+      final clubLogoUrl = vm.currentClub?.photoUrl;
+      if (_mode == _ExportMode.day) {
+        await AttendancePdfExport().saveAndShare(
+          day: _dayAnchor,
+          clubName: clubName,
+          clubLogoUrl: clubLogoUrl,
+        );
+      } else if (_mode == _ExportMode.week) {
         await AttendancePdfExport().saveAndShare(
           start: _weekStart,
           end: _weekEnd,
           clubName: clubName,
+          clubLogoUrl: clubLogoUrl,
         );
       } else {
         await AttendancePdfExport().saveAndShare(
           year: _year,
           month: _month,
           clubName: clubName,
+          clubLogoUrl: clubLogoUrl,
         );
       }
     } catch (e) {

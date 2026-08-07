@@ -50,12 +50,14 @@ class InvitationService {
 
     final existingInvitations = await _firestore
         .collection('invitations')
-        .where('inviteeEmail', isEqualTo: inviteeEmail)
         .where('clubId', isEqualTo: clubId)
-        .where('status', isEqualTo: ClubInvitationStatus.pending.name)
+        .limit(100)
         .get();
 
-    if (existingInvitations.docs.isNotEmpty) {
+    final hasPending = existingInvitations.docs.any((d) =>
+        d.data()['inviteeEmail'] == inviteeEmail &&
+        d.data()['status'] == ClubInvitationStatus.pending.name);
+    if (hasPending) {
       return 'Ya existe una invitación pendiente para este usuario';
     }
 
@@ -98,9 +100,9 @@ class InvitationService {
     return _firestore
         .collection('invitations')
         .where('inviteeUserId', isEqualTo: uid)
-        .where('status', isEqualTo: ClubInvitationStatus.pending.name)
         .snapshots()
         .map((snap) => snap.docs
+            .where((d) => d.data()['status'] == ClubInvitationStatus.pending.name)
             .map((d) => ClubInvitation.fromMap(d.id, d.data()))
             .toList());
   }
@@ -112,10 +114,11 @@ class InvitationService {
     final snap = await _firestore
         .collection('invitations')
         .where('inviteeUserId', isEqualTo: uid)
-        .where('status', isEqualTo: ClubInvitationStatus.pending.name)
+        .limit(100)
         .get();
 
     return snap.docs
+        .where((d) => d.data()['status'] == ClubInvitationStatus.pending.name)
         .map((d) => ClubInvitation.fromMap(d.id, d.data()))
         .toList();
   }

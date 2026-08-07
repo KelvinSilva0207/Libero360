@@ -4,12 +4,20 @@ import '../models/user_model.dart';
 
 class AuthRepository extends AbstractAuthService {
   AppUser? _currentUser;
+  String? _lastLoginError;
+
+  @override
+  String? get lastLoginError => _lastLoginError;
 
   @override
   Future<AppUser?> login(String email, String password) async {
     await DatabaseService.instance.initialize();
     final user = await DatabaseService.instance.getUserByEmail(email);
-    if (user == null || user.password != password) return null;
+    if (user == null || user.password != password) {
+      _lastLoginError = 'Correo o contraseña incorrectos';
+      return null;
+    }
+    _lastLoginError = null;
     _currentUser = user;
     await DatabaseService.instance.saveSessionUserId(user.id);
     return _currentUser;

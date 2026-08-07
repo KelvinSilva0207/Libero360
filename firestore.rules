@@ -1,0 +1,41 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Usuarios: cualquier usuario autenticado puede leer (necesario para
+    // invitaciones y nombres de entrenadores). Solo el dueño edita su perfil.
+    match /users/{uid} {
+      allow read: if request.auth != null;
+      allow create, update: if request.auth != null && request.auth.uid == uid;
+      allow delete: if false;
+    }
+
+    // Clubes: cualquier usuario autenticado puede leer y crear.
+    match /clubs/{clubId} {
+      allow read, create: if request.auth != null;
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.ownerId;
+    }
+
+    // Miembros del club: lecturas para usuarios autenticados.
+    // Los miembros gestionan su propia membresía al aceptar invitaciones.
+    match /clubs/{clubId}/members/{memberId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.auth.uid == memberId;
+      allow update: if request.auth != null;
+      allow delete: if request.auth != null;
+    }
+
+    // Invitaciones: solo visibles para quien invita o el invitado.
+    match /invitations/{invitationId} {
+      allow read: if request.auth != null && (
+        request.auth.uid == resource.data.inviterUserId ||
+        request.auth.uid == resource.data.inviteeUserId
+      );
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.inviterUserId;
+      allow update: if request.auth != null && (
+        request.auth.uid == resource.data.inviterUserId ||
+        request.auth.uid == resource.data.inviteeUserId
+      );
+      allow delete: if false;
+    }
+  }
+}

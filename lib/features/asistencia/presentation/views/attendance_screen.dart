@@ -4,6 +4,7 @@ import '../../../../core/services/log_service.dart';
 import '../../../notifications/data/notification_service.dart';
 import '../../../notifications/data/notification_models.dart' show NotificationType;
 import '../../../dashboard/presentation/viewmodels/dashboard_viewmodel.dart';
+import '../../../teams/presentation/viewmodels/club_viewmodel.dart';
 import '../../../estadisticas/data/models/models.dart';
 import '../../../estadisticas/data/local_db/database_service.dart';
 import '../../../../core/utils/name_formatter.dart';
@@ -220,6 +221,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     }
     return Column(
       children: [
+        _clubBanner(cs),
         _dateHeader(dateStr, cs),
         Expanded(
           child: _players.isEmpty
@@ -232,6 +234,48 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         ),
         if (_players.isNotEmpty) _saveBar(cs),
       ],
+    );
+  }
+
+  Widget _clubBanner(ColorScheme cs) {
+    final club = context.watch<ClubViewModel>().currentClub;
+    if (club == null) return const SizedBox.shrink();
+    final hasLogo = club.photoUrl != null && club.photoUrl!.isNotEmpty;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest,
+        border: Border(bottom: BorderSide(color: cs.outlineVariant)),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 22,
+            backgroundColor: cs.primary.withValues(alpha: 0.15),
+            backgroundImage: hasLogo ? NetworkImage(club.photoUrl!) : null,
+            onBackgroundImageError: hasLogo ? (_, __) {} : null,
+            child: hasLogo ? null : Icon(Icons.groups_2_rounded, color: cs.primary),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(club.name,
+                    style: TextStyle(
+                        color: cs.onSurface,
+                        fontSize: 17,
+                        fontWeight: FontWeight.bold)),
+                Text('Asistencia del día',
+                    style: TextStyle(
+                        color: cs.onSurface.withValues(alpha: 0.5),
+                        fontSize: 12)),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 

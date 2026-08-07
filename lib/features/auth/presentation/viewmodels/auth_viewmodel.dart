@@ -37,7 +37,7 @@ class AuthViewModel extends ChangeNotifier {
       return true;
     }
     print("🔴 AUTHVM: login fallido para $email");
-    _error = 'Correo o contraseña incorrectos';
+    _error = _repository.lastLoginError ?? 'Correo o contraseña incorrectos';
     _isLoading = false;
     notifyListeners();
     return false;

@@ -106,6 +106,34 @@ if ($Force -or (Read-Host "¿Configurar Firebase ahora? (s/n)") -eq "s") {
 }
 
 # ============================================================
+# Step 3.5: Deploy Firestore rules + indexes
+# ============================================================
+Write-Host ""
+Write-Host "Paso 3.5: Desplegando reglas e índices de Firestore..." -ForegroundColor Yellow
+Write-Host "       Esto evita errores de permisos (modo prueba expira a los 30 días)"
+Write-Host "       e índices faltantes que impiden crear clubes o verlos en la app."
+
+if ($Force -or (Read-Host "¿Desplegar reglas e índices de Firestore ahora? (s/n)") -eq "s") {
+  firebase deploy --only firestore:rules --project=$projName
+  if ($LASTEXITCODE -ne 0) {
+    Write-Host "ERROR: No se pudieron desplegar las reglas de Firestore." -ForegroundColor Red
+    exit 1
+  }
+  Write-Host "  ✓ Reglas de Firestore desplegadas"
+
+  firebase deploy --only firestore:indexes --project=$projName
+  if ($LASTEXITCODE -ne 0) {
+    Write-Host "ERROR: No se pudieron desplegar los índices de Firestore." -ForegroundColor Red
+    exit 1
+  }
+  Write-Host "  ✓ Índices de Firestore desplegados"
+} else {
+  Write-Host "  Saltando despliegue. Ejecútalo manualmente cuando quieras:"
+  Write-Host "    firebase deploy --only firestore:rules --project=$projName"
+  Write-Host "    firebase deploy --only firestore:indexes --project=$projName"
+}
+
+# ============================================================
 # Step 4: Integrate Firebase code into app
 # ============================================================
 Write-Host ""
@@ -176,7 +204,10 @@ Write-Host "  1. https://console.firebase.google.com/project/$projName/authentic
 Write-Host "     → Habilita 'Correo electrónico/Contraseña' como método de inicio de sesión"
 Write-Host "  2. https://console.firebase.google.com/project/$projName/firestore"
 Write-Host "     → Crea la base de datos Firestore (modo prueba para empezar)"
-Write-Host "  3. Si usas Android: agrega la huella SHA-1 en Configuración del proyecto"
+Write-Host "  3. https://console.firebase.google.com/project/$projName/firestore/indexes"
+Write-Host "     → Confirma que el índice de grupo de colección 'members' esté activo"
+Write-Host "     (si no se desplegó con firebase deploy, créalo aquí manualmente)"
+Write-Host "  4. Si usas Android: agrega la huella SHA-1 en Configuración del proyecto"
 Write-Host "     (para Google Sign-In)"
 Write-Host ""
 Write-Host "¡Disfruta de Libero360 con sincronización en la nube!" -ForegroundColor Cyan

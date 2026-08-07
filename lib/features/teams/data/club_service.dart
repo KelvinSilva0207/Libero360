@@ -27,15 +27,22 @@ class ClubService {
   }
 
   /// Verificar si ya existe un club con el mismo nombre (del mismo owner).
+  ///
+  /// Usa un filtro de un solo campo (`ownerId`, índice automático de
+  /// Firestore) y filtra por nombre en memoria, evitando la necesidad de un
+  /// índice compuesto que puede no estar creado y bloquea la creación.
   Future<bool> nameExists(String name) async {
     final uid = _uid;
     if (uid == null) return false;
     final snap = await _clubs
-        .where('name', isEqualTo: name.trim())
         .where('ownerId', isEqualTo: uid)
-        .limit(1)
+        .limit(100)
         .get();
-    return snap.docs.isNotEmpty;
+    final trimmed = name.trim();
+    return snap.docs.any((d) {
+      final data = d.data();
+      return data is Map<String, dynamic> && data['name'] == trimmed;
+    });
   }
 
   /// Create a new club and add creator as owner member.
@@ -58,30 +65,54 @@ class ClubService {
       throw Exception('Ya tienes un club con ese nombre');
     }
 
-    final doc = await _clubs.add({
-      'name': name.trim(),
-      'description': description,
-      'photoUrl': photoUrl ?? '',
-      'ownerId': uid,
-      'memberCount': 1,
-      'createdAt': DateTime.now().toIso8601String(),
-    });
+    try {
+      final doc = await _clubs.add({
+        'name': name.trim(),
+        'description': description,
+        'photoUrl': photoUrl ?? '',
+        'ownerId': uid,
+        'memberCount': 1,
+        'createdAt': DateTime.now().toIso8601String(),
+      });
 
-    final userDoc = await _firestore.collection('users').doc(uid).get();
-    final displayName = userDoc.data()?['nombre'] as String? ?? '';
-    final email = userDoc.data()?['email'] as String? ?? '';
+      final userDoc = await _firestore.collection('users').doc(uid).get();
+      final displayName = userDoc.data()?['nombre'] as String? ?? '';
+      final email = userDoc.data()?['email'] as String? ?? '';
 
-    await doc.collection('members').doc(uid).set({
-      'userId': uid,
-      'email': email,
-      'displayName': displayName,
-      'role': ClubRole.owner.name,
-      'status': MembershipStatus.active.name,
-      'joinedAt': DateTime.now().toIso8601String(),
-    });
+      await doc.collection('members').doc(uid).set({
+        'userId': uid,
+        'email': email,
+        'displayName': displayName,
+        'role': ClubRole.owner.name,
+        'status': MembershipStatus.active.name,
+        'joinedAt': DateTime.now().toIso8601String(),
+      });
 
-    await _log.auto('🟢 Club creado: ${name.trim()}', source: 'ClubService');
-    return doc.id;
+      await _log.auto('🟢 Club creado: ${name.trim()}', source: 'ClubService');
+      return doc.id;
+    } on Exception catch (e) {
+      final msg = _friendlyError(e);
+      await _log.error('🔴 Error creando club: $msg', source: 'ClubService');
+      throw Exception(msg);
+    }
+  }
+
+  /// Convierte errores comunes de Firestore en mensajes accionables.
+  String _friendlyError(Object e) {
+    if (e is FirebaseException) {
+      switch (e.code) {
+        case 'permission-denied':
+          return 'No tienes permisos para crear el club. Revisa las reglas de Firestore (modo prueba expira a los 30 días).';
+        case 'failed-precondition':
+          return 'Falta crear un índice en Firestore para esta consulta. Ejecuta el script scripts/setup_firebase.ps1 para desplegar índices y reglas.';
+        case 'unavailable':
+        case 'network-request-failed':
+          return 'Error de conexión. Verifica tu internet e inténtalo de nuevo.';
+        default:
+          return 'Firebase: ${e.code}';
+      }
+    }
+    return e.toString().replaceFirst('Exception: ', '');
   }
 
   /// Update club metadata.

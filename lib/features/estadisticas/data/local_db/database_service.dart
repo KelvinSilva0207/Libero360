@@ -444,6 +444,14 @@ class DatabaseService extends AbstractDataService {
     return snapshots.map((e) => _attendanceFromMap(e.value)..id = e.key).toList();
   }
 
+  Future<List<AttendanceRecord>> getAttendanceByDateAndSession(
+    DateTime date,
+    String session,
+  ) async {
+    final records = await getAttendanceByDate(date);
+    return records.where((r) => r.sessionKey == session).toList();
+  }
+
   Future<List<AttendanceRecord>> getAttendanceByPlayer(int playerId) async {
     final snapshots = await _attendanceStore.find(
       _database,
@@ -1479,6 +1487,8 @@ class DatabaseService extends AbstractDataService {
     'fecha': r.fecha.millisecondsSinceEpoch,
     'asistio': r.asistio ? 1 : 0,
     'observaciones': r.observaciones,
+    'session': r.session,
+    'savedAt': r.savedAt?.millisecondsSinceEpoch,
   };
 
   AttendanceRecord _attendanceFromMap(Map<String, dynamic> map) => AttendanceRecord()
@@ -1487,7 +1497,11 @@ class DatabaseService extends AbstractDataService {
     ..clubId = map['clubId'] as String?
     ..fecha = DateTime.fromMillisecondsSinceEpoch(map['fecha'] as int? ?? DateTime.now().millisecondsSinceEpoch)
     ..asistio = (map['asistio'] as int? ?? 0) == 1
-    ..observaciones = map['observaciones'] as String? ?? '';
+    ..observaciones = map['observaciones'] as String? ?? ''
+    ..session = map['session'] as String?
+    ..savedAt = map['savedAt'] != null
+        ? DateTime.fromMillisecondsSinceEpoch(map['savedAt'] as int)
+        : null;
 
   Map<String, dynamic> _eventToMap(StatEvent e) => {
     'tipoAccion': e.tipoAccion.index,

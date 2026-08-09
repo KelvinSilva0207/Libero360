@@ -559,6 +559,8 @@ class SyncService {
         'fecha': r.fecha.toIso8601String(),
         'asistio': r.asistio,
         'observaciones': r.observaciones,
+        'session': r.session,
+        'savedAt': r.savedAt?.toIso8601String(),
         'updatedAt': DateTime.now().toIso8601String(),
       };
 
@@ -572,7 +574,11 @@ class SyncService {
             ? DateTime.parse(data['fecha'] as String)
             : DateTime.now()
         ..asistio = data['asistio'] as bool? ?? false
-        ..observaciones = data['observaciones'] as String? ?? '';
+        ..observaciones = data['observaciones'] as String? ?? ''
+        ..session = data['session'] as String?
+        ..savedAt = data['savedAt'] != null
+            ? DateTime.tryParse(data['savedAt'] as String)
+            : null;
 
   // ============================================================
   // SERIALIZATION — STAT EVENT

@@ -6,6 +6,7 @@ class DailyAttendanceSummary {
   final int presentCount;
   final int absentCount;
   final int medicalRestCount;
+  final Set<String> sessions;
   final List<AttendanceRecord> records;
 
   const DailyAttendanceSummary({
@@ -14,6 +15,7 @@ class DailyAttendanceSummary {
     required this.presentCount,
     required this.absentCount,
     required this.medicalRestCount,
+    this.sessions = const {'manana'},
     required this.records,
   });
 }

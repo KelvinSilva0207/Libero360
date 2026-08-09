@@ -22,9 +22,13 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   List<Player> _players = [];
   Map<int, AttendanceRecord> _records = {};
   DateTime _selectedDate = DateTime.now();
+  late String _session = _defaultSession(DateTime.now().hour);
   bool _loading = true;
   bool _saving = false;
   String? _error;
+
+  static String _defaultSession(int hour) =>
+      hour < 13 ? AttendanceRecord.sessionManana : AttendanceRecord.sessionTarde;
 
   @override
   void initState() {
@@ -37,13 +41,14 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     try {
       await DatabaseService.instance.initialize();
       _players = await DatabaseService.instance.getAllPlayers();
-      final existing = await DatabaseService.instance.getAttendanceByDate(_selectedDate);
+      final existing = await DatabaseService.instance.getAttendanceByDateAndSession(_selectedDate, _session);
       _records = {for (final r in existing) r.playerId: r};
       for (final p in _players) {
         _records.putIfAbsent(p.id, () => AttendanceRecord.create(
           playerId: p.id,
           fecha: DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day),
           asistio: true,
+          session: _session,
         ));
       }
     } catch (e) {
@@ -78,10 +83,13 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   Future<void> _save() async {
     setState(() => _saving = true);
     try {
+      final now = DateTime.now();
       for (final record in _records.values) {
+        record.session = _session;
+        record.savedAt = now;
         await DatabaseService.instance.saveAttendanceRecord(record);
       }
-      LogService.instance.auto('Asistencia registrada: ${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}', source: 'AttendanceScreen');
+      LogService.instance.auto('Asistencia registrada (${_sessionLabel(_session)}): ${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}', source: 'AttendanceScreen');
       _checkConsecutiveAbsences();
       if (context.mounted) {
         context.read<DashboardViewModel>().refresh();
@@ -145,6 +153,16 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       record.asistio = asistio;
       setState(() {});
     }
+  }
+
+  String _sessionLabel(String session) => session == AttendanceRecord.sessionTarde
+      ? AttendanceRecord.tardeLabel
+      : AttendanceRecord.mananaLabel;
+
+  void _switchSession(String session) {
+    if (session == _session) return;
+    setState(() => _session = session);
+    _load();
   }
 
   Color _saludColor(EstadoSalud e) {
@@ -222,6 +240,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     return Column(
       children: [
         _clubBanner(cs),
+        _sessionSelector(cs),
         _dateHeader(dateStr, cs),
         Expanded(
           child: _players.isEmpty
@@ -275,6 +294,51 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _sessionSelector(ColorScheme cs) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest,
+        border: Border(bottom: BorderSide(color: cs.outlineVariant)),
+      ),
+      child: SegmentedButton<String>(
+        segments: const [
+          ButtonSegment(
+            value: AttendanceRecord.sessionManana,
+            label: Text(AttendanceRecord.mananaLabel),
+            icon: Icon(Icons.wb_sunny_outlined, size: 16),
+          ),
+          ButtonSegment(
+            value: AttendanceRecord.sessionTarde,
+            label: Text(AttendanceRecord.tardeLabel),
+            icon: Icon(Icons.nights_stay_outlined, size: 16),
+          ),
+        ],
+        selected: {_session},
+        onSelectionChanged: (selection) => _switchSession(selection.first),
+        showSelectedIcon: false,
+        style: ButtonStyle(
+          visualDensity: VisualDensity.compact,
+          textStyle: const WidgetStatePropertyAll(
+            TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+          ),
+          foregroundColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.selected)
+                ? cs.onPrimary
+                : cs.onSurface,
+          ),
+          backgroundColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.selected)
+                ? cs.primary
+                : Colors.transparent,
+          ),
+          side: WidgetStatePropertyAll(BorderSide(color: cs.outlineVariant)),
+        ),
       ),
     );
   }

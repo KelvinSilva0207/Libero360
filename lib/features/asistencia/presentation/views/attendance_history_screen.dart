@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:libero360/features/estadisticas/data/models/models.dart';
 import 'package:libero360/features/asistencia/data/attendance_history_model.dart';
 import 'package:libero360/features/asistencia/presentation/viewmodels/attendance_history_viewmodel.dart';
 import 'package:libero360/features/asistencia/presentation/views/attendance_history_detail_screen.dart';
@@ -197,8 +198,14 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('${summary.presentCount} asistentes',
-                        style: TextStyle(color: cs.onSurface, fontSize: 14, fontWeight: FontWeight.w600)),
+                    Row(
+                      children: [
+                        Text('${summary.presentCount} asistentes',
+                            style: TextStyle(color: cs.onSurface, fontSize: 14, fontWeight: FontWeight.w600)),
+                        const SizedBox(width: 8),
+                        _sessionChip(cs, summary.sessions),
+                      ],
+                    ),
                     const SizedBox(height: 4),
                     Row(
                       children: [
@@ -228,6 +235,23 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
       ),
       child: Text(label,
           style: TextStyle(color: fg, fontSize: 10, fontWeight: FontWeight.w600)),
+    );
+  }
+
+  Widget _sessionChip(ColorScheme cs, Set<String> sessions) {
+    final labels = <String>[
+      if (sessions.contains(AttendanceRecord.sessionManana)) AttendanceRecord.mananaLabel,
+      if (sessions.contains(AttendanceRecord.sessionTarde)) AttendanceRecord.tardeLabel,
+    ];
+    if (labels.isEmpty) return const SizedBox.shrink();
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: cs.primary.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(labels.join(' + '),
+          style: TextStyle(color: cs.primary, fontSize: 10, fontWeight: FontWeight.w600)),
     );
   }
 

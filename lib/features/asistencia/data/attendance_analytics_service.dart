@@ -64,7 +64,10 @@ class AttendanceAnalyticsService {
       totalPresent: totalPresent,
       totalAbsent: totalAbsent,
       totalMedicalRest: totalRest,
-      totalDays: filtered.map((r) => '${r.fecha.year}-${r.fecha.month}-${r.fecha.day}').toSet().length,
+      totalDays: filtered
+          .map((r) => '${r.fecha.year}-${r.fecha.month}-${r.fecha.day}|${r.sessionKey}')
+          .toSet()
+          .length,
     );
   }
 

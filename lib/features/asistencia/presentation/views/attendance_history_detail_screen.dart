@@ -44,9 +44,6 @@ class _AttendanceHistoryDetailScreenState extends State<AttendanceHistoryDetailS
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final present = _records.where((r) => r.asistio).toList();
-    final absent = _records.where((r) => !r.asistio).toList();
-
     return Scaffold(
       backgroundColor: cs.surface,
       appBar: AppBar(
@@ -57,7 +54,7 @@ class _AttendanceHistoryDetailScreenState extends State<AttendanceHistoryDetailS
           ? Center(child: CircularProgressIndicator(color: cs.primary))
           : _records.isEmpty
               ? _emptyState(cs)
-              : _buildContent(cs, present, absent),
+              : _buildContent(cs),
     );
   }
 
@@ -75,20 +72,41 @@ class _AttendanceHistoryDetailScreenState extends State<AttendanceHistoryDetailS
     );
   }
 
-  Widget _buildContent(ColorScheme cs, List<AttendanceRecord> present, List<AttendanceRecord> absent) {
+  List<({String sessionKey, List<AttendanceRecord> records})> _groupBySession() {
+    final grouped = <String, List<AttendanceRecord>>{};
+    for (final r in _records) {
+      grouped.putIfAbsent(r.sessionKey, () => []).add(r);
+    }
+    final order = <String, int>{
+      AttendanceRecord.sessionManana: 0,
+      AttendanceRecord.sessionTarde: 1,
+    };
+    final keys = grouped.keys.toList()
+      ..sort((a, b) => (order[a] ?? 9).compareTo(order[b] ?? 9));
+    return [
+      for (final k in keys) (sessionKey: k, records: grouped[k]!),
+    ];
+  }
+
+  Widget _buildContent(ColorScheme cs) {
+    final groups = _groupBySession();
+    final allIds = _records.map((r) => r.playerId).toSet();
+    final presentIds = _records.where((r) => r.asistio).map((r) => r.playerId).toSet();
+
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        _buildSummaryBar(cs, present.length, absent.length),
+        _buildSummaryBar(cs, presentIds.length, allIds.length - presentIds.length, allIds.length),
         const SizedBox(height: 20),
-        _buildSection(cs, 'ASISTIERON', present, Colors.green, Icons.check_circle_rounded),
-        const SizedBox(height: 16),
-        _buildSection(cs, 'AUSENTES', absent, Colors.redAccent, Icons.cancel_rounded),
+        for (final g in groups) ...[
+          _buildSessionBlock(cs, g.sessionKey, g.records),
+          const SizedBox(height: 16),
+        ],
       ],
     );
   }
 
-  Widget _buildSummaryBar(ColorScheme cs, int presentCount, int absentCount) {
+  Widget _buildSummaryBar(ColorScheme cs, int presentCount, int absentCount, int totalCount) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -103,10 +121,63 @@ class _AttendanceHistoryDetailScreenState extends State<AttendanceHistoryDetailS
           Container(width: 1, height: 40, color: cs.outlineVariant),
           _statColumn(cs, 'Ausentes', '$absentCount', Colors.redAccent),
           Container(width: 1, height: 40, color: cs.outlineVariant),
-          _statColumn(cs, 'Total', '${_records.length}', cs.onSurface.withValues(alpha: 0.7)),
+          _statColumn(cs, 'Total', '$totalCount', cs.onSurface.withValues(alpha: 0.7)),
         ],
       ),
     );
+  }
+
+  Widget _buildSessionBlock(ColorScheme cs, String sessionKey, List<AttendanceRecord> records) {
+    final isManana = sessionKey == AttendanceRecord.sessionManana;
+    final label = isManana ? AttendanceRecord.mananaLabel : AttendanceRecord.tardeLabel;
+    final icon = isManana ? Icons.wb_sunny_outlined : Icons.nights_stay_outlined;
+    final time = _recordsTime(records);
+    final present = records.where((r) => r.asistio).toList();
+    final absent = records.where((r) => !r.asistio).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: cs.primary.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(icon, size: 15, color: cs.primary),
+                  const SizedBox(width: 5),
+                  Text(label,
+                      style: TextStyle(
+                          color: cs.primary,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold)),
+                ],
+              ),
+            ),
+            if (time != null) ...[
+              const SizedBox(width: 8),
+              Text('Guardada a las $time',
+                  style: TextStyle(color: cs.onSurface.withValues(alpha: 0.45), fontSize: 11)),
+            ],
+          ],
+        ),
+        const SizedBox(height: 12),
+        _buildSection(cs, 'ASISTIERON', present, Colors.green, Icons.check_circle_rounded),
+        const SizedBox(height: 16),
+        _buildSection(cs, 'AUSENTES', absent, Colors.redAccent, Icons.cancel_rounded),
+      ],
+    );
+  }
+
+  String? _recordsTime(List<AttendanceRecord> records) {
+    final saved = records.where((r) => r.savedAt != null).map((r) => r.savedAt!).toList();
+    if (saved.isEmpty) return null;
+    final t = saved.reduce((a, b) => a.isBefore(b) ? a : b);
+    return '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
   }
 
   Widget _statColumn(ColorScheme cs, String label, String value, Color color) {
@@ -203,6 +274,15 @@ class _AttendanceHistoryDetailScreenState extends State<AttendanceHistoryDetailS
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: const Text('REPOSO', style: TextStyle(color: Colors.orange, fontSize: 8, fontWeight: FontWeight.bold)),
+              ),
+            ],
+            if (record.savedAt != null) ...[
+              const SizedBox(width: 8),
+              Icon(Icons.schedule, size: 11, color: cs.onSurface.withValues(alpha: 0.35)),
+              const SizedBox(width: 2),
+              Text(
+                '${record.savedAt!.hour.toString().padLeft(2, '0')}:${record.savedAt!.minute.toString().padLeft(2, '0')}',
+                style: TextStyle(color: cs.onSurface.withValues(alpha: 0.45), fontSize: 11),
               ),
             ],
           ],

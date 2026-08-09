@@ -65,7 +65,10 @@ class AttendancePdfExport {
       }
     }
 
-    final totalDays = periodRecords.map((r) => '${r.fecha.year}-${r.fecha.month}-${r.fecha.day}').toSet().length;
+    final totalDays = periodRecords
+        .map((r) => '${r.fecha.year}-${r.fecha.month}-${r.fecha.day}|${r.sessionKey}')
+        .toSet()
+        .length;
 
     final periodLabel = isDay
         ? _shortDate(dayStart!)
@@ -96,14 +99,17 @@ class AttendancePdfExport {
           pw.SizedBox(height: 20),
           if (totalDays > 0) _summaryRow(totalDays, playerStats.values.toList()),
           pw.SizedBox(height: 16),
-          _playerTable(
-            playerStats.entries
-                .where((e) => players.containsKey(e.key))
-                .map((e) => (player: players[e.key]!, stats: e.value))
-                .where((x) => category == null || category.isEmpty || x.player.posicionLabel == category || x.player.categoria == category)
-                .toList()
-              ..sort((a, b) => b.stats.percentage.compareTo(a.stats.percentage)),
-          ),
+          if (isDay)
+            _dayTable(periodRecords, players, playerOnLeave)
+          else
+            _playerTable(
+              playerStats.entries
+                  .where((e) => players.containsKey(e.key))
+                  .map((e) => (player: players[e.key]!, stats: e.value))
+                  .where((x) => category == null || category.isEmpty || x.player.posicionLabel == category || x.player.categoria == category)
+                  .toList()
+                ..sort((a, b) => b.stats.percentage.compareTo(a.stats.percentage)),
+            ),
         ],
       ),
     );
@@ -264,6 +270,82 @@ class AttendancePdfExport {
         3: const pw.FixedColumnWidth(52),
         4: const pw.FixedColumnWidth(44),
         5: const pw.FixedColumnWidth(40),
+      },
+    );
+  }
+
+  String _formatTime(AttendanceRecord r) {
+    if (r.savedAt == null) return '—';
+    final t = r.savedAt!;
+    return '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+  }
+
+  String _estadoLabel(AttendanceRecord r, Map<int, Player> players, Set<int> playerOnLeave) {
+    if (r.asistio) return 'Presente';
+    final p = players[r.playerId];
+    if (playerOnLeave.contains(r.playerId) ||
+        (p?.estadoSalud == EstadoSalud.lesionado) ||
+        (p?.atletaStatus == AthleteStatus.injured)) {
+      return 'Reposo';
+    }
+    return 'Ausente';
+  }
+
+  pw.Widget _dayTable(
+    List<AttendanceRecord> records,
+    Map<int, Player> players,
+    Set<int> playerOnLeave,
+  ) {
+    final rows = records
+        .where((r) {
+          final p = players[r.playerId];
+          if (p == null) return false;
+          return true;
+        })
+        .toList()
+      ..sort((a, b) {
+        final sa = a.sessionKey == AttendanceRecord.sessionTarde ? 1 : 0;
+        final sb = b.sessionKey == AttendanceRecord.sessionTarde ? 1 : 0;
+        if (sa != sb) return sa.compareTo(sb);
+        final na = NameFormatter.playerDisplayName(players[a.playerId]!);
+        final nb = NameFormatter.playerDisplayName(players[b.playerId]!);
+        return na.compareTo(nb);
+      });
+
+    final data = rows.asMap().entries.map((entry) {
+      final i = entry.key + 1;
+      final r = entry.value;
+      final p = players[r.playerId];
+      return [
+        i.toString(),
+        p != null ? NameFormatter.playerDisplayName(p) : 'Atleta #${r.playerId}',
+        r.sessionLabel,
+        _formatTime(r),
+        _estadoLabel(r, players, playerOnLeave),
+      ];
+    }).toList();
+
+    return pw.TableHelper.fromTextArray(
+      headerAlignment: pw.Alignment.center,
+      cellAlignment: pw.Alignment.center,
+      cellPadding: const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+      headerStyle: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold, color: PdfColors.white),
+      cellStyle: const pw.TextStyle(fontSize: 8.5),
+      headerDecoration: pw.BoxDecoration(
+        color: PdfColor.fromInt(0xFF263238),
+        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4)),
+      ),
+      rowDecoration: const pw.BoxDecoration(
+        border: pw.Border(bottom: pw.BorderSide(color: PdfColors.grey300, width: 0.4)),
+      ),
+      headers: ['#', 'Nombre', 'Sesión', 'Hora', 'Estado'],
+      data: data,
+      columnWidths: {
+        0: const pw.FixedColumnWidth(24),
+        1: const pw.FlexColumnWidth(),
+        2: const pw.FixedColumnWidth(52),
+        3: const pw.FixedColumnWidth(40),
+        4: const pw.FixedColumnWidth(56),
       },
     );
   }

@@ -48,17 +48,20 @@ class AttendanceHistoryRepository {
       final dayRecords = grouped[key]!;
       final parts = key.split('-');
       final date = DateTime(int.parse(parts[0]), int.parse(parts[1]), int.parse(parts[2]));
-      final present = dayRecords.where((r) => r.asistio).length;
-      final medicalRest = dayRecords.where((r) {
+      final presentIds = dayRecords.where((r) => r.asistio).map((r) => r.playerId).toSet();
+      final medicalIds = dayRecords.where((r) {
         final p = players[r.playerId];
         return p != null && (p.estadoSalud == EstadoSalud.lesionado || p.atletaStatus == AthleteStatus.injured || playerOnLeave.contains(r.playerId));
-      }).length;
+      }).map((r) => r.playerId).toSet();
+      final allIds = dayRecords.map((r) => r.playerId).toSet();
+      final sessions = dayRecords.map((r) => r.sessionKey).toSet();
       return DailyAttendanceSummary(
         date: date,
-        totalPlayers: dayRecords.length,
-        presentCount: present,
-        absentCount: dayRecords.length - present - medicalRest,
-        medicalRestCount: medicalRest,
+        totalPlayers: allIds.length,
+        presentCount: presentIds.length,
+        absentCount: allIds.where((id) => !presentIds.contains(id) && !medicalIds.contains(id)).length,
+        medicalRestCount: medicalIds.length,
+        sessions: sessions,
         records: dayRecords,
       );
     }).toList();

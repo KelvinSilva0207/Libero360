@@ -18,7 +18,7 @@ class MatchListScreen extends StatefulWidget {
   State<MatchListScreen> createState() => _MatchListScreenState();
 }
 
-class _MatchListScreenState extends State<MatchListScreen> {
+class _MatchListScreenState extends State<MatchListScreen> with RouteAware {
   List<Match> _activeMatches = [];
   List<Match> _finishedMatches = [];
   List<Season> _seasons = [];
@@ -44,9 +44,22 @@ class _MatchListScreenState extends State<MatchListScreen> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route != null) appRouteObserver.subscribe(this, route);
+  }
+
+  @override
   void dispose() {
+    appRouteObserver.unsubscribe(this);
     _searchCtrl.dispose();
     super.dispose();
+  }
+
+  @override
+  void didPopNext() {
+    _loadMatches();
   }
 
   Future<void> _loadMatches() async {

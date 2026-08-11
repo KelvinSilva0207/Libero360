@@ -351,22 +351,21 @@ class _AthleteDetailScreenState extends State<AthleteDetailScreen> {
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.border),
       ),
-      child: Column(
-        children: [
-          Row(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final itemWidth = (constraints.maxWidth - 12) / 2;
+          return Wrap(
+            spacing: 12,
+            runSpacing: 16,
             children: [
-              _infoItem(Icons.badge_rounded, 'Cédula', p.cedula.isEmpty ? '—' : p.cedula),
-              _infoItem(Icons.cake_rounded, 'Edad', '${p.edad} años'),
+              _infoItem(Icons.badge_rounded, 'Cédula', p.cedula.isEmpty ? '—' : p.cedula, width: itemWidth),
+              _infoItem(Icons.cake_rounded, 'Edad', '${p.edad} años', width: itemWidth),
+              _infoItem(Icons.cake_outlined, 'Nacimiento', _formatDate(p.fechaNacimiento), width: itemWidth),
+              _infoItem(Icons.fitness_center_rounded, 'Condición', p.condicionFisica, width: itemWidth),
+              _infoItem(Icons.calendar_today_rounded, 'Ingreso', _formatDate(p.fechaIngreso), width: itemWidth),
             ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              _infoItem(Icons.fitness_center_rounded, 'Condición', p.condicionFisica),
-              _infoItem(Icons.calendar_today_rounded, 'Ingreso', _formatDate(p.fechaIngreso)),
-            ],
-          ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -533,26 +532,26 @@ class _AthleteDetailScreenState extends State<AthleteDetailScreen> {
     );
   }
 
-  Widget _infoItem(IconData icon, String label, String value) {
-    return Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, size: 12, color: AppColors.textTertiary),
-              const SizedBox(width: 4),
-              Text(label, style: const TextStyle(color: AppColors.textTertiary, fontSize: 11)),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
-          ),
-        ],
-      ),
+  Widget _infoItem(IconData icon, String label, String value, {double? width}) {
+    final item = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(icon, size: 12, color: AppColors.textTertiary),
+            const SizedBox(width: 4),
+            Text(label, style: const TextStyle(color: AppColors.textTertiary, fontSize: 11)),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+        ),
+      ],
     );
+    if (width != null) return SizedBox(width: width, child: item);
+    return Expanded(child: item);
   }
 
   Widget _statItem(String label, String value, Color color) {

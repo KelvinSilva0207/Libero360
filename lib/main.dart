@@ -87,6 +87,7 @@ class Libero360App extends StatelessWidget {
       theme: AppTheme.light(textTheme: typography.textTheme),
       darkTheme: AppTheme.dark(textTheme: typography.textTheme),
       themeMode: theme.mode,
+      navigatorObservers: [appRouteObserver],
       initialRoute: '/',
       onGenerateRoute: _onGenerateRoute,
       home: const AuthGate(),

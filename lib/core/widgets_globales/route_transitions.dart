@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+final RouteObserver<ModalRoute<void>> appRouteObserver =
+    RouteObserver<ModalRoute<void>>();
+
 Route<T> slideRightRoute<T>(Widget page, {Duration duration = const Duration(milliseconds: 300)}) {
   return PageRouteBuilder<T>(
     pageBuilder: (context, animation, secondaryAnimation) => page,

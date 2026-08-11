@@ -430,6 +430,9 @@ class _AthleteSearchDelegate extends SearchDelegate<void> {
   ThemeData appBarTheme(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Theme.of(context).copyWith(
+      textTheme: Theme.of(context).textTheme.copyWith(
+        titleLarge: TextStyle(color: cs.onSurface, fontSize: 18, fontWeight: FontWeight.w500),
+      ),
       appBarTheme: AppBarTheme(
         backgroundColor: cs.surface,
         iconTheme: IconThemeData(color: cs.onSurface),
